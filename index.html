@@ -69,10 +69,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .meta .count{font-size:15px;color:var(--muted)}
 .meta .acts{display:flex;gap:8px}
 .list{flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line);-webkit-overflow-scrolling:touch}
-.row{display:flex;align-items:center;min-height:60px;padding:0 4px 0 4px;border-bottom:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;align-items:center;min-height:60px;padding:0 4px 0 4px;border-bottom:1px solid var(--line)}
 .tick{flex:none;width:48px;height:48px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
 .rowtext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:8px 0;text-align:left;background:none;border:0;font-size:17px;line-height:1.3;color:var(--text);overflow-wrap:anywhere}
 .rowtext small{font-size:14px;color:var(--muted)}
+.more{flex:none;width:44px;height:48px;border:0;background:none;padding:0;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.more[aria-expanded="true"]{color:var(--accent)}
+.details{flex:0 0 100%;padding:0 52px 12px 48px;font-size:16px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.details a{color:var(--accent);text-decoration:underline}
+.field textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px 14px;resize:vertical}
+.field textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .row.done .rowtext{color:var(--muted);text-decoration:line-through}
 .empty{padding:28px 20px;color:var(--muted);line-height:1.45}
 .strip{margin:8px 16px 0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 16px}
@@ -152,7 +158,7 @@ function loadLocal(){
 var S=loadLocal()||seed();
 
 var ui={view:'master',activityId:null,lastActivityId:null,sheet:null,draft:'',pick:null,lastTicked:null,
-  q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device'};
+  q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device',open:{}};
 
 /* ---------- persistence ---------- */
 function commit(){
@@ -193,7 +199,8 @@ var ICON={
   right:'<path d="M9 6l6 6-6 6"/>',
   box:'<path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"/>',
   list:'<path d="M4 6h16M4 12h16M4 18h16"/>',
-  check:'<path d="M5 12.5l4.5 4.5L19 7"/>'
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  chevup:'<path d="M6 15l6-6 6 6"/>'
 };
 function h(tag,attrs,kids){
   var e=document.createElement(tag);
@@ -285,16 +292,41 @@ function dots(cur){
   ]);
 }
 
+/* turns web addresses and phone numbers in a note into tappable links; everything else stays plain text */
+function richText(str){
+  var out=[],re=/(https?:\/\/[^\s<>]+|www\.[^\s<>]+)|(\+?\d[\d ().-]{7,}\d)/gi,last=0,m;
+  while((m=re.exec(str))){
+    if(m.index>last)out.push(str.slice(last,m.index));
+    var s=m[0];
+    if(m[1]){
+      var tr=s.match(/[.,;:!?)\]'"”’]+$/);
+      if(tr){s=s.slice(0,-tr[0].length);re.lastIndex=m.index+s.length;}
+      out.push(h('a',{href:/^www\./i.test(s)?'https://'+s:s,target:'_blank',rel:'noopener noreferrer',text:s}));
+    }else{
+      var d=s.replace(/\D/g,'');
+      if(d.length>=9&&d.length<=15)out.push(h('a',{href:'tel:'+(s.charAt(0)==='+'?'+':'')+d,text:s}));
+      else out.push(s);
+    }
+    last=re.lastIndex;
+  }
+  if(last<str.length)out.push(str.slice(last));
+  return out;
+}
+
 function taskRow(t,showAct){
   var a=t.activityId?act(t.activityId):null;
   var sub=showAct&&a?h('small',{text:a.name}):null;
+  var hasNotes=!!(t.notes&&t.notes.trim()),isOpen=hasNotes&&!!ui.open[t.id];
   return h('div',{class:'row'+(t.done?' done':''),'data-id':t.id},[
     h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
     h('button',{class:'rowtext','aria-label':'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
       h('span',{text:t.text}),sub]),
+    hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
+      onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
     h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder: '+t.text+'. Drag, or use the up and down arrow keys.',
       onpointerdown:function(e){startDrag(e,t.id);},onkeydown:function(e){nudge(e,t.id);}},
-      [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)])
+      [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]),
+    isOpen?h('div',{class:'details'},richText(t.notes)):null
   ]);
 }
 
@@ -587,7 +619,7 @@ function viewArchive(){
     var ts=tasksOf(a.id),hits=[];
     var meta=(a.name+' '+fmt(a.created)+' '+fmt(a.archived)+' '+a.created.slice(0,10)+' '+a.archived.slice(0,10)).toLowerCase();
     var nameHit=!q||meta.indexOf(q)>-1;
-    if(q)hits=ts.filter(function(t){return t.text.toLowerCase().indexOf(q)>-1;});
+    if(q)hits=ts.filter(function(t){return t.text.toLowerCase().indexOf(q)>-1||(t.notes||'').toLowerCase().indexOf(q)>-1;});
     return {a:a,ts:ts,hits:hits,ok:nameHit||hits.length>0};
   }).filter(function(x){return x.ok;});
   var dir=ui.rev?-1:1;
@@ -670,15 +702,24 @@ function sheetEl(){
     var sel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(
       S.activities.filter(function(a){return !a.archived||a.id===t.activityId;}).map(function(a){return h('option',{value:a.id,text:a.name+(a.archived?' (archived)':'')});})));
     sel.value=t.activityId||'';
+    var hasN=!!(t.notes&&t.notes.trim());
+    var nt=h('textarea',{id:'sheetnotes','aria-label':'Details',placeholder:'A web address, a phone number, anything useful',autocapitalize:'sentences'});
+    nt.value=t.notes||'';
+    var notesBox=h('label',null,['Details',nt]);
+    var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
     function saveEdit(){
       var v=ti.value.trim();if(!v)return;
-      t.text=v;t.activityId=sel.value||null;ui.sheet=null;commit();
+      t.text=v;t.activityId=sel.value||null;
+      var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
+      if(nv)t.notes=nv;else delete t.notes;
+      if(!nv)delete ui.open[t.id];
+      ui.sheet=null;commit();
     }
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),
+    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),hasN?notesBox:addN,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
-          S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
+          S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:saveEdit},['Save'])])]));
   }

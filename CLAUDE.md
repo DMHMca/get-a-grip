@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v7`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v8`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `README.txt`: upload notes from the first build.
@@ -39,7 +39,8 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 7. Created and ticked dates are recorded silently on activities and tasks. They are never shown on tasks in the normal UI. No due dates and no priorities, ever.
 8. Navigation: bottom bar with four buttons, in this order: Archive, Activities, Master tasks, then the last-used activity (named). Swiping left and right moves along the same order. The top bar also has "Master tasks", the current activity tab (tap for the "Go to activity" switcher) and a "+" for a new activity.
 9. Tapping a task opens an edit sheet (change text, move to another activity, delete).
-10. Alarms and reminders are out of scope (a web app cannot do them reliably).
+10. **Details** (agreed later): any task can carry optional free-text details (a web address, a phone number, extra information). Nothing is shown for a task without details, so there are no empty boxes. A task with details shows a small chevron beside the grip handle that opens and closes the details under the task (closed by default, remembered only until the page is reloaded). Details are added in the task's edit sheet through an "Add details" button, which only then reveals the text box. Web addresses become links and phone numbers (9 to 15 digits) become tap-to-call; everything else stays plain text. Archive search also looks inside details.
+11. Alarms and reminders are out of scope (a web app cannot do them reliably).
 
 ## Design
 
@@ -52,7 +53,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 
 - Everything is stored on the phone in `localStorage` under the key `tasks.v1`, as one JSON object: `{ v, updatedAt, activities: [...], tasks: [...] }`.
 - Activity: `{ id, name, created, archived }` (`archived` is an ISO date string or `null`).
-- Task: `{ id, text, activityId, created, done, gid? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`).
+- Task: `{ id, text, activityId, created, done, gid?, notes? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`; `notes` is the optional details text and is absent when empty).
 - Task array order is the display order. Master and activity views are filtered views of the same array; reordering keeps the positions of tasks not shown.
 - "Download a backup" and "Restore from backup" (bottom of the Activities page) export and import this JSON. Do not break that format without a migration.
 - The default first-run data includes an activity called "AI project audit" with four starter tasks. It is the owner's own reminder to review their scattered AI projects (including a Hermes-based SEO system). Leave it in the seed.
@@ -75,7 +76,7 @@ The owner wants Master tasks to stay in step with one Google Tasks list, so that
 Agreed behaviour:
 
 - The owner chooses which existing Google Tasks list to sync with (not fixed to "My Tasks"), in a settings screen.
-- The activity name is written into each Google task's notes field.
+- The activity name is written into each Google task's notes field. Since tasks now have details (`notes`), the Google notes field should start with a line `Activity: <name>`, followed by a blank line and the task's details. When reading from Google, split that first line off again so details stay clean.
 - Ticking in either place ticks in the other. Open tasks of archived activities remain in the synced list.
 - Tasks added in the app appear in Google Tasks and the reverse.
 
