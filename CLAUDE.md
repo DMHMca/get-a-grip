@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v13`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v14`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `privacy.html`: plain-English privacy page, linked from the Sync page and meant for the Google consent screen. Keep it true to what the app does (it mentions Google Fonts and the Drive app-data file).
@@ -76,7 +76,7 @@ Activities page, "Import from Google Tasks". One-off, read-only import.
 ## Making it easy for family and friends (built; waiting on one value)
 
 Owner's aim: family and friends can use it without Google Cloud work. How it is built:
-- `DEFAULT_CID` (top of the sign-in code in `index.html`) is the app's built-in Google client ID. It is EMPTY until the owner creates a second, family-only Google project and gives me its client ID (a client ID is public; only a client secret must never be shared, and this app has none). Put the ID in, bump the cache, push.
+- `DEFAULT_CID` (top of the sign-in code in `index.html`) is the app's built-in Google client ID, from the owner's second, family-only Google project `get-a-grip-family` (client ID `941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com`; a client ID is public, only a client secret must never be shared, and this app has none). The owner must still press Publish app (Audience page) so people other than listed test users can sign in; check that no unverified-app warning appears.
 - The family project must have ONLY the Google Drive API enabled and ONLY the `drive.appdata` scope (the owner confirmed Google lists it as non-sensitive), authorised JavaScript origin `https://dmhmca.github.io`, and be published to production, with `privacy.html` as the privacy policy and the app address as the homepage. Google may insist on proving ownership of the homepage; github.io pages can usually be proved through a Search Console URL-prefix property. The owner's existing `get-a-grip` project (Tasks scope, Testing mode) stays separate and must not be published.
 - `getCid()` = the user's own stored ID (`gag.clientId`) or else `DEFAULT_CID`. With only the built-in ID: Sync shows just "Between my devices" plus a folded "Advanced"; the Import row and the whole Google Tasks list section are hidden, because they need the Tasks scope. Pasting an own client ID in Advanced shows them. The owner's phone and PC already have their own ID stored, so nothing changes for them.
 - `sw.js` now leaves other pages (such as `privacy.html`) alone; before, any page navigation overwrote the saved offline copy of the app.
