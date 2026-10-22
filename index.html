@@ -470,7 +470,7 @@ function fetchTasks(list){
     I.items=all.filter(function(t){return t.title&&t.title.trim();}).map(function(t){
       var gid=list.id+':'+t.id,dup=S.tasks.some(function(x){return x.gid===gid;});
       var rec=draft[gid],act=rec&&!dup?rec.act||'':'';
-      if(act&&act!=='__new'&&!live().some(function(a){return a.id===act;}))act='';
+      if(act&&!live().some(function(a){return a.id===act;}))act='';
       return {gid:gid,title:t.title.trim(),inc:dup?false:(rec?rec.inc!==false:true),dup:dup,act:act,sub:!!t.parent};
     });
     I.busy=false;render();
@@ -531,7 +531,7 @@ function viewImport(){
       function opts(){
         var o=[h('option',{value:'',text:'No activity'})];
         live().forEach(function(a){o.push(h('option',{value:a.id,text:a.name}));});
-        o.push(h('option',{value:'__new',text:'New activity: '+I.listName}));
+        o.push(h('option',{value:'__create',text:'+ New activity…'}));
         return o;
       }
       parts.push(h('p',{class:'note',text:'“'+I.listName+'” has '+I.items.length+' open task'+(I.items.length===1?'':'s')+'. '+(I.only?'Only tasks you give an activity will be imported.':'Every ticked task will be imported.')}));
@@ -541,7 +541,7 @@ function viewImport(){
       if(I.items.length){
         var bulk=h('select',{class:'sel','aria-label':'Put all of these in'},opts());
         bulk.value=I.bulk;
-        bulk.addEventListener('change',function(e){I.bulk=e.target.value;I.items.forEach(function(it){if(!it.dup)it.act=I.bulk;});saveDraft();render();});
+        bulk.addEventListener('change',function(e){if(e.target.value==='__create'){ui.afterCreate={assign:'bulk'};ui.sheet={type:'new'};render();return;}I.bulk=e.target.value;I.items.forEach(function(it){if(!it.dup)it.act=I.bulk;});saveDraft();render();});
         parts.push(h('div',{style:'padding:0 16px 12px'},[h('small',{style:'color:var(--muted);font-size:14px',text:'Put all of these in'}),bulk]));
       }
       I.items.forEach(function(it){
@@ -550,7 +550,7 @@ function viewImport(){
         if(it.sub)inner.push(h('small',{text:'Subtask in Google Tasks'}));
         if(it.dup)inner.push(h('small',{text:'Already imported'}));
         else{
-          var sel=h('select',{class:'sel','aria-label':'Activity for: '+it.title,onchange:function(e){it.act=e.target.value;saveDraft();render();}},opts());
+          var sel=h('select',{class:'sel','aria-label':'Activity for: '+it.title,onchange:function(e){if(e.target.value==='__create'){ui.afterCreate={assign:it.gid};ui.sheet={type:'new'};render();return;}it.act=e.target.value;saveDraft();render();}},opts());
           sel.value=it.act;inner.push(sel);
           if(I.only&&it.inc&&!it.act)inner.push(h('small',{text:'Not imported (no activity)'}));
         }
@@ -644,7 +644,8 @@ function sheetEl(){
       if(renaming){if(a)a.name=v;ui.sheet=null;commit();return;}
       var n=createActivity(v);if(!n)return;
       var mode=ui.afterCreate;ui.afterCreate=null;ui.sheet=null;
-      if(mode==='pick'){ui.pick=n.id;commit();}
+      if(mode&&mode.assign){var I=impState();if(mode.assign==='bulk'){I.bulk=n.id;I.items.forEach(function(it){if(!it.dup)it.act=n.id;});}else{I.items.forEach(function(it){if(it.gid===mode.assign)it.act=n.id;});}saveDraft();commit();}
+      else if(mode==='pick'){ui.pick=n.id;commit();}
       else if(mode==='stay'){commit();}
       else{ui.view='activity';ui.activityId=n.id;ui.lastActivityId=n.id;commit();}
     }
