@@ -9,3 +9,5 @@ Open that address in Chrome on your phone, then menu > Install app.
 
 To update later: upload the new files over the old ones (same names). Open the app once with a
 connection and it picks the new version up; close and reopen if you don't see it straight away.
+
+Version 2 adds: Activities page > Import from Google Tasks (one-off import, needs a Google client ID).

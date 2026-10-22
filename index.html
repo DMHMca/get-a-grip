@@ -113,6 +113,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .field label{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .field .btns{display:flex;gap:8px}
 .field .btns .btn{flex:1;height:48px}
+.txt{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:16px;padding:0 14px}
+.sel{width:100%;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:15px;padding:0 10px;margin-top:6px}
+.note{margin:0;padding:12px 16px;color:var(--muted);line-height:1.45;font-size:15px}
+.err{padding:8px 16px;color:var(--danger);font-size:15px;line-height:1.4}
+.ok{padding:8px 16px;color:var(--accent);font-size:15px;font-weight:700}
+.bar{flex:none;display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.bar .btn{flex:1;height:48px}
+.bar .btn[disabled]{opacity:.45}
+input[type=checkbox]{width:24px;height:24px;accent-color:var(--accent)}
 @media (prefers-reduced-motion: no-preference){
   .sheet{animation:up .18s ease-out}
   @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
@@ -340,7 +349,7 @@ function viewActivity(){
 
 function pageHeader(title){
   return h('div',{class:'topbar'},[
-    h('button',{class:'btn',onclick:function(){go(ui.view==='archive'?'activities':'master');}},[ui.view==='archive'?'Activities':'Master tasks']),
+    h('button',{class:'btn',onclick:function(){go(ui.view==='archive'||ui.view==='import'?'activities':'master');}},[ui.view==='archive'||ui.view==='import'?'Activities':'Master tasks']),
     h('h2',{class:'title',text:title})]);
 }
 
@@ -355,6 +364,8 @@ function viewActivities(){
     h('div',{style:'border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:'No activities yet. Create one to group related tasks.'})]),
     h('button',{class:'navrow',onclick:function(){go('archive');}},[
       h('span',{class:'t'},[h('b',{text:'Archive'}),h('small',{text:arch===1?'1 archived activity':arch+' archived activities'})]),svg(ICON.right,20)]),
+    h('button',{class:'navrow',onclick:openImport},[
+      h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]),
     footEl()
   ]);
   return [pageHeader('Activities'),body,dots(1)];
@@ -389,6 +400,154 @@ function restoreFile(f){
     }catch(e){alert('That file is not a Get a grip backup.');}
   };
   r.readAsText(f);
+}
+
+
+/* ---------- Google Tasks import ---------- */
+var gisReady=false,gisLoading=false;
+function getCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
+function impState(){return ui.imp||(ui.imp={stage:'start',token:null,lists:[],listId:null,listName:'',items:[],bulk:'',busy:false,err:'',msg:''});}
+function loadGIS(){
+  if(gisReady||gisLoading)return;
+  gisLoading=true;
+  var sc=document.createElement('script');
+  sc.src='https://accounts.google.com/gsi/client';sc.async=true;
+  sc.onload=function(){gisReady=true;gisLoading=false;if(ui.view==='import')render();};
+  sc.onerror=function(){gisLoading=false;var I=impState();I.err='Could not load Google sign-in. Check your connection and try again.';if(ui.view==='import')render();};
+  document.head.appendChild(sc);
+}
+function openImport(){ui.view='import';ui.sheet=null;if(getCid())loadGIS();render();}
+function connectGoogle(){
+  var I=impState(),cid=getCid();
+  if(!gisReady||!window.google||!google.accounts){I.err='Google sign-in is still loading. Try again in a moment.';render();return;}
+  I.err='';
+  try{
+    var tc=google.accounts.oauth2.initTokenClient({
+      client_id:cid,scope:'https://www.googleapis.com/auth/tasks.readonly',
+      callback:function(r){
+        if(r&&r.access_token){I.token=r.access_token;fetchLists();}
+        else{I.err='Google did not give access ('+((r&&r.error)||'unknown reason')+').';render();}
+      },
+      error_callback:function(er){I.err='Sign-in was closed or blocked ('+((er&&er.type)||'unknown reason')+').';render();}
+    });
+    tc.requestAccessToken({prompt:''});
+  }catch(e){I.err='Could not start Google sign-in.';render();}
+}
+function gapi(url){
+  var I=impState();
+  return fetch(url,{headers:{Authorization:'Bearer '+I.token}}).then(function(r){
+    if(r.status===401){I.token=null;I.stage='start';throw new Error('Your Google sign-in expired. Connect again.');}
+    if(!r.ok){throw new Error('Google said '+r.status+(r.status===403?'. Check that the Google Tasks API is switched on in your project.':'.'));}
+    return r.json();
+  });
+}
+function fetchLists(){
+  var I=impState();I.busy=true;I.err='';I.stage='lists';render();
+  gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100').then(function(d){
+    I.lists=d.items||[];I.busy=false;render();
+  }).catch(function(e){I.busy=false;I.err=e.message;render();});
+}
+function fetchTasks(list){
+  var I=impState();I.busy=true;I.err='';I.msg='';I.listId=list.id;I.listName=list.title||'Google Tasks';I.bulk='';I.stage='review';I.items=[];render();
+  var all=[];
+  function page(tok){
+    var u='https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(list.id)+'/tasks?showCompleted=false&showHidden=false&maxResults=100'+(tok?'&pageToken='+encodeURIComponent(tok):'');
+    return gapi(u).then(function(d){all=all.concat(d.items||[]);return d.nextPageToken?page(d.nextPageToken):null;});
+  }
+  page(null).then(function(){
+    I.items=all.filter(function(t){return t.title&&t.title.trim();}).map(function(t){
+      var gid=list.id+':'+t.id,dup=S.tasks.some(function(x){return x.gid===gid;});
+      return {gid:gid,title:t.title.trim(),inc:!dup,dup:dup,act:'',sub:!!t.parent};
+    });
+    I.busy=false;render();
+  }).catch(function(e){I.busy=false;I.err=e.message;render();});
+}
+function doImport(){
+  var I=impState();
+  var chosen=I.items.filter(function(x){return x.inc&&!x.dup;});
+  if(!chosen.length)return;
+  var newId=null;
+  var made=chosen.map(function(x){
+    var aid=x.act||null;
+    if(aid==='__new'){
+      if(!newId){
+        var ex=live().filter(function(a){return a.name.toLowerCase()===I.listName.toLowerCase();})[0];
+        newId=ex?ex.id:createActivity(I.listName).id;
+      }
+      aid=newId;
+    }
+    return {id:uid(),text:x.title,activityId:aid,created:iso(),done:null,gid:x.gid};
+  });
+  S.tasks=made.concat(S.tasks);
+  I.msg='Imported '+made.length+' task'+(made.length===1?'':'s')+' from “'+I.listName+'”.';
+  I.stage='lists';I.items=[];I.bulk='';
+  commit();
+}
+function viewImport(){
+  var I=impState(),cid=getCid(),parts=[],bar=null;
+  if(I.err)parts.push(h('div',{class:'err',role:'alert',text:I.err}));
+  if(!cid){
+    var inp=h('input',{type:'text',class:'txt','aria-label':'Google client ID',placeholder:'Paste your client ID',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
+    parts.push(h('p',{class:'note',text:'To read your Google Tasks, this app needs a client ID from your own Google Cloud project. You only set this up once, and it is stored on this phone only.'}));
+    parts.push(h('div',{class:'pad'},[inp,h('div',{style:'height:10px'}),h('button',{class:'btn primary',onclick:function(){
+      var v=inp.value.trim();
+      if(!/\.apps\.googleusercontent\.com$/.test(v)){I.err='That does not look like a client ID. It should end in .apps.googleusercontent.com.';render();return;}
+      try{localStorage.setItem('gag.clientId',v);}catch(e){}
+      I.err='';loadGIS();render();}},['Save client ID'])]));
+  }else if(I.stage==='start'||!I.token){
+    parts.push(h('p',{class:'note',text:'Sign in with Google so the app can read your tasks. It only reads them. Nothing in Google Tasks is changed or deleted.'}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectGoogle},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
+    parts.push(h('div',{class:'foot'},[h('button',{onclick:function(){try{localStorage.removeItem('gag.clientId');}catch(e){}I.err='';render();}},['Change client ID'])]));
+  }else if(I.stage==='lists'){
+    if(I.msg)parts.push(h('div',{class:'ok',text:I.msg}));
+    if(I.busy)parts.push(h('p',{class:'note',text:'Loading your lists…'}));
+    else{
+      parts.push(h('p',{class:'note',text:I.lists.length?'Choose a Google Tasks list to import from.':'No lists were found in your Google Tasks.'}));
+      I.lists.forEach(function(l){
+        parts.push(h('button',{class:'navrow',onclick:function(){fetchTasks(l);}},[
+          h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
+      });
+    }
+  }else if(I.stage==='review'){
+    if(I.busy)parts.push(h('p',{class:'note',text:'Loading tasks…'}));
+    else{
+      var n=I.items.filter(function(x){return x.inc&&!x.dup;}).length;
+      function opts(){
+        var o=[h('option',{value:'',text:'No activity'})];
+        live().forEach(function(a){o.push(h('option',{value:a.id,text:a.name}));});
+        o.push(h('option',{value:'__new',text:'New activity: '+I.listName}));
+        return o;
+      }
+      parts.push(h('p',{class:'note',text:'“'+I.listName+'” has '+I.items.length+' open task'+(I.items.length===1?'':'s')+'. Untick any you do not want.'}));
+      if(I.items.length){
+        var bulk=h('select',{class:'sel','aria-label':'Put all of these in'},opts());
+        bulk.value=I.bulk;
+        bulk.addEventListener('change',function(e){I.bulk=e.target.value;I.items.forEach(function(it){if(!it.dup)it.act=I.bulk;});render();});
+        parts.push(h('div',{style:'padding:0 16px 12px'},[h('small',{style:'color:var(--muted);font-size:14px',text:'Put all of these in'}),bulk]));
+      }
+      I.items.forEach(function(it){
+        var cb=h('input',{type:'checkbox','aria-label':'Include: '+it.title,checked:it.inc,disabled:it.dup,onchange:function(e){it.inc=e.target.checked;render();}});
+        var inner=[h('span',{text:it.title})];
+        if(it.sub)inner.push(h('small',{text:'Subtask in Google Tasks'}));
+        if(it.dup)inner.push(h('small',{text:'Already imported'}));
+        else{
+          var sel=h('select',{class:'sel','aria-label':'Activity for: '+it.title,onchange:function(e){it.act=e.target.value;}},opts());
+          sel.value=it.act;inner.push(sel);
+        }
+        parts.push(h('div',{class:'row',style:'align-items:flex-start;padding:8px 16px 8px 12px'},[
+          h('label',{class:'tick',style:'height:48px'},[cb]),
+          h('div',{class:'rowtext',style:'padding:6px 0 4px'},inner)]));
+      });
+      bar=h('div',{class:'bar'},[
+        h('button',{class:'btn',onclick:function(){I.stage='lists';I.err='';render();}},['Back to lists']),
+        h('button',{class:'btn primary',disabled:n===0,onclick:doImport},['Import '+n+' task'+(n===1?'':'s')])]);
+    }
+  }
+  var body=h('div',{class:'list'},parts);
+  var out=[pageHeader('Import tasks'),body];
+  if(bar)out.push(bar);
+  out.push(dots(1));
+  return out;
 }
 
 function viewArchive(){
@@ -495,7 +654,7 @@ function sheetEl(){
 
 /* ---------- render ---------- */
 function render(){
-  var kids=ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():viewMaster();
+  var kids=ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():ui.view==='import'?viewImport():viewMaster();
   var scroller=app.querySelector('.list');var st=scroller?scroller.scrollTop:0;
   app.replaceChildren.apply(app,kids.concat([sheetEl()].filter(Boolean)));
   var l=app.querySelector('.list');if(l&&ui.view===lastView)l.scrollTop=st;
