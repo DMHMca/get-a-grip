@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v9`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v10`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `README.txt`: upload notes from the first build.
@@ -57,7 +57,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 - Sync settings live in `S.sync`; `S.deleted` holds notes of linked tasks deleted in the app so the deletion can be passed on. Both are optional, so old backups still load. A safety copy is saved in `localStorage` under `tasks.v1.presync` before the first sync.
 - Task array order is the display order. Master and activity views are filtered views of the same array; reordering keeps the positions of tasks not shown.
 - "Download a backup" and "Restore from backup" (bottom of the Activities page) export and import this JSON. Do not break that format without a migration.
-- The default first-run data includes an activity called "AI project audit" with four starter tasks. It is the owner's own reminder to review their scattered AI projects (including a Hermes-based SEO system). Leave it in the seed.
+- First-run data is empty (no activities, no tasks). The owner's "AI project audit" starter activity was removed from the code at their request, because a fresh browser (for example on the PC) would otherwise push those four tasks into Google Tasks on its first sync. Do not add starter data back.
 
 ## Google Tasks import (built and working)
 
@@ -86,6 +86,9 @@ Activities page, "Google Tasks sync" (`viewSync`, engine in the "Google Tasks sy
 - Syncs never redraw over a text box or an open sheet (`softRender`, `patchAround`); keep that rule.
 
 ## Smaller open items
+
+- Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
+- Multi-device: a task arriving from Google whose notes name an activity that does not exist on this device lands with no activity. Proposed (awaiting the owner's yes): create the missing activity at the end of the list. Also proposed: a wider layout on large screens.
 
 - On narrow phone screens the bottom-bar labels truncate ("Master ta…", and long activity names). Shorten or rebalance.
 - The top bar and the bottom bar partly duplicate navigation. The owner may want the top buttons dropped.

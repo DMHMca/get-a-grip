@@ -149,9 +149,7 @@ var KEY='tasks.v1';
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
 function iso(){return new Date().toISOString();}
 function seed(){
-  var a={id:uid(),name:'AI project audit',created:iso(),archived:null};
-  var t=['Find where the Hermes SEO project stands','Turn on “Search and reference past chats”','List every Claude project and Claude Code project','Write one next step for each project'];
-  return {v:1,updatedAt:0,activities:[a],tasks:t.map(function(x){return {id:uid(),text:x,activityId:a.id,created:iso(),done:null};})};
+  return {v:1,updatedAt:0,activities:[],tasks:[]};
 }
 function loadLocal(){
   try{var r=localStorage.getItem(KEY);if(r){var s=JSON.parse(r);if(s&&s.activities&&s.tasks)return s;}}catch(e){}
