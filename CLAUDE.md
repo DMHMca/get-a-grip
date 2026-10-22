@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v11`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v12`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `README.md`: the public documentation for GitHub (what the app is, privacy, how the two syncs work, why there is no hosted database, how to use your own Google Cloud project). Keep it in step with the app. It replaces the old `README.txt` upload notes.
@@ -43,6 +43,8 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 11. Alarms and reminders are out of scope (a web app cannot do them reliably).
 
 ## Design
+
+- The app title "Get a grip" appears once, in small accent-coloured type, above the top bar of every page (`viewKids` adds it; the page views must not add their own). The owner asked for it after it had appeared twice and then disappeared.
 
 - Font: Atkinson Hyperlegible (Google Fonts, with system fallbacks).
 - Colours: accent `#234E70`, background `#F3F4F2`, text `#1B1F1D`. Dark mode is supported through CSS variables (`prefers-color-scheme`), keep both themes working.
