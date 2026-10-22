@@ -23,10 +23,10 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v10`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v11`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
-- `README.txt`: upload notes from the first build.
+- `README.md`: the public documentation for GitHub (what the app is, privacy, how the two syncs work, why there is no hosted database, how to use your own Google Cloud project). Keep it in step with the app. It replaces the old `README.txt` upload notes.
 
 ## Product rules the owner has agreed (do not change without asking)
 
@@ -53,8 +53,8 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 
 - Everything is stored on the phone in `localStorage` under the key `tasks.v1`, as one JSON object: `{ v, updatedAt, activities: [...], tasks: [...] }`.
 - Activity: `{ id, name, created, archived }` (`archived` is an ISO date string or `null`).
-- Task: `{ id, text, activityId, created, done, gid?, notes?, sid?, gs?, updated? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`; `notes` is the optional details text and is absent when empty; `sid` is the two-way sync link `listId:taskId`; `gs` is what Google held at the last sync, `{title,notes,done}`, used to tell which side changed; `updated` is an ISO time stamped on ticking, restoring and editing, used only to settle a clash).
-- Sync settings live in `S.sync`; `S.deleted` holds notes of linked tasks deleted in the app so the deletion can be passed on. Both are optional, so old backups still load. A safety copy is saved in `localStorage` under `tasks.v1.presync` before the first sync.
+- Task: `{ id, text, activityId, created, done, gid?, notes?, sid?, gs?, updated? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`; `notes` is the optional details text and is absent when empty; `sid` is the two-way sync link `listId:taskId`; `gs` is what Google held at the last sync, `{title,notes,done}`, used to tell which side changed; `updated` is an ISO time stamped on adding, ticking, restoring and editing, used to settle clashes between devices and with Google). Activities also carry an optional `updated`.
+- Device-sync fields: `S.gone` is a list of `{id,at}` notes of deleted tasks; `S.ord` is `{t,a}`, the time tasks and activities were last reordered; `S.drive` is this device's on/off setting. Sync settings live in `S.sync`; `S.deleted` holds notes of linked tasks deleted in the app so the deletion can be passed on. Both are optional, so old backups still load. A safety copy is saved in `localStorage` under `tasks.v1.presync` before the first sync.
 - Task array order is the display order. Master and activity views are filtered views of the same array; reordering keeps the positions of tasks not shown.
 - "Download a backup" and "Restore from backup" (bottom of the Activities page) export and import this JSON. Do not break that format without a migration.
 - First-run data is empty (no activities, no tasks). The owner's "AI project audit" starter activity was removed from the code at their request, because a fresh browser (for example on the PC) would otherwise push those four tasks into Google Tasks on its first sync. Do not add starter data back.
@@ -70,9 +70,21 @@ Activities page, "Import from Google Tasks". One-off, read-only import.
 - Imported tasks carry `gid`, so re-importing skips ones already imported. Completed Google tasks are not imported. Due dates and notes are dropped. Subtasks arrive as ordinary tasks.
 - Google Cloud project: named `get-a-grip` (separate from the owner's SEO project). OAuth consent screen is External and in **Testing**, with the owner's Google account as the only test user. Authorised JavaScript origin: `https://dmhmca.github.io`. Google shows an "unverified app" warning, which is expected.
 
+## Sync between devices through Google Drive (built; needs a real-Google trial)
+
+Decided with the owner: a hosted database (Firebase etc.) is ruled out because the owner will not host or pay for other people's task lists, and wants the app usable by others. Each person's data therefore lives in their own Google account. Documented in `README.md`; keep that true.
+
+- Activities page, "Sync" (the page was "Google Tasks sync" before; `viewSync`). Section "Between my devices" keeps one file, `get-a-grip-data.json`, in the Drive app-data folder (scope `https://www.googleapis.com/auth/drive.appdata`, Drive API v3 over `fetch`). Section "Google Tasks list" is the sync below. "When to sync" (automatic on/off, interval) applies to both.
+- The shared document is `{v:2, activities, tasks, gone, ord}` (`toDoc`). Settings, tokens and `S.sync`/`S.deleted` are never shared. `mergeDocs(local, remote)` merges item by item: later `updated` (or `created`) wins; a deletion in `gone` stands unless the task changed after it; same-named activities (same archived state) become one, keeping the older id so every device settles on the same one (`lastAlias` remaps ids in tasks and in `ui`); two tasks with the same `sid` become one; order follows whichever side has the later `S.ord` stamp, with the other side's extra tasks on top and extra activities at the end; tombstones older than 90 days are dropped.
+- `driveCycle`: find file, read, merge, apply locally (`applyMerged`), and write back only if the merged result differs (`stable` JSON compare), re-reading up to three times if the file's `version` changed meanwhile. First join asks for confirmation with counts and saves `tasks.v1.predrive`. There is no deletion confirmation screen for Drive; the safety copy is the protection.
+- `syncAll` runs Drive first, then the Google Tasks list, then Drive again if the list changed anything. All triggers (open, return, 4 seconds after a change, timer) call `syncAll`. One sign-in covers whichever scopes are switched on (`needScopes`).
+- The Google Tasks sync should run on ONE device only (the owner's phone); the others get its results through Drive. Running it on two at once risks duplicates in Google.
+- Tested against a pretend Drive and Tasks server with two simulated devices (36 checks) plus the 46 Tasks checks, all passing; NOT yet against real Google. Needs, in the Google Cloud project: Google Drive API enabled and the `drive.appdata` scope added under Data Access.
+- Not done: a Drive deletion confirmation screen, and sending drag-reordering to Google Tasks.
+
 ## Two-way Google Tasks sync (built; needs a real-Google trial)
 
-Activities page, "Google Tasks sync" (`viewSync`, engine in the "Google Tasks sync" section of `index.html`). Tested against a pretend Google Tasks server in a scripted browser (46 checks, all passing), NOT yet against real Google. Status after the owner's first real trial should be recorded here.
+Activities page, "Sync", section "Google Tasks list" (`viewSync`, engine in the "Google Tasks sync" section of `index.html`). Tested against a pretend Google Tasks server in a scripted browser (46 checks, all passing), NOT yet against real Google. Status after the owner's first real trial should be recorded here.
 
 - Scope is now `https://www.googleapis.com/auth/tasks` for both the import and the sync (the consent screen lists only that scope; the owner has saved it under Data Access). OAuth consent screen is still in Testing.
 - The owner chooses one existing Google Tasks list. First sync shows a preview ("add N to Google, bring in M") and waits for "Start syncing". Trial on a spare list called "Get a grip test" first.
@@ -88,7 +100,8 @@ Activities page, "Google Tasks sync" (`viewSync`, engine in the "Google Tasks sy
 ## Smaller open items
 
 - Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
-- Multi-device: a task arriving from Google whose notes name an activity that does not exist on this device lands with no activity. Proposed (awaiting the owner's yes): create the missing activity at the end of the list. Also proposed: a wider layout on large screens.
+- Multi-device: a task arriving from Google Tasks whose notes name an activity that does not exist on that device lands with no activity. Largely solved by the Drive sync (activities travel with it); creating a missing activity on pull was proposed but the owner has not asked for it. A wider layout on large screens was also proposed and not yet answered.
+- No licence has been chosen for the public repository (README says so). Ask the owner.
 
 - On narrow phone screens the bottom-bar labels truncate ("Master ta…", and long activity names). Shorten or rebalance.
 - The top bar and the bottom bar partly duplicate navigation. The owner may want the top buttons dropped.

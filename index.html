@@ -100,6 +100,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .navrow.static{cursor:default}
 .pad{padding:0 16px 16px}
 .pad .btn{width:100%;height:52px;font-size:17px}
+.sect{margin:0;padding:16px 16px 0;font-size:17px;font-weight:700}
 .pad.two{display:flex;gap:8px}
 .pad.two .btn{flex:1;width:auto;min-width:0;padding:0 8px}
 .sorts{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap}
@@ -227,7 +228,7 @@ function tickIcon(done){
 /* ---------- actions ---------- */
 function addTask(text,activityId){
   text=(text||'').trim();if(!text)return false;
-  S.tasks.unshift({id:uid(),text:text,activityId:activityId||null,created:iso(),done:null});
+  S.tasks.unshift({id:uid(),text:text,activityId:activityId||null,created:iso(),done:null,updated:iso()});
   commit();return true;
 }
 function toggle(id){
@@ -240,18 +241,18 @@ function toggle(id){
 function restore(id){var t=task(id);if(t){t.done=null;t.updated=iso();}ui.lastTicked=null;commit();}
 function createActivity(name){
   name=(name||'').trim();if(!name)return null;
-  var a={id:uid(),name:name,created:iso(),archived:null};
+  var a={id:uid(),name:name,created:iso(),archived:null,updated:iso()};
   S.activities.push(a);return a;
 }
 function openActivity(id){ui.view='activity';ui.activityId=id;ui.lastActivityId=id;ui.sheet=null;render();}
 function go(view){ui.view=view;ui.sheet=null;render();}
 function archiveActivity(id){
   var a=act(id);if(!a)return;
-  a.archived=iso();
+  a.archived=iso();a.updated=iso();
   if(ui.lastActivityId===id)ui.lastActivityId=null;
   ui.view='activities';commit();
 }
-function unarchive(id){var a=act(id);if(a){a.archived=null;}commit();}
+function unarchive(id){var a=act(id);if(a){a.archived=null;a.updated=iso();}commit();}
 function closeSheet(){ui.sheet=null;ui.afterCreate=null;render();}
 
 /* ---------- views ---------- */
@@ -409,7 +410,7 @@ function viewActivities(){
     h('button',{class:'navrow',onclick:function(){go('archive');}},[
       h('span',{class:'t'},[h('b',{text:'Archive'}),h('small',{text:arch===1?'1 archived activity':arch+' archived activities'})]),svg(ICON.right,20)]),
     h('button',{class:'navrow',onclick:openSync},[
-      h('span',{class:'t'},[h('b',{text:'Google Tasks sync'}),h('small',{text:syncSummary()})]),svg(ICON.right,20)]),
+      h('span',{class:'t'},[h('b',{text:'Sync'}),h('small',{text:syncSummary()})]),svg(ICON.right,20)]),
     h('button',{class:'navrow',onclick:openImport},[
       h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]),
     footEl()
@@ -536,7 +537,7 @@ function doImport(){
       }
       aid=newId;
     }
-    return {id:uid(),text:x.title,activityId:aid,created:iso(),done:null,gid:x.gid};
+    return {id:uid(),text:x.title,activityId:aid,created:iso(),done:null,gid:x.gid,updated:iso()};
   });
   S.tasks=made.concat(S.tasks);
   var dd=loadDraft();chosen.forEach(function(x){delete dd[x.gid];});try{localStorage.setItem(DRAFT,JSON.stringify(dd));}catch(e){}
@@ -667,6 +668,8 @@ function cfg(){
   if(!S.sync)S.sync={};
   for(var k in SYNC_DEFAULTS)if(S.sync[k]===undefined)S.sync[k]=SYNC_DEFAULTS[k];
   if(!Array.isArray(S.deleted))S.deleted=[];
+  if(!Array.isArray(S.gone))S.gone=[];
+  if(!S.ord)S.ord={t:'',a:''};
   return S.sync;
 }
 function ago(d){
@@ -706,23 +709,31 @@ function commitSync(){commit(true);}
 var changeTimer=0;
 function scheduleSync(){
   var c=cfg();
-  if(!c.enabled||!c.auto||!c.confirmed||!c.listId)return;
+  if(!c.auto||!anySync())return;
   clearTimeout(changeTimer);
-  changeTimer=setTimeout(function(){syncNow('change');},4000);
+  changeTimer=setTimeout(function(){syncAll('change');},4000);
 }
 
 /* sign-in: a quiet request first (prompt none); a tap is needed if Google wants to show something */
-function tokenValid(){return !!G.token&&Date.now()<G.exp-60000;}
-function getToken(interactive){
-  if(tokenValid())return Promise.resolve(G.token);
+function needScopes(extra){
+  var c=cfg(),d=dcfg(),a=[];
+  if(c.enabled&&c.listId)a.push(SCOPE);
+  if(d.enabled)a.push(DRIVE);
+  (extra||[]).forEach(function(x){if(a.indexOf(x)<0)a.push(x);});
+  return a;
+}
+function tokenValid(need){return !!G.token&&Date.now()<G.exp-60000&&(need||[]).every(function(x){return (G.tokScope||[]).indexOf(x)>-1;});}
+function getToken(interactive,extra){
+  var need=needScopes(extra);
+  if(tokenValid(need))return Promise.resolve(G.token);
   return new Promise(function(res,rej){
     var cid=getCid();
     if(!cid){rej({type:'noclient'});return;}
     function start(){
       try{
-        var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:SCOPE,
+        var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:need.join(' '),
           callback:function(r){
-            if(r&&r.access_token){G.token=r.access_token;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
+            if(r&&r.access_token){G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
             else rej({type:(r&&r.error)||'denied'});
           },
           error_callback:function(e){rej({type:(e&&e.type)||'blocked'});}});
@@ -915,7 +926,7 @@ function applyPlan(P,opts){
       S.tasks=made.concat(S.tasks);
     }
     if(hasDel&&!park){
-      var gone={};P.del.app.forEach(function(t){gone[t.id]=1;});
+      var gone={};P.del.app.forEach(function(t){gone[t.id]=1;S.gone.push({id:t.id,at:iso()});});
       S.tasks=S.tasks.filter(function(t){if(gone[t.id]){delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;return false;}return true;});
     }
     var keep={};
@@ -931,11 +942,11 @@ function syncNow(reason,opts){
   var c=cfg();
   if(!c.listId)return Promise.resolve();
   if(G.running){G.again=true;return Promise.resolve();}
-  if(!opts.interactive&&(reason==='change'||reason==='timer')&&G.status==='needs'&&!tokenValid())return Promise.resolve();
+  if(!opts.interactive&&(reason==='change'||reason==='timer')&&G.status==='needs'&&!tokenValid(needScopes([SCOPE])))return Promise.resolve();
   G.running=true;G.err='';
   if(G.status!=='confirm')G.status='syncing';
   if(ui.view==='sync')softRender();
-  return getToken(!!opts.interactive).then(function(){
+  return getToken(!!opts.interactive,[SCOPE]).then(function(){
     return fetchAll(c.listId);
   }).then(function(gt){
     var P=buildPlan(gt);G.plan=P;
@@ -979,7 +990,7 @@ function chooseList(l){
 }
 function connectForLists(){
   G.busy=true;G.err='';render();
-  getToken(true).then(function(){return gcall('GET',TB+'users/@me/lists?maxResults=100');}).then(function(d){
+  getToken(true,[SCOPE]).then(function(){return gcall('GET',TB+'users/@me/lists?maxResults=100');}).then(function(d){
     G.lists=d.items||[];G.busy=false;render();
   }).catch(function(e){
     G.busy=false;
@@ -988,23 +999,23 @@ function connectForLists(){
   });
 }
 function syncSummary(){
-  var c=cfg();
-  if(!c.enabled||!c.listId)return 'Keep Master tasks in step with a Google Tasks list';
-  if(G.status==='needs')return '“'+c.listName+'”. Tap to sign in again';
-  if(G.status==='error')return '“'+c.listName+'”. Needs attention';
-  return '“'+c.listName+'”. Last synced '+ago(c.last);
+  var c=cfg(),d=dcfg(),bits=[];
+  if(d.enabled)bits.push('Devices: '+(D.status==='needs'?'sign in needed':'synced '+ago(d.last)));
+  if(c.enabled&&c.listId)bits.push('Google Tasks: '+(G.status==='needs'?'sign in needed':'synced '+ago(c.last)));
+  return bits.length?bits.join('. '):'Keep your devices, and a Google Tasks list, in step';
 }
 function syncBanner(){
-  var c=cfg();
-  if(!c.enabled||!c.listId||G.status!=='needs')return null;
+  var c=cfg(),d=dcfg();
+  var needs=(c.enabled&&c.listId&&G.status==='needs')||(d.enabled&&D.status==='needs');
+  if(!needs)return null;
   return h('div',{class:'strip'},[
-    h('div',null,[h('small',{text:'Google Tasks sync'}),h('span',{text:'Tap to keep syncing'})]),
-    h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){syncNow('manual',{interactive:true});}},['Sign in'])]);
+    h('div',null,[h('small',{text:'Sync'}),h('span',{text:'Tap to keep syncing'})]),
+    h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){syncAll('manual',{interactive:true});}},['Sign in'])]);
 }
 
 function viewSync(){
-  var c=cfg(),parts=[],bar=null;
-  if(G.err)parts.push(h('div',{class:'err',role:'alert',text:G.err}));
+  var c=cfg(),d=dcfg(),parts=[];
+  [D.err,G.err].forEach(function(m){if(m)parts.push(h('div',{class:'err',role:'alert',text:m}));});
   function check(label,on,fn){
     return h('label',{style:'display:flex;align-items:center;gap:12px;padding:6px 16px;min-height:48px;font-size:16px'},[
       h('input',{type:'checkbox',checked:on,onchange:function(e){fn(e.target.checked);}}),h('span',{text:label})]);
@@ -1018,8 +1029,25 @@ function viewSync(){
   if(!getCid()){
     parts.push(h('p',{class:'note',text:'To sync, the app needs your Google client ID, which you add once on the import page.'}));
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:openImport},['Go to the import page'])]));
-  }else if(!c.listId){
-    parts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list. Ticking, adding and editing in either place carries across. Start with a spare test list rather than your real one.'}));
+    return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
+  }
+
+  /* 1. between devices */
+  parts.push(h('h3',{class:'sect',text:'Between my devices'}));
+  parts.push(h('p',{class:'note',text:'Keeps the same activities, tasks, archive and order on your phone and your computer. It uses one hidden file in your own Google Drive, which only this app can open. Nothing is stored anywhere else.'}));
+  if(!d.enabled){
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
+  }else{
+    parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
+    parts.push(h('div',{class:'pad two'},[
+      h('button',{class:'btn primary',disabled:D.status==='syncing',onclick:function(){driveNow('manual',{interactive:true});}},[D.status==='needs'?'Sign in and sync':'Sync now']),
+      h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
+  }
+
+  /* 2. a Google Tasks list */
+  parts.push(h('h3',{class:'sect',text:'Google Tasks list'}));
+  if(!c.listId){
+    parts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list, so ticking in Gmail’s side panel ticks here. Turn this on for one device only, usually your phone. Start with a spare test list rather than your real one.'}));
     if(G.busy)parts.push(h('p',{class:'note',text:'Connecting to Google…'}));
     else if(!G.lists.length){
       parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectForLists},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
@@ -1048,9 +1076,6 @@ function viewSync(){
       parts.push(h('div',{class:'pad two'},[
         h('button',{class:'btn primary',disabled:G.status==='syncing',onclick:function(){syncNow('manual',{interactive:true});}},[G.status==='needs'?'Sign in and sync':'Sync now']),
         h('button',{class:'btn',onclick:disconnectSync},['Disconnect'])]));
-      parts.push(h('div',{class:'sep',style:'margin:6px 16px 10px'}));
-      parts.push(check('Sync automatically',c.auto,function(v){c.auto=v;commit();}));
-      parts.push(pick('How often while the app is open',c.interval,[[0,'Only when I open the app or change something'],[2,'Every 2 minutes'],[5,'Every 5 minutes'],[15,'Every 15 minutes']],function(v){c.interval=+v;commit();}));
       parts.push(pick('Direction',c.dir,[['both','Both ways'],['toApp','Google into the app only'],['toGoogle','App into Google only']],function(v){c.dir=v;commit();}));
       parts.push(check('Pass ticks across',c.ticks,function(v){c.ticks=v;commit();}));
       parts.push(check('Pass new tasks across',c.adds,function(v){c.adds=v;commit();}));
@@ -1059,7 +1084,233 @@ function viewSync(){
       parts.push(h('p',{class:'note',text:'As a safety stop, if one sync would delete more than about a third of your tasks, I pause and ask first, whatever you choose above.'}));
     }
   }
-  return [pageHeader('Google Tasks sync'),h('div',{class:'list'},parts),dots(1)].concat(bar?[bar]:[]);
+
+  /* 3. when to sync, for both */
+  if(d.enabled||c.enabled){
+    parts.push(h('h3',{class:'sect',text:'When to sync'}));
+    parts.push(check('Sync automatically',c.auto,function(v){c.auto=v;commit();}));
+    parts.push(pick('How often while the app is open',c.interval,[[0,'Only when I open the app or change something'],[2,'Every 2 minutes'],[5,'Every 5 minutes'],[15,'Every 15 minutes']],function(v){c.interval=+v;commit();}));
+  }
+  return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
+}
+
+/* ---------- Sync between devices (a hidden file in the user's own Google Drive) ---------- */
+var DRIVE='https://www.googleapis.com/auth/drive.appdata';
+var DB='https://www.googleapis.com/drive/v3/';
+var DU='https://www.googleapis.com/upload/drive/v3/';
+var DFILE='get-a-grip-data.json';
+/* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
+var D={status:'idle',err:'',running:false,again:false};
+function dcfg(){
+  cfg();
+  if(!S.drive)S.drive={};
+  if(S.drive.enabled===undefined)S.drive.enabled=false;
+  if(S.drive.confirmed===undefined)S.drive.confirmed=false;
+  if(S.drive.last===undefined)S.drive.last=null;
+  return S.drive;
+}
+function stable(o){
+  return JSON.stringify(o,function(k,v){
+    if(v&&typeof v==='object'&&!Array.isArray(v)){var s={};Object.keys(v).sort().forEach(function(x){s[x]=v[x];});return s;}
+    return v;
+  });
+}
+/* what is shared: activities, tasks, a note of deletions and when each list was last reordered.
+   Settings, tokens and the Google Tasks links of the other sync stay on the device. */
+function toDoc(st){
+  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks,gone:st.gone||[],ord:st.ord||{t:'',a:''}}));
+}
+function stampOf(x){return x.updated||x.created||'';}
+var lastAlias={};
+function mergeDocs(L,R){
+  var cutoff=new Date(Date.now()-90*86400000).toISOString();
+  var gone={};
+  (L.gone||[]).concat(R.gone||[]).forEach(function(g){if(!gone[g.id]||gone[g.id]<g.at)gone[g.id]=g.at;});
+
+  /* activities: the later change wins. Two with the same name (and the same archived state) are one activity;
+     both devices keep the older of the two, so they settle on the same one. */
+  var lA={},byKey={},acts={},alias={};
+  function key(a){return a.name.toLowerCase()+'|'+(a.archived?1:0);}
+  (L.activities||[]).forEach(function(a){lA[a.id]=a;acts[a.id]=a;byKey[key(a)]=a;});
+  (R.activities||[]).forEach(function(r){
+    var l=lA[r.id];
+    if(l){if(stampOf(r)>stampOf(l))acts[l.id]=Object.assign({},r);return;}
+    var same=byKey[key(r)];
+    if(!same||!acts[same.id]){acts[r.id]=r;byKey[key(r)]=r;return;}
+    var cur=acts[same.id];
+    var older=((cur.created||'')<(r.created||'')||((cur.created||'')===(r.created||'')&&cur.id<r.id))?cur:r,other=older===cur?r:cur;
+    var latest=stampOf(r)>stampOf(cur)?r:cur;
+    var merged=Object.assign({},latest,{id:older.id,created:older.created||latest.created});
+    delete acts[cur.id];acts[older.id]=merged;alias[other.id]=older.id;byKey[key(merged)]=merged;
+  });
+  lastAlias=alias;
+  function realias(t){return alias[t.activityId]?Object.assign({},t,{activityId:alias[t.activityId]}):t;}
+
+  /* tasks: the later change wins; the Google Tasks link stays as this device has it */
+  var lT={},tasks={};
+  (L.tasks||[]).forEach(function(t0){var t=realias(t0);lT[t.id]=t;tasks[t.id]=t;});
+  (R.tasks||[]).forEach(function(r0){
+    var r=realias(r0);
+    var l=lT[r.id];
+    if(!l){tasks[r.id]=r;return;}
+    if(stampOf(r)>stampOf(l)){
+      var w=Object.assign({},r);
+      if(l.sid){w.sid=l.sid;w.gs=l.gs;}
+      tasks[r.id]=w;
+    }
+  });
+  /* a deletion stands unless the task was changed after it was deleted */
+  Object.keys(tasks).forEach(function(id){if(gone[id]&&gone[id]>=stampOf(tasks[id]))delete tasks[id];});
+  var goneList=Object.keys(gone).filter(function(id){return !tasks[id]&&gone[id]>cutoff;}).map(function(id){return {id:id,at:gone[id]};});
+  /* two tasks pointing at the same Google task are one task */
+  var bySid={};
+  Object.keys(tasks).forEach(function(id){
+    var t=tasks[id];if(!t||!t.sid)return;
+    var o=bySid[t.sid];
+    if(!o){bySid[t.sid]=t;return;}
+    var keep=stampOf(t)>stampOf(o)?t:o,drop=keep===t?o:t;
+    delete tasks[drop.id];goneList.push({id:drop.id,at:new Date().toISOString()});bySid[t.sid]=keep;
+  });
+  goneList.sort(function(a,b){return a.id<b.id?-1:a.id>b.id?1:0;});
+
+  /* order: whichever device reordered last decides; tasks the other side has that this one lacks go on top, new activities at the end */
+  var lOrd=L.ord||{},rOrd=R.ord||{};
+  var tWin=(lOrd.t||'')>=(rOrd.t||''),aWin=(lOrd.a||'')>=(rOrd.a||'');
+  function order(win,lose,items,top){
+    var seen={},base=[],extra=[];
+    (win||[]).forEach(function(x){var id=alias[x.id]||x.id;if(items[id]&&!seen[id]){seen[id]=1;base.push(id);}});
+    (lose||[]).forEach(function(x){var id=alias[x.id]||x.id;if(items[id]&&!seen[id]){seen[id]=1;extra.push(id);}});
+    Object.keys(items).forEach(function(id){if(!seen[id]){seen[id]=1;extra.push(id);}});
+    return (top?extra.concat(base):base.concat(extra)).map(function(id){return items[id];});
+  }
+  return {v:2,
+    activities:order(aWin?L.activities:R.activities,aWin?R.activities:L.activities,acts,false),
+    tasks:order(tWin?L.tasks:R.tasks,tWin?R.tasks:L.tasks,tasks,true),
+    gone:goneList,
+    ord:{t:(lOrd.t||'')>(rOrd.t||'')?(lOrd.t||''):(rOrd.t||''),a:(lOrd.a||'')>(rOrd.a||'')?(lOrd.a||''):(rOrd.a||'')}};
+}
+function applyMerged(doc){
+  cfg();
+  if(stable(toDoc(S))===stable(doc))return false;
+  var have={};doc.tasks.forEach(function(t){have[t.id]=1;});
+  Object.keys(ui.open).forEach(function(id){if(!have[id])delete ui.open[id];});
+  if(ui.lastTicked&&!have[ui.lastTicked])ui.lastTicked=null;
+  ['pick','activityId','lastActivityId'].forEach(function(k){if(ui[k]&&lastAlias[ui[k]])ui[k]=lastAlias[ui[k]];});
+  S.activities=doc.activities;S.tasks=doc.tasks;S.gone=doc.gone;S.ord=doc.ord;
+  return true;
+}
+
+/* Drive transport */
+function dfetch(method,url,headers,body){
+  var o={method:method,headers:Object.assign({Authorization:'Bearer '+G.token},headers||{})};
+  if(body!==undefined)o.body=body;
+  return fetch(url,o).then(function(r){
+    if(r.status===401){G.token=null;var e=new Error('Your Google sign-in has expired.');e.auth=true;throw e;}
+    if(!r.ok)throw new Error('Google Drive said '+r.status+(r.status===403?'. Check that the Google Drive API is switched on and that you approved the Drive permission.':'.'));
+    return r;
+  });
+}
+function dfind(){
+  return dfetch('GET',DB+'files?spaces=appDataFolder&q='+enc("name='"+DFILE+"' and trashed=false")+'&fields='+enc('files(id,version)'))
+    .then(function(r){return r.json();}).then(function(d){return (d.files&&d.files[0])||null;});
+}
+function dread(id){
+  return dfetch('GET',DB+'files/'+enc(id)+'?alt=media').then(function(r){return r.text();}).then(function(t){
+    var d;try{d=JSON.parse(t);}catch(e){throw new Error('The data saved in Google Drive could not be read.');}
+    if(!d||!Array.isArray(d.activities)||!Array.isArray(d.tasks))throw new Error('The data saved in Google Drive is not in the expected format.');
+    if(d.v>2)throw new Error('The data in Google Drive was written by a newer version of the app. Reload the app to update it.');
+    return d;
+  });
+}
+function dversion(id){return dfetch('GET',DB+'files/'+enc(id)+'?fields=version').then(function(r){return r.json();}).then(function(d){return d.version;});}
+function dcreate(doc){
+  var bd='gag'+Date.now();
+  var body='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:DFILE,parents:['appDataFolder']})+
+    '\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(doc)+'\r\n--'+bd+'--';
+  return dfetch('POST',DU+'files?uploadType=multipart&fields=id,version',{'Content-Type':'multipart/related; boundary='+bd},body);
+}
+function dupdate(id,doc){
+  return dfetch('PATCH',DU+'files/'+enc(id)+'?uploadType=media&fields=id,version',{'Content-Type':'application/json'},JSON.stringify(doc));
+}
+/* read, merge, save. If someone else saved in between, start again (up to three times). */
+function driveCycle(n){
+  return dfind().then(function(f){
+    cfg();
+    if(!f)return dcreate(toDoc(S));
+    return dread(f.id).then(function(remote){
+      var merged=mergeDocs(toDoc(S),remote);
+      applyMerged(merged);
+      if(stable(merged)===stable(remote))return null;
+      return dversion(f.id).then(function(v){
+        if(v!==f.version&&n<3)return driveCycle(n+1);
+        return dupdate(f.id,merged);
+      });
+    });
+  });
+}
+function driveNow(reason,opts){
+  opts=opts||{};
+  var d=dcfg();
+  if(!d.enabled||!d.confirmed)return Promise.resolve();
+  if(D.running){D.again=true;return Promise.resolve();}
+  if(!opts.interactive&&(reason==='change'||reason==='timer')&&D.status==='needs'&&!tokenValid(needScopes([DRIVE])))return Promise.resolve();
+  D.running=true;D.err='';D.status='syncing';
+  if(ui.view==='sync')softRender();
+  return getToken(!!opts.interactive,[DRIVE]).then(function(){return driveCycle(0);}).then(function(){
+    D.status='idle';d.last=new Date().toISOString();
+  }).catch(function(e){
+    if(e&&e.type==='noclient'){D.status='error';D.err='Add your Google client ID on the Import page first.';}
+    else if(e&&(e.auth||(e.type&&!opts.interactive))){D.status='needs';D.err='';}
+    else if(e&&e.type){D.status='error';D.err='Google did not give access ('+e.type+').';}
+    else if(e instanceof TypeError){D.status='error';D.err='Could not reach Google. It will try again.';}
+    else{D.status='error';D.err=(e&&e.message)||'Sync failed.';}
+  }).then(function(){
+    D.running=false;
+    commitSync();
+    if(D.again){D.again=false;setTimeout(function(){driveNow('again');},500);}
+  });
+}
+function enableDrive(){
+  var d=dcfg();
+  D.err='';D.status='syncing';render();
+  function back(){D.status='idle';render();}
+  getToken(true,[DRIVE]).then(dfind).then(function(f){
+    return f?dread(f.id).then(function(r){return {f:f,r:r};}):{f:null};
+  }).then(function(x){
+    var msg;
+    if(!x.f)msg='Nothing is saved in your Google Drive for this app yet. Save this device’s '+S.tasks.length+' tasks and '+S.activities.length+' activities there, so your other devices can pick them up?';
+    else{
+      var m=mergeDocs(toDoc(S),x.r);
+      msg='This device has '+S.tasks.length+' tasks and '+S.activities.length+' activities. Google Drive holds '+x.r.tasks.length+' tasks and '+x.r.activities.length+' activities. After joining them, every device will have '+m.tasks.length+' tasks and '+m.activities.length+' activities. A safety copy of this device’s data is saved first. Go ahead?';
+    }
+    if(!confirm(msg)){back();return null;}
+    try{localStorage.setItem('tasks.v1.predrive',JSON.stringify(S));}catch(e){}
+    d.enabled=true;d.confirmed=true;
+    return driveNow('manual',{interactive:true});
+  }).catch(function(e){
+    D.status='error';
+    D.err=e&&e.type?(e.type==='noclient'?'Add your Google client ID on the Import page first.':'Google did not give access ('+e.type+').'):((e&&e.message)||'Could not connect to Google Drive.');
+    render();
+  });
+}
+function disableDrive(){
+  var d=dcfg();d.enabled=false;d.confirmed=false;d.last=null;D.status='idle';D.err='';
+  commit(true);
+}
+function anySync(){var c=cfg(),d=dcfg();return !!((c.enabled&&c.listId&&c.confirmed)||(d.enabled&&d.confirmed));}
+/* one run of everything that is switched on: devices first, then the Google Tasks list, then devices again if the list changed anything */
+function syncAll(reason,opts){
+  opts=opts||{};
+  var c=cfg(),d=dcfg();
+  var tasksOn=!!(c.enabled&&c.listId&&c.confirmed),driveOn=!!(d.enabled&&d.confirmed);
+  var before=null;
+  return (driveOn?driveNow(reason,opts):Promise.resolve()).then(function(){
+    if(!tasksOn)return null;
+    before=stable(toDoc(S));
+    return syncNow(reason,opts);
+  }).then(function(){
+    if(driveOn&&tasksOn&&before!==null&&stable(toDoc(S))!==before)return driveNow('after',opts);
+  });
 }
 
 /* ---------- sheets ---------- */
@@ -1093,7 +1344,7 @@ function sheetEl(){
       onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();save();}}});
     function save(){
       var v=inp.value.trim();if(!v)return;
-      if(renaming){if(a)a.name=v;ui.sheet=null;commit();return;}
+      if(renaming){if(a){a.name=v;a.updated=iso();}ui.sheet=null;commit();return;}
       var n=createActivity(v);if(!n)return;
       var mode=ui.afterCreate;ui.afterCreate=null;ui.sheet=null;
       if(mode&&mode.assign){var I=impState();if(mode.assign==='bulk'){I.bulk=n.id;I.items.forEach(function(it){if(!it.dup)it.act=n.id;});}else{I.items.forEach(function(it){if(it.gid===mode.assign)it.act=n.id;});}saveDraft();commit();}
@@ -1130,6 +1381,7 @@ function sheetEl(){
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
+          S.gone.push({id:t.id,at:iso()});
           S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:saveEdit},['Save'])])]));
@@ -1168,12 +1420,14 @@ function applyOrder(ids){
   ids.forEach(function(i){set[i]=1;});
   S.tasks.forEach(function(t,i){byId[t.id]=t;if(set[t.id])slots.push(i);});
   slots.forEach(function(si,k){S.tasks[si]=byId[ids[k]];});
+  cfg();S.ord.t=iso();
 }
 function applyActOrder(ids){
   var set={},byId={},slots=[];
   ids.forEach(function(i){set[i]=1;});
   S.activities.forEach(function(a,i){byId[a.id]=a;if(set[a.id])slots.push(i);});
   slots.forEach(function(si,k){S.activities[si]=byId[ids[k]];});
+  cfg();S.ord.a=iso();
 }
 function rowIds(list,sel){return Array.prototype.slice.call(list.querySelectorAll(sel||'.row')).map(function(r){return r.getAttribute('data-id');});}
 function scrollerOf(el){var n=el.parentNode;while(n&&n!==document.body){var o=getComputedStyle(n).overflowY;if(o==='auto'||o==='scroll')return n;n=n.parentNode;}return el.parentNode;}
@@ -1248,20 +1502,21 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)cl
 
 render();
 (function(){
-  var c=cfg();
-  if(c.enabled&&c.listId){
+  var c=cfg(),d=dcfg();
+  if((c.enabled&&c.listId)||d.enabled){
     if(getCid())loadGIS();
-    if(c.auto&&c.confirmed)setTimeout(function(){syncNow('open');},800);
+    if(c.auto&&anySync())setTimeout(function(){syncAll('open');},800);
   }
+  function lastAny(){var k=cfg(),dd=dcfg();return Math.max(k.last?Date.parse(k.last):0,dd.last?Date.parse(dd.last):0);}
   setInterval(function(){
     var k=cfg();
-    if(!k.enabled||!k.auto||!k.confirmed||!k.interval||document.visibilityState!=='visible')return;
-    if(Date.now()-(k.last?Date.parse(k.last):0)>=k.interval*60000-5000)syncNow('timer');
+    if(!k.auto||!anySync()||!k.interval||document.visibilityState!=='visible')return;
+    if(Date.now()-lastAny()>=k.interval*60000-5000)syncAll('timer');
   },30000);
   document.addEventListener('visibilitychange',function(){
     var k=cfg();
-    if(document.visibilityState!=='visible'||!k.enabled||!k.auto||!k.confirmed)return;
-    if(Date.now()-(k.last?Date.parse(k.last):0)>30000)syncNow('return');
+    if(document.visibilityState!=='visible'||!k.auto||!anySync())return;
+    if(Date.now()-lastAny()>30000)syncAll('return');
   });
   document.addEventListener('focusout',function(){
     if(ui.dirty)setTimeout(function(){if(ui.dirty)softRender();},250);
