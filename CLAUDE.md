@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v4`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v7`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `README.txt`: upload notes from the first build.
@@ -32,7 +32,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 
 1. **Activities** (never called "projects") each hold a flat, ordered list of tasks. No sub-activities and no folders.
 2. **Master tasks** shows all open tasks (from activities and standalone tasks) in one list. It was called "All tasks" earlier; the owner renamed it "Master tasks".
-3. New tasks go at the **top** of their list. Tasks can be reordered by dragging the grip handle on the right (or ArrowUp/ArrowDown on the focused handle).
+3. New tasks go at the **top** of their list. Tasks can be reordered by dragging the grip handle on the right (or ArrowUp/ArrowDown on the focused handle). Activities can be reordered the same way on the Activities page (the order is the order of `activities` in the data; archived activities keep their own slots). New activities are added at the END of the activity list (not the top), which the owner has not asked to change.
 4. Ticking a task removes it from Master tasks but keeps it in its activity, struck through, so progress stays visible there. Master tasks has a "Just ticked" strip with a one-tap Restore.
 5. A task can be added with no activity, from Master tasks. The add box has an activity picker that can also create a new activity.
 6. **Archive** applies to activities, not tasks. Archiving removes the activity from the Activities page into a searchable, sortable Archive page (Archived date, Created date, A to Z; tapping the active sort again reverses it). Open tasks of an archived activity STAY in Master tasks. Archive search covers activity names, dates AND the text of tasks inside archived activities. Restore brings an activity back.
@@ -91,7 +91,8 @@ Things to work out before coding, and to explain to the owner in plain English:
 - On narrow phone screens the bottom-bar labels truncate ("Master ta…", and long activity names). Shorten or rebalance.
 - The top bar and the bottom bar partly duplicate navigation. The owner may want the top buttons dropped.
 - A search-results view that shows the matching task under its archived activity is only partly done (matching tasks are shown in the result row).
-- The drag handle has been tested in a simulated browser only, not extensively by thumb.
+- Drag handles (tasks and activities) have been tested in a simulated browser only, not extensively by thumb.
+- Keyboard (Gboard) behaviour: the owner saw the keyboard sometimes fail to appear or edit. The likely cause was whole-page redraws replacing the focused text box (fixed for Archive search; `render()` now restores focus and cursor, and the viewport meta uses `interactive-widget=resizes-content`). Not reproduced on a real device, so ask the owner whether it recurs. Never rebuild a text box while the user is typing in it.
 
 ## Working agreements
 
