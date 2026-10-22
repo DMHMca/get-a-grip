@@ -301,7 +301,11 @@ function addBox(placeholder,aria,onAdd,withPicker){
     oninput:function(e){ui.draft=e.target.value;},
     onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
   function doAdd(){
-    if(onAdd(ui.draft)){ui.draft='';setTimeout(function(){var i=document.getElementById('addin');if(i)i.focus();},0);}
+    var txt=ui.draft;
+    if(!txt||!txt.trim())return;
+    ui.draft='';
+    if(!onAdd(txt))ui.draft=txt;
+    setTimeout(function(){var i=document.getElementById('addin');if(i)i.focus();},0);
   }
   var box=h('div',{class:'addbox'},[input,h('button',{class:'go','aria-label':'Add task',onclick:doAdd},[svg(ICON.up)])]);
   var kids=[box];
