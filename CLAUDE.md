@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v8`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v9`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `README.txt`: upload notes from the first build.
@@ -53,7 +53,8 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 
 - Everything is stored on the phone in `localStorage` under the key `tasks.v1`, as one JSON object: `{ v, updatedAt, activities: [...], tasks: [...] }`.
 - Activity: `{ id, name, created, archived }` (`archived` is an ISO date string or `null`).
-- Task: `{ id, text, activityId, created, done, gid?, notes? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`; `notes` is the optional details text and is absent when empty).
+- Task: `{ id, text, activityId, created, done, gid?, notes?, sid?, gs?, updated? }` (`done` is an ISO date or `null`; `gid` is set on tasks imported from Google Tasks, as `listId:taskId`; `notes` is the optional details text and is absent when empty; `sid` is the two-way sync link `listId:taskId`; `gs` is what Google held at the last sync, `{title,notes,done}`, used to tell which side changed; `updated` is an ISO time stamped on ticking, restoring and editing, used only to settle a clash).
+- Sync settings live in `S.sync`; `S.deleted` holds notes of linked tasks deleted in the app so the deletion can be passed on. Both are optional, so old backups still load. A safety copy is saved in `localStorage` under `tasks.v1.presync` before the first sync.
 - Task array order is the display order. Master and activity views are filtered views of the same array; reordering keeps the positions of tasks not shown.
 - "Download a backup" and "Restore from backup" (bottom of the Activities page) export and import this JSON. Do not break that format without a migration.
 - The default first-run data includes an activity called "AI project audit" with four starter tasks. It is the owner's own reminder to review their scattered AI projects (including a Hermes-based SEO system). Leave it in the seed.
@@ -69,23 +70,20 @@ Activities page, "Import from Google Tasks". One-off, read-only import.
 - Imported tasks carry `gid`, so re-importing skips ones already imported. Completed Google tasks are not imported. Due dates and notes are dropped. Subtasks arrive as ordinary tasks.
 - Google Cloud project: named `get-a-grip` (separate from the owner's SEO project). OAuth consent screen is External and in **Testing**, with the owner's Google account as the only test user. Authorised JavaScript origin: `https://dmhmca.github.io`. Google shows an "unverified app" warning, which is expected.
 
-## What to build next: two-way Google Tasks sync
+## Two-way Google Tasks sync (built; needs a real-Google trial)
 
-The owner wants Master tasks to stay in step with one Google Tasks list, so that ticking in Google Tasks (including the Gmail sidebar) ticks in the app, and the other way round.
+Activities page, "Google Tasks sync" (`viewSync`, engine in the "Google Tasks sync" section of `index.html`). Tested against a pretend Google Tasks server in a scripted browser (46 checks, all passing), NOT yet against real Google. Status after the owner's first real trial should be recorded here.
 
-Agreed behaviour:
-
-- The owner chooses which existing Google Tasks list to sync with (not fixed to "My Tasks"), in a settings screen.
-- The activity name is written into each Google task's notes field. Since tasks now have details (`notes`), the Google notes field should start with a line `Activity: <name>`, followed by a blank line and the task's details. When reading from Google, split that first line off again so details stay clean.
-- Ticking in either place ticks in the other. Open tasks of archived activities remain in the synced list.
-- Tasks added in the app appear in Google Tasks and the reverse.
-
-Things to work out before coding, and to explain to the owner in plain English:
-
-- Sync needs the write scope `https://www.googleapis.com/auth/tasks`, so the consent screen and the stored consent must be updated.
-- The token flow gives short-lived tokens (about an hour) with no refresh token. Decide how to re-sign-in smoothly (for example silent re-request when the app opens or syncs). Note that Google limits refresh tokens for apps left in Testing mode to seven days.
-- Define conflict rules, deletion handling, and how task order maps to Google's ordering. Add an `updated` timestamp per task if needed, and migrate existing data safely.
-- Consider a small backend only if the browser-only approach proves too fragile. The owner prefers not to depend on their own computer being on.
+- Scope is now `https://www.googleapis.com/auth/tasks` for both the import and the sync (the consent screen lists only that scope; the owner has saved it under Data Access). OAuth consent screen is still in Testing.
+- The owner chooses one existing Google Tasks list. First sync shows a preview ("add N to Google, bring in M") and waits for "Start syncing". Trial on a spare list called "Get a grip test" first.
+- Google notes field = `Activity: <name>`, a blank line, then the task's details. Reading back, that first line is split off again.
+- Three-way merge per field (title, notes, done) against `gs`: if only one side changed, it wins; if both changed, the later change wins (`updated` against Google's `updated`).
+- Only open tasks are sent up. Ticked tasks already linked keep their ticked state in step. Completed Google tasks that were never linked are not imported. A linked ticked task missing from Google is never deleted from the app.
+- Deletions: owner's setting is "ask me first" (default), "carry across" or "never (put the task back)". A safety stop always asks first if one sync would delete more than max(3, a third of linked tasks), or if every linked task vanished from Google. Pending deletions are recomputed each sync and shown with "Delete them" / "Keep them".
+- Direction (both / Google into app only / app into Google only), ticks, new tasks and edits can each be switched off. Automatic sync: on open, on return to the app, 4 seconds after a change, and on a timer (2, 5 or 15 minutes, or off) while the app is open. A web page cannot sync while closed.
+- Sign-in: Google's token flow gives about an hour and no refresh token. Background attempts use `prompt:'none'`; if Google needs to show something, the status becomes "needs" and a "Tap to keep syncing" banner appears on Master tasks and activity pages. This silent renewal has NOT been proved on a real phone. Consider moving the Google project to "In production" (unverified, personal use) to avoid the seven-day Testing expiry.
+- Not done yet: sending drag-reordering to Google (only new tasks go to the top; order from Google is not applied to existing tasks).
+- Syncs never redraw over a text box or an open sheet (`softRender`, `patchAround`); keep that rule.
 
 ## Smaller open items
 

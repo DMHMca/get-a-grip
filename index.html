@@ -100,6 +100,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .navrow.static{cursor:default}
 .pad{padding:0 16px 16px}
 .pad .btn{width:100%;height:52px;font-size:17px}
+.pad.two{display:flex;gap:8px}
+.pad.two .btn{flex:1;width:auto;min-width:0;padding:0 8px}
 .sorts{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap}
 .sorts .btn{height:40px;font-size:15px;padding:0 12px}
 .sorts .btn[aria-pressed="true"]{background:var(--tint);border-color:var(--accent);font-weight:700}
@@ -158,15 +160,15 @@ function loadLocal(){
 var S=loadLocal()||seed();
 
 var ui={view:'master',activityId:null,lastActivityId:null,sheet:null,draft:'',pick:null,lastTicked:null,
-  q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device',open:{}};
+  q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device',open:{},dirty:false,dragging:false};
 
 /* ---------- persistence ---------- */
-function commit(){
+function commit(fromSync){
   S.updatedAt=Date.now();
   var ok=true;
   try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){ok=false;}
   ui.status=ok?'device':'failed';
-  render();
+  if(fromSync===true){softRender();}else{render();scheduleSync();}
 }
 if(navigator.storage&&navigator.storage.persist){try{navigator.storage.persist();}catch(e){}}
 
@@ -234,9 +236,10 @@ function toggle(id){
   var t=task(id);if(!t)return;
   if(t.done){t.done=null;if(ui.lastTicked===id)ui.lastTicked=null;}
   else{t.done=iso();ui.lastTicked=id;}
+  t.updated=iso();
   commit();
 }
-function restore(id){var t=task(id);if(t){t.done=null;}ui.lastTicked=null;commit();}
+function restore(id){var t=task(id);if(t){t.done=null;t.updated=iso();}ui.lastTicked=null;commit();}
 function createActivity(name){
   name=(name||'').trim();if(!name)return null;
   var a={id:uid(),name:name,created:iso(),archived:null};
@@ -364,6 +367,7 @@ function viewMaster(){
       h('div',null,[h('small',{text:'Just ticked'}),h('span',{text:lt.text})]),
       h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){restore(lt.id);}},['Restore'])]));
   }
+  var sb=syncBanner();if(sb)kids.push(sb);
   kids.push(dots(2));
   return kids;
 }
@@ -379,7 +383,7 @@ function viewActivity(){
     h('div',{class:'acts'},[
       h('button',{class:'btn',onclick:function(){ui.sheet={type:'rename'};render();}},['Rename']),
       h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
-  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false),meta,list,dots(3)];
+  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false),meta,list].concat(syncBanner()||[],[dots(3)]);
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
   return kids;
@@ -387,7 +391,7 @@ function viewActivity(){
 
 function pageHeader(title){
   return h('div',{class:'topbar'},[
-    h('button',{class:'btn',onclick:function(){go(ui.view==='archive'||ui.view==='import'?'activities':'master');}},[ui.view==='archive'||ui.view==='import'?'Activities':'Master tasks']),
+    h('button',{class:'btn',onclick:function(){var sub=ui.view==='archive'||ui.view==='import'||ui.view==='sync';go(sub?'activities':'master');}},[ui.view==='archive'||ui.view==='import'||ui.view==='sync'?'Activities':'Master tasks']),
     h('h2',{class:'title',text:title})]);
 }
 
@@ -406,6 +410,8 @@ function viewActivities(){
     h('div',{style:'border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:'No activities yet. Create one to group related tasks.'})]),
     h('button',{class:'navrow',onclick:function(){go('archive');}},[
       h('span',{class:'t'},[h('b',{text:'Archive'}),h('small',{text:arch===1?'1 archived activity':arch+' archived activities'})]),svg(ICON.right,20)]),
+    h('button',{class:'navrow',onclick:openSync},[
+      h('span',{class:'t'},[h('b',{text:'Google Tasks sync'}),h('small',{text:syncSummary()})]),svg(ICON.right,20)]),
     h('button',{class:'navrow',onclick:openImport},[
       h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]),
     footEl()
@@ -454,7 +460,7 @@ function loadGIS(){
   gisLoading=true;
   var sc=document.createElement('script');
   sc.src='https://accounts.google.com/gsi/client';sc.async=true;
-  sc.onload=function(){gisReady=true;gisLoading=false;if(ui.view==='import')render();};
+  sc.onload=function(){gisReady=true;gisLoading=false;if(ui.view==='import'||ui.view==='sync')softRender();};
   sc.onerror=function(){gisLoading=false;var I=impState();I.err='Could not load Google sign-in. Check your connection and try again.';if(ui.view==='import')render();};
   document.head.appendChild(sc);
 }
@@ -465,7 +471,7 @@ function connectGoogle(){
   I.err='';
   try{
     var tc=google.accounts.oauth2.initTokenClient({
-      client_id:cid,scope:'https://www.googleapis.com/auth/tasks.readonly',
+      client_id:cid,scope:SCOPE,
       callback:function(r){
         if(r&&r.access_token){I.token=r.access_token;fetchLists();}
         else{I.err='Google did not give access ('+((r&&r.error)||'unknown reason')+').';render();}
@@ -552,7 +558,7 @@ function viewImport(){
       try{localStorage.setItem('gag.clientId',v);}catch(e){}
       I.err='';loadGIS();render();}},['Save client ID'])]));
   }else if(I.stage==='start'||!I.token){
-    parts.push(h('p',{class:'note',text:'Sign in with Google so the app can read your tasks. It only reads them. Nothing in Google Tasks is changed or deleted.'}));
+    parts.push(h('p',{class:'note',text:'Sign in with Google so the app can read your tasks. This import only reads them. Nothing in Google Tasks is changed or deleted by it.'}));
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectGoogle},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
     parts.push(h('div',{class:'foot'},[h('button',{onclick:function(){try{localStorage.removeItem('gag.clientId');}catch(e){}I.err='';render();}},['Change client ID'])]));
   }else if(I.stage==='lists'){
@@ -652,6 +658,412 @@ function viewArchive(){
   return [pageHeader('Archive'),search,sorts,body,note,dots(0)];
 }
 
+/* ---------- Google Tasks sync ---------- */
+var SCOPE='https://www.googleapis.com/auth/tasks';
+var TB='https://tasks.googleapis.com/tasks/v1/';
+var SYNC_DEFAULTS={listId:'',listName:'',enabled:false,confirmed:false,auto:true,interval:5,dir:'both',ticks:true,adds:true,edits:true,deletes:'ask',last:null};
+/* G is runtime only (never saved): token, status and the latest plan. Settings live in S.sync. */
+var G={token:null,exp:0,status:'idle',err:'',lists:[],busy:false,plan:null,pending:null,running:false,again:false};
+var enc=encodeURIComponent;
+function cfg(){
+  if(!S.sync)S.sync={};
+  for(var k in SYNC_DEFAULTS)if(S.sync[k]===undefined)S.sync[k]=SYNC_DEFAULTS[k];
+  if(!Array.isArray(S.deleted))S.deleted=[];
+  return S.sync;
+}
+function ago(d){
+  if(!d)return 'never';
+  var s=Math.max(0,Math.round((Date.now()-new Date(d).getTime())/1000));
+  if(s<45)return 'just now';
+  var m=Math.round(s/60);if(m<60)return m+(m===1?' minute':' minutes')+' ago';
+  var hr=Math.round(m/60);if(hr<24)return hr+(hr===1?' hour':' hours')+' ago';
+  var dd=Math.round(hr/24);return dd+(dd===1?' day':' days')+' ago';
+}
+/* a redraw that never touches a text box someone may be typing in: the add or search box stays put and
+   everything around it is swapped; with a sheet open, or while dragging, it waits until that is finished */
+function softRender(){
+  var ae=document.activeElement;
+  if(ui.dragging||ui.sheet){ui.dirty=true;return;}
+  if(ae&&app.contains(ae)&&(ae.tagName==='TEXTAREA'||ae.tagName==='INPUT')){
+    var keep=ae.closest('.addwrap');
+    if(keep&&keep.parentNode===app&&patchAround(keep))return;
+    ui.dirty=true;return;
+  }
+  render();
+}
+function patchAround(keep){
+  var kids=viewKids(),idx=-1;
+  kids.forEach(function(k,i){if(k.classList&&k.classList.contains('addwrap'))idx=i;});
+  if(idx<0)return false;
+  var sc=app.querySelector('.list'),st=sc?sc.scrollTop:0;
+  while(keep.previousSibling)app.removeChild(keep.previousSibling);
+  while(keep.nextSibling)app.removeChild(keep.nextSibling);
+  kids.slice(0,idx).forEach(function(k){app.insertBefore(k,keep);});
+  kids.slice(idx+1).forEach(function(k){app.appendChild(k);});
+  var l=app.querySelector('.list');if(l)l.scrollTop=st;
+  ui.dirty=false;
+  return true;
+}
+function commitSync(){commit(true);}
+var changeTimer=0;
+function scheduleSync(){
+  var c=cfg();
+  if(!c.enabled||!c.auto||!c.confirmed||!c.listId)return;
+  clearTimeout(changeTimer);
+  changeTimer=setTimeout(function(){syncNow('change');},4000);
+}
+
+/* sign-in: a quiet request first (prompt none); a tap is needed if Google wants to show something */
+function tokenValid(){return !!G.token&&Date.now()<G.exp-60000;}
+function getToken(interactive){
+  if(tokenValid())return Promise.resolve(G.token);
+  return new Promise(function(res,rej){
+    var cid=getCid();
+    if(!cid){rej({type:'noclient'});return;}
+    function start(){
+      try{
+        var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:SCOPE,
+          callback:function(r){
+            if(r&&r.access_token){G.token=r.access_token;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
+            else rej({type:(r&&r.error)||'denied'});
+          },
+          error_callback:function(e){rej({type:(e&&e.type)||'blocked'});}});
+        tc.requestAccessToken({prompt:interactive?'':'none'});
+      }catch(e){rej({type:'start'});}
+    }
+    if(gisReady&&window.google&&google.accounts){start();return;}
+    loadGIS();
+    var n=0,iv=setInterval(function(){
+      if(gisReady&&window.google&&google.accounts){clearInterval(iv);start();}
+      else if(++n>40){clearInterval(iv);rej({type:'load'});}
+    },250);
+  });
+}
+function gcall(method,url,body){
+  var o={method:method,headers:{Authorization:'Bearer '+G.token}};
+  if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}
+  return fetch(url,o).then(function(r){
+    if(r.status===401){G.token=null;var e=new Error('Your Google sign-in has expired.');e.auth=true;throw e;}
+    if(r.status===404&&method==='DELETE')return null;
+    if(!r.ok){var e2=new Error('Google said '+r.status+(r.status===403?'. Check that the Google Tasks API is switched on and that you approved the permission to change tasks.':'.'));throw e2;}
+    return r.status===204?null:r.json();
+  });
+}
+function fetchAll(listId){
+  var all=[];
+  function page(tok){
+    var u=TB+'lists/'+enc(listId)+'/tasks?showCompleted=true&showHidden=true&maxResults=100'+(tok?'&pageToken='+enc(tok):'');
+    return gcall('GET',u).then(function(d){all=all.concat(d.items||[]);return d.nextPageToken?page(d.nextPageToken):all;});
+  }
+  return page(null);
+}
+
+/* how a task looks in Google: its text is the title; the notes start with an "Activity:" line, then the details */
+function composeNotes(t){
+  var a=t.activityId?act(t.activityId):null,d=(t.notes||'').trim(),p=[];
+  if(a)p.push('Activity: '+a.name);
+  if(d)p.push(d);
+  return p.join('\n\n');
+}
+function parseNotes(n){
+  n=(n||'').replace(/\r\n/g,'\n');
+  var m=n.match(/^Activity: ([^\n]*)(?:\n\n?|$)/);
+  if(m)return {activity:m[1].trim(),details:n.slice(m[0].length).trim()};
+  return {activity:null,details:n.trim()};
+}
+function appRepr(t){return {title:t.text,notes:composeNotes(t),done:!!t.done};}
+function gRepr(g){return {title:(g.title||'').trim(),notes:(g.notes||'').replace(/\r\n/g,'\n').trim(),done:g.status==='completed'};}
+function findAct(name){
+  var n=name.toLowerCase();
+  function same(a){return a.name.toLowerCase()===n;}
+  return live().filter(same)[0]||archived().filter(same)[0]||null;
+}
+function linkOf(t,pre){
+  if(t.sid&&t.sid.indexOf(pre)===0)return t.sid.slice(pre.length);
+  if(t.gid&&t.gid.indexOf(pre)===0)return t.gid.slice(pre.length);
+  return null;
+}
+function applyPull(t,g,f){
+  if(f==='title'){var v=(g.title||'').trim();if(v)t.text=v;}
+  else if(f==='notes'){
+    var p=parseNotes(g.notes);
+    if(p.details)t.notes=p.details;else delete t.notes;
+    if(p.activity){var a=findAct(p.activity);if(a)t.activityId=a.id;}
+  }else if(f==='done'){t.done=g.status==='completed'?(g.completed||iso()):null;}
+}
+
+/* work out what a sync would do, without doing it */
+function buildPlan(gtasks){
+  var c=cfg(),L=c.listId,pre=L+':',toG=c.dir!=='toApp',toA=c.dir!=='toGoogle';
+  var gmap={},seen={},tomb={},recreate=[];
+  gtasks.forEach(function(g){gmap[g.id]=g;});
+  S.deleted.forEach(function(d){if(d.gid.indexOf(pre)===0)tomb[d.gid.slice(pre.length)]=d;});
+  var P={merge:[],ins:[],news:[],del:{app:[],google:[]},n:{gNew:0,gEdit:0,aNew:0,aEdit:0},linked:0,stopped:false};
+
+  S.tasks.forEach(function(t){
+    var id=linkOf(t,pre);if(!id)return;
+    P.linked++;
+    var g=gmap[id];
+    if(!g){
+      if(t.done)return;
+      if(c.deletes==='never'||!toA)recreate.push(t);
+      else P.del.app.push(t);
+      return;
+    }
+    seen[id]=1;
+    var gr=gRepr(g),ar=appRepr(t),base=t.gs?{title:t.gs.title,notes:t.gs.notes,done:t.gs.done}:{title:gr.title,notes:gr.notes,done:gr.done};
+    var gUpd=Date.parse(g.updated)||0,aUpd=Date.parse(t.updated)||0;
+    var nb={title:base.title,notes:base.notes,done:base.done},patch={},pulls=[],pushed=[];
+    ['title','notes','done'].forEach(function(f){
+      var allowed=f==='done'?c.ticks:c.edits;
+      var aC=ar[f]!==base[f],gC=gr[f]!==base[f],dec=null;
+      if(aC&&gC&&ar[f]!==gr[f])dec=aUpd>gUpd?'app':'google';
+      else if(aC&&!gC)dec='app';
+      else if(gC&&!aC)dec='google';
+      if(allowed&&dec==='app'&&toG){pushed.push(f);}
+      else if(allowed&&dec==='google'&&toA){pulls.push(f);nb[f]=gr[f];}
+      else if(ar[f]===gr[f]){nb[f]=ar[f];}
+    });
+    var tmp={title:t.text,activityId:t.activityId,notes:t.notes,done:t.done};
+    pulls.forEach(function(f){applyPullTo(tmp,g,f);});
+    /* after pulling notes, the app's own wording of them may differ from Google's: send that back too */
+    if(pulls.indexOf('notes')>-1&&toG&&composeNotes(tmp)!==gr.notes&&pushed.indexOf('notes')<0)pushed.push('notes');
+    if(pushed.length)P.n.gEdit++;
+    if(pulls.length)P.n.aEdit++;
+    if(!pushed.length&&!pulls.length&&t.gs&&t.sid===pre+id&&nb.title===t.gs.title&&nb.notes===t.gs.notes&&nb.done===t.gs.done)return;
+    P.merge.push(function(){
+      pulls.forEach(function(f){applyPull(t,g,f);});
+      if(pulls.length)t.updated=g.updated;
+      var fin=appRepr(t);
+      pushed.forEach(function(f){
+        if(f==='title')patch.title=fin.title;
+        else if(f==='notes')patch.notes=fin.notes||null;
+        else{patch.status=fin.done?'completed':'needsAction';if(!fin.done)patch.completed=null;}
+      });
+      function finish(r){
+        var out=r?gRepr(r):null;
+        pushed.forEach(function(f){nb[f]=out?out[f]:fin[f];});
+        t.gs={title:nb.title,notes:nb.notes,done:nb.done};t.sid=pre+id;
+      }
+      if(!pushed.length){finish(null);return Promise.resolve();}
+      return gcall('PATCH',TB+'lists/'+enc(L)+'/tasks/'+enc(id),patch).then(finish);
+    });
+  });
+
+  /* tasks only in the app go up to Google (oldest first, so the newest ends up on top) */
+  var ins=[];
+  if(toG){
+    S.tasks.forEach(function(t){
+      if(t.done)return;
+      var id=linkOf(t,pre);
+      if(id&&gmap[id])return;
+      if(id){if(recreate.indexOf(t)>-1)ins.push(t);return;}
+      if(c.adds)ins.push(t);
+    });
+  }
+  ins.slice().reverse().forEach(function(t){
+    P.ins.push(function(){
+      var body={title:t.text};
+      var nt=composeNotes(t);if(nt)body.notes=nt;
+      return gcall('POST',TB+'lists/'+enc(L)+'/tasks',body).then(function(r){t.sid=pre+r.id;t.gs=gRepr(r);});
+    });
+  });
+  P.n.gNew=ins.length;
+
+  /* tasks only in Google, or deleted in the app */
+  var news=[];
+  gtasks.forEach(function(g){
+    if(seen[g.id])return;
+    var tb=tomb[g.id];
+    if(tb&&c.deletes!=='never'){if(toG)P.del.google.push(tb);return;}
+    if(!toA||!c.adds)return;
+    if(!(g.title||'').trim()||g.status==='completed')return;
+    news.push(g);
+  });
+  P.news=news;P.n.aNew=news.length;
+  P.stopped=(P.del.app.length+P.del.google.length)>Math.max(3,Math.ceil(P.linked/3))||(P.linked>=2&&P.del.app.length>=P.linked);
+  return P;
+}
+/* same as applyPull but onto a plain copy, used only to preview the wording */
+function applyPullTo(tmp,g,f){
+  if(f==='notes'){
+    var p=parseNotes(g.notes);
+    if(p.details)tmp.notes=p.details;else delete tmp.notes;
+    if(p.activity){var a=findAct(p.activity);if(a)tmp.activityId=a.id;}
+  }
+}
+function runSeq(fns){return fns.reduce(function(p,f){return p.then(f);},Promise.resolve());}
+
+function applyPlan(P,opts){
+  var c=cfg(),L=c.listId,pre=L+':',force=!!(opts&&opts.force);
+  var park=!force&&(c.deletes==='ask'||P.stopped);
+  var hasDel=P.del.app.length+P.del.google.length>0;
+  var fns=P.merge.slice();
+  G.pending=null;
+  if(hasDel&&park)G.pending={app:P.del.app.length,google:P.del.google.length,stopped:P.stopped};
+  if(hasDel&&!park){
+    P.del.google.forEach(function(d){fns.push(function(){return gcall('DELETE',TB+'lists/'+enc(L)+'/tasks/'+enc(d.gid.slice(pre.length)));});});
+  }
+  fns=fns.concat(P.ins);
+  if(!c.confirmed){try{localStorage.setItem('tasks.v1.presync',JSON.stringify(S));}catch(e){}c.confirmed=true;}
+  return runSeq(fns).then(function(){
+    if(P.news.length){
+      var made=P.news.map(function(g){
+        var gr=gRepr(g),p=parseNotes(gr.notes),a=p.activity?findAct(p.activity):null;
+        var t={id:uid(),text:gr.title,activityId:a?a.id:null,created:g.updated||iso(),done:null,sid:pre+g.id,gs:gr,updated:g.updated};
+        if(p.details)t.notes=p.details;
+        return t;
+      });
+      S.tasks=made.concat(S.tasks);
+    }
+    if(hasDel&&!park){
+      var gone={};P.del.app.forEach(function(t){gone[t.id]=1;});
+      S.tasks=S.tasks.filter(function(t){if(gone[t.id]){delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;return false;}return true;});
+    }
+    var keep={};
+    if(park)P.del.google.forEach(function(d){keep[d.gid]=1;});
+    var cutoff=Date.now()-90*86400000;
+    S.deleted=S.deleted.filter(function(d){return keep[d.gid]||(d.gid.indexOf(pre)!==0&&Date.parse(d.at)>cutoff);});
+    c.last=iso();
+  });
+}
+
+function syncNow(reason,opts){
+  opts=opts||{};
+  var c=cfg();
+  if(!c.listId)return Promise.resolve();
+  if(G.running){G.again=true;return Promise.resolve();}
+  if(!opts.interactive&&(reason==='change'||reason==='timer')&&G.status==='needs'&&!tokenValid())return Promise.resolve();
+  G.running=true;G.err='';
+  if(G.status!=='confirm')G.status='syncing';
+  if(ui.view==='sync')softRender();
+  return getToken(!!opts.interactive).then(function(){
+    return fetchAll(c.listId);
+  }).then(function(gt){
+    var P=buildPlan(gt);G.plan=P;
+    if(!c.confirmed&&!opts.confirm){G.status='confirm';return null;}
+    return applyPlan(P,opts).then(function(){G.status='idle';});
+  }).catch(function(e){
+    if(e&&e.type==='noclient'){G.status='error';G.err='Add your Google client ID on the Import page first.';}
+    else if(e&&(e.auth||(e.type&&!opts.interactive))){G.status='needs';G.err='';}
+    else if(e&&e.type){G.status='error';G.err='Google did not give access ('+e.type+').';}
+    else if(e instanceof TypeError){G.status='error';G.err='Could not reach Google. It will try again.';}
+    else{G.status='error';G.err=(e&&e.message)||'Sync failed.';}
+  }).then(function(){
+    G.running=false;
+    commitSync();
+    if(G.again){G.again=false;setTimeout(function(){syncNow('again');},500);}
+  });
+}
+function startFirstSync(){G.status='syncing';syncNow('manual',{confirm:true,interactive:true});}
+function applyPending(){syncNow('manual',{force:true,interactive:true});}
+function keepPending(){
+  var P=G.plan,c=cfg(),pre=c.listId+':';
+  if(!P)return;
+  P.del.app.forEach(function(t){delete t.sid;delete t.gs;if(t.gid&&t.gid.indexOf(pre)===0)delete t.gid;});
+  var gone={};P.del.google.forEach(function(d){gone[d.gid]=1;});
+  S.deleted=S.deleted.filter(function(d){return !gone[d.gid];});
+  G.pending=null;
+  commitSync();
+  syncNow('manual',{interactive:true});
+}
+function disconnectSync(){
+  var c=cfg();c.enabled=false;c.listId='';c.listName='';c.confirmed=false;c.last=null;
+  G.status='idle';G.err='';G.plan=null;G.pending=null;G.lists=[];
+  commit(true);
+}
+function openSync(){ui.view='sync';ui.sheet=null;if(getCid())loadGIS();render();}
+function chooseList(l){
+  var c=cfg();c.listId=l.id;c.listName=l.title||'Google Tasks';c.enabled=true;c.confirmed=false;
+  G.status='idle';G.plan=null;G.pending=null;G.err='';
+  commitSync();
+  syncNow('manual',{interactive:true});
+}
+function connectForLists(){
+  G.busy=true;G.err='';render();
+  getToken(true).then(function(){return gcall('GET',TB+'users/@me/lists?maxResults=100');}).then(function(d){
+    G.lists=d.items||[];G.busy=false;render();
+  }).catch(function(e){
+    G.busy=false;
+    G.err=e&&e.type?(e.type==='noclient'?'Add your Google client ID on the Import page first.':'Google did not give access ('+e.type+').'):((e&&e.message)||'Could not connect.');
+    render();
+  });
+}
+function syncSummary(){
+  var c=cfg();
+  if(!c.enabled||!c.listId)return 'Keep Master tasks in step with a Google Tasks list';
+  if(G.status==='needs')return '“'+c.listName+'”. Tap to sign in again';
+  if(G.status==='error')return '“'+c.listName+'”. Needs attention';
+  return '“'+c.listName+'”. Last synced '+ago(c.last);
+}
+function syncBanner(){
+  var c=cfg();
+  if(!c.enabled||!c.listId||G.status!=='needs')return null;
+  return h('div',{class:'strip'},[
+    h('div',null,[h('small',{text:'Google Tasks sync'}),h('span',{text:'Tap to keep syncing'})]),
+    h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){syncNow('manual',{interactive:true});}},['Sign in'])]);
+}
+
+function viewSync(){
+  var c=cfg(),parts=[],bar=null;
+  if(G.err)parts.push(h('div',{class:'err',role:'alert',text:G.err}));
+  function check(label,on,fn){
+    return h('label',{style:'display:flex;align-items:center;gap:12px;padding:6px 16px;min-height:48px;font-size:16px'},[
+      h('input',{type:'checkbox',checked:on,onchange:function(e){fn(e.target.checked);}}),h('span',{text:label})]);
+  }
+  function pick(label,val,choices,fn){
+    var sel=h('select',{class:'sel','aria-label':label},choices.map(function(x){return h('option',{value:String(x[0]),text:x[1]});}));
+    sel.value=String(val);
+    sel.addEventListener('change',function(e){fn(e.target.value);});
+    return h('div',{style:'padding:6px 16px 10px'},[h('small',{style:'color:var(--muted);font-size:14px',text:label}),sel]);
+  }
+  if(!getCid()){
+    parts.push(h('p',{class:'note',text:'To sync, the app needs your Google client ID, which you add once on the import page.'}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:openImport},['Go to the import page'])]));
+  }else if(!c.listId){
+    parts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list. Ticking, adding and editing in either place carries across. Start with a spare test list rather than your real one.'}));
+    if(G.busy)parts.push(h('p',{class:'note',text:'Connecting to Google…'}));
+    else if(!G.lists.length){
+      parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectForLists},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
+    }else{
+      parts.push(h('p',{class:'note',text:'Choose the list to keep in step.'}));
+      G.lists.forEach(function(l){
+        parts.push(h('button',{class:'navrow',onclick:function(){chooseList(l);}},[h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
+      });
+    }
+  }else{
+    var st=G.status==='syncing'?'Syncing…':G.status==='needs'?'Google needs you to sign in again.':G.status==='confirm'?'Ready for the first sync.':G.status==='error'?'The last sync did not finish.':'Last synced '+ago(c.last)+'.';
+    parts.push(h('p',{class:'note',style:'padding-bottom:4px'},[h('b',{text:'“'+c.listName+'”'}),h('br'),st]));
+    var P=G.plan;
+    if(G.status==='confirm'&&P){
+      var n=P.n;
+      parts.push(h('p',{class:'note',text:'If you go ahead, the app will add '+n.gNew+' task'+(n.gNew===1?'':'s')+' to Google and bring in '+n.aNew+' from Google'+((n.gEdit+n.aEdit)?', and update '+(n.gEdit+n.aEdit)+' that already match':'')+'. Nothing is deleted. A safety copy of your tasks is saved on this phone first.'}));
+      parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:startFirstSync},['Start syncing']),h('div',{style:'height:8px'}),h('button',{class:'btn',onclick:disconnectSync},['Cancel'])]));
+    }else{
+      if(G.pending){
+        var pd=G.pending,total=pd.app+pd.google;
+        parts.push(h('p',{class:'note',text:(pd.stopped?'That would remove '+total+' tasks, which is a lot, so I paused. ':'')+total+' deletion'+(total===1?' is':'s are')+' waiting for you: '+pd.google+' to remove from Google (you deleted them here) and '+pd.app+' to remove here (deleted in Google).'}));
+        parts.push(h('div',{class:'pad two'},[
+          h('button',{class:'btn ghost',onclick:applyPending},['Delete them']),
+          h('button',{class:'btn',onclick:keepPending},['Keep them'])]));
+      }
+      parts.push(h('div',{class:'pad two'},[
+        h('button',{class:'btn primary',disabled:G.status==='syncing',onclick:function(){syncNow('manual',{interactive:true});}},[G.status==='needs'?'Sign in and sync':'Sync now']),
+        h('button',{class:'btn',onclick:disconnectSync},['Disconnect'])]));
+      parts.push(h('div',{class:'sep',style:'margin:6px 16px 10px'}));
+      parts.push(check('Sync automatically',c.auto,function(v){c.auto=v;commit();}));
+      parts.push(pick('How often while the app is open',c.interval,[[0,'Only when I open the app or change something'],[2,'Every 2 minutes'],[5,'Every 5 minutes'],[15,'Every 15 minutes']],function(v){c.interval=+v;commit();}));
+      parts.push(pick('Direction',c.dir,[['both','Both ways'],['toApp','Google into the app only'],['toGoogle','App into Google only']],function(v){c.dir=v;commit();}));
+      parts.push(check('Pass ticks across',c.ticks,function(v){c.ticks=v;commit();}));
+      parts.push(check('Pass new tasks across',c.adds,function(v){c.adds=v;commit();}));
+      parts.push(check('Pass edits across (name, details, activity)',c.edits,function(v){c.edits=v;commit();}));
+      parts.push(pick('When a task is deleted',c.deletes,[['ask','Ask me first'],['carry','Carry the deletion across'],['never','Never (put the task back)']],function(v){c.deletes=v;commit();}));
+      parts.push(h('p',{class:'note',text:'As a safety stop, if one sync would delete more than about a third of your tasks, I pause and ask first, whatever you choose above.'}));
+    }
+  }
+  return [pageHeader('Google Tasks sync'),h('div',{class:'list'},parts),dots(1)].concat(bar?[bar]:[]);
+}
+
 /* ---------- sheets ---------- */
 function sheetEl(){
   var s=ui.sheet;if(!s)return null;
@@ -709,7 +1121,7 @@ function sheetEl(){
     var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
     function saveEdit(){
       var v=ti.value.trim();if(!v)return;
-      t.text=v;t.activityId=sel.value||null;
+      t.text=v;t.activityId=sel.value||null;t.updated=iso();
       var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
@@ -719,6 +1131,7 @@ function sheetEl(){
     inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),hasN?notesBox:addN,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
+          [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
           S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:saveEdit},['Save'])])]));
@@ -727,8 +1140,12 @@ function sheetEl(){
 }
 
 /* ---------- render ---------- */
+function viewKids(){
+  return ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():ui.view==='import'?viewImport():ui.view==='sync'?viewSync():viewMaster();
+}
 function render(){
-  var kids=ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():ui.view==='import'?viewImport():viewMaster();
+  ui.dirty=false;
+  var kids=viewKids();
   var scroller=app.querySelector('.list');var st=scroller?scroller.scrollTop:0;
   var ae=document.activeElement,keep=null;
   if(ae&&app.contains(ae)&&ae.tagName==='INPUT'&&ae.type==='text'){keep={id:ae.id,label:ae.getAttribute('aria-label'),s:ae.selectionStart,e:ae.selectionEnd};}
@@ -769,7 +1186,7 @@ function startDrag(e,id,sel,apply){
   var handle=e.currentTarget,row=handle.closest(sel),list=row.parentNode,scroller=scrollerOf(row);
   var before=rowIds(list,sel).join(','),grab=e.clientY-row.getBoundingClientRect().top;
   var lastY=e.clientY,raf=0,active=true;
-  row.classList.add('dragging');
+  row.classList.add('dragging');ui.dragging=true;
   try{handle.setPointerCapture(e.pointerId);}catch(x){}
   function place(){
     row.style.transform='none';
@@ -788,7 +1205,7 @@ function startDrag(e,id,sel,apply){
   }
   function move(ev){lastY=ev.clientY;}
   function end(){
-    active=false;cancelAnimationFrame(raf);
+    active=false;ui.dragging=false;cancelAnimationFrame(raf);
     handle.removeEventListener('pointermove',move);
     handle.removeEventListener('pointerup',end);
     handle.removeEventListener('pointercancel',end);
@@ -832,6 +1249,26 @@ document.addEventListener('touchend',function(e){
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
 
 render();
+(function(){
+  var c=cfg();
+  if(c.enabled&&c.listId){
+    if(getCid())loadGIS();
+    if(c.auto&&c.confirmed)setTimeout(function(){syncNow('open');},800);
+  }
+  setInterval(function(){
+    var k=cfg();
+    if(!k.enabled||!k.auto||!k.confirmed||!k.interval||document.visibilityState!=='visible')return;
+    if(Date.now()-(k.last?Date.parse(k.last):0)>=k.interval*60000-5000)syncNow('timer');
+  },30000);
+  document.addEventListener('visibilitychange',function(){
+    var k=cfg();
+    if(document.visibilityState!=='visible'||!k.enabled||!k.auto||!k.confirmed)return;
+    if(Date.now()-(k.last?Date.parse(k.last):0)>30000)syncNow('return');
+  });
+  document.addEventListener('focusout',function(){
+    if(ui.dirty)setTimeout(function(){if(ui.dirty)softRender();},250);
+  });
+})();
 })();
 </script>
 <script>
