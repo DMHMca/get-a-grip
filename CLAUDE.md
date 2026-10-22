@@ -115,7 +115,7 @@ Activities page, "Sync", section "Google Tasks list" (`viewSync`, engine in the 
 
 - Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
 - Multi-device: a task arriving from Google Tasks whose notes name an activity that does not exist on that device lands with no activity. Largely solved by the Drive sync (activities travel with it); creating a missing activity on pull was proposed but the owner has not asked for it. A wider layout on large screens was also proposed and not yet answered.
-- Licence: MIT (`LICENSE`, copyright line "2026 DMHMca"; the owner may want their full name there instead).
+- Licence: MIT (`LICENSE`, copyright line "2026 David McAughtry", the owner's name as they gave it).
 
 - On narrow phone screens the bottom-bar labels truncate ("Master ta…", and long activity names). Shorten or rebalance.
 - The top bar and the bottom bar partly duplicate navigation. The owner may want the top buttons dropped.
