@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Get a grip</title>
 <meta name="description" content="Get a grip: a plain to-do list with activities.">
 <meta name="theme-color" content="#234E70">
@@ -297,7 +297,7 @@ function taskRow(t,showAct){
 }
 
 function addBox(placeholder,aria,onAdd,withPicker){
-  var input=h('input',{type:'text',id:'addin','aria-label':aria,placeholder:placeholder,value:ui.draft,autocomplete:'off',enterkeyhint:'done',
+  var input=h('input',{type:'text',id:'addin','aria-label':aria,placeholder:placeholder,value:ui.draft,autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
     oninput:function(e){ui.draft=e.target.value;},
     onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
   function doAdd(){
@@ -598,7 +598,7 @@ function viewArchive(){
   }
   var search=h('div',{class:'addwrap'},[h('div',{class:'addbox',style:'padding-right:16px'},[
     h('input',{type:'text','aria-label':'Search archive',placeholder:'Search names, tasks or dates',value:ui.q,autocomplete:'off',
-      oninput:function(e){ui.q=e.target.value;var p=e.target.selectionStart;render();var i=document.querySelector('[aria-label="Search archive"]');if(i){i.focus();try{i.setSelectionRange(p,p);}catch(x){}}}})])]);
+      autocapitalize:'off',enterkeyhint:'search',oninput:function(e){ui.q=e.target.value;var nb=viewArchive()[3],ob=document.getElementById('archbody');if(ob&&nb){ob.replaceChildren.apply(ob,Array.prototype.slice.call(nb.childNodes));}}})])]);
   var sorts=h('div',{class:'sorts',style:'padding-top:10px'},[sortBtn('archived','Archived date'),sortBtn('created','Created date'),sortBtn('az','A to Z')]);
   var rows=items.map(function(x){
     var a=x.a,done=x.ts.filter(function(t){return t.done;}).length;
@@ -609,7 +609,7 @@ function viewArchive(){
       h('button',{class:'btn ghost',style:'min-width:88px','aria-label':'Restore '+a.name,onclick:function(){unarchive(a.id);}},['Restore'])]);
   });
   var empty=archived().length?'Nothing in the archive matches that search.':'Nothing archived yet. Archive an activity from its own screen.';
-  var body=h('div',{style:'flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:empty})]);
+  var body=h('div',{id:'archbody',style:'flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:empty})]);
   var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in Master tasks.'});
   return [pageHeader('Archive'),search,sorts,body,note,dots(0)];
 }
@@ -683,9 +683,16 @@ function sheetEl(){
 function render(){
   var kids=ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():ui.view==='import'?viewImport():viewMaster();
   var scroller=app.querySelector('.list');var st=scroller?scroller.scrollTop:0;
+  var ae=document.activeElement,keep=null;
+  if(ae&&app.contains(ae)&&ae.tagName==='INPUT'&&ae.type==='text'){keep={id:ae.id,label:ae.getAttribute('aria-label'),s:ae.selectionStart,e:ae.selectionEnd};}
   app.replaceChildren.apply(app,kids.concat([sheetEl()].filter(Boolean)));
   var l=app.querySelector('.list');if(l&&ui.view===lastView)l.scrollTop=st;
   lastView=ui.view;
+  if(keep&&!ui.sheet){
+    var q=keep.id?document.getElementById(keep.id):null;
+    if(!q&&keep.label){var all=app.querySelectorAll('input[type=text]');for(var i=0;i<all.length;i++){if(all[i].getAttribute('aria-label')===keep.label){q=all[i];break;}}}
+    if(q&&q!==document.activeElement){try{q.focus({preventScroll:true});q.setSelectionRange(keep.s,keep.e);}catch(x){}}
+  }
   if(ui.focusHandle){var fh=app.querySelector('[data-handle="'+ui.focusHandle+'"]');if(fh)fh.focus();ui.focusHandle=null;}
   if(ui.sheet&&(ui.sheet.type==='new'||ui.sheet.type==='rename'||ui.sheet.type==='edit')){
     var si=document.getElementById('sheetin');if(si){si.focus();si.select();}
