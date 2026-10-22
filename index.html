@@ -736,30 +736,41 @@ function needScopes(extra){
   return a;
 }
 function tokenValid(need){return !!G.token&&Date.now()<G.exp-60000&&(need||[]).every(function(x){return (G.tokScope||[]).indexOf(x)>-1;});}
+var silentFailAt=0,askingUntil=0,pendingTok=null;
 function getToken(interactive,extra){
   var need=needScopes(extra);
   if(tokenValid(need))return Promise.resolve(G.token);
-  return new Promise(function(res,rej){
+  /* a quiet attempt that failed is not repeated for ten minutes: Google needs a tap, and retrying only makes the screen flash */
+  if(!interactive&&Date.now()-silentFailAt<600000)return Promise.reject({type:'quiet'});
+  if(!interactive&&pendingTok)return pendingTok;
+  var pr=new Promise(function(res,rej){
     var cid=getCid();
     if(!cid){rej({type:'noclient'});return;}
+    function fail(t){if(!interactive)silentFailAt=Date.now();rej({type:t});}
     function start(){
       try{
         var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:need.join(' '),
           callback:function(r){
-            if(r&&r.access_token){G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
-            else rej({type:(r&&r.error)||'denied'});
+            if(r&&r.access_token){silentFailAt=0;G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
+            else fail((r&&r.error)||'denied');
           },
-          error_callback:function(e){rej({type:(e&&e.type)||'blocked'});}});
+          error_callback:function(e){fail((e&&e.type)||'blocked');}});
+        /* Google's window opening and closing makes the page lose and regain focus; ignore that for a few seconds */
+        askingUntil=Date.now()+6000;
         tc.requestAccessToken({prompt:interactive?'':'none'});
-      }catch(e){rej({type:'start'});}
+      }catch(e){fail('start');}
     }
     if(gisReady&&window.google&&google.accounts){start();return;}
     loadGIS();
     var n=0,iv=setInterval(function(){
       if(gisReady&&window.google&&google.accounts){clearInterval(iv);start();}
-      else if(++n>40){clearInterval(iv);rej({type:'load'});}
+      else if(++n>40){clearInterval(iv);fail('load');}
     },250);
   });
+  var clear=function(){if(pendingTok===pr)pendingTok=null;};
+  pr.then(clear,clear);
+  if(!interactive)pendingTok=pr;
+  return pr;
 }
 function gcall(method,url,body){
   var o={method:method,headers:{Authorization:'Bearer '+G.token}};
@@ -1324,8 +1335,22 @@ function disableDrive(){
 }
 function anySync(){var c=cfg(),d=dcfg();return !!((c.enabled&&c.listId&&c.confirmed)||(d.enabled&&d.confirmed));}
 /* one run of everything that is switched on: devices first, then the Google Tasks list, then devices again if the list changed anything */
+var runLog=[],pausedUntil=0,lastAuto=0;
 function syncAll(reason,opts){
   opts=opts||{};
+  if(!opts.interactive){
+    var t=Date.now();
+    if(t<pausedUntil)return Promise.resolve();
+    /* coming back to the app or the timer: no more than one run every 30 seconds, and none while a sign-in is waiting for a tap */
+    if(reason==='return'||reason==='timer'){
+      if(t-lastAuto<30000)return Promise.resolve();
+      if(G.status==='needs'||D.status==='needs')return Promise.resolve();
+    }
+    lastAuto=t;
+    /* safety net: if something ever makes this run away, stop automatic syncing for five minutes */
+    runLog=runLog.filter(function(x){return t-x<60000;});runLog.push(t);
+    if(runLog.length>8){pausedUntil=t+300000;return Promise.resolve();}
+  }
   var c=cfg(),d=dcfg();
   var tasksOn=!!(c.enabled&&c.listId&&c.confirmed),driveOn=!!(d.enabled&&d.confirmed);
   var before=null;
@@ -1544,6 +1569,7 @@ render();
   document.addEventListener('visibilitychange',function(){
     var k=cfg();
     if(document.visibilityState!=='visible'||!k.auto||!anySync())return;
+    if(Date.now()<askingUntil||G.running||D.running)return;
     if(Date.now()-lastAny()>30000)syncAll('return');
   });
   document.addEventListener('focusout',function(){
