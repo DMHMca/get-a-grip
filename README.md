@@ -6,6 +6,14 @@ It is a Progressive Web App: a few static files, no server and no build step. Yo
 
 Live copy: https://dmhmca.github.io/get-a-grip/
 
+## Quick start for family and friends
+
+1. Open the link above in Chrome on your phone or computer. On a phone, use the menu, then **Install app**, so it sits on your home screen like any other app.
+2. Start adding tasks. That is all you need. It works on that device straight away and keeps working offline.
+3. Want the same tasks on a second device, such as your phone and your computer? On each device go to **Activities, then Sync**, and tap **Turn on**. Sign in with your Google account and approve the single permission it asks for. Your tasks are then kept in a hidden file in your own Google Drive, and nobody else, including the person who made the app, can see them.
+
+You do not need a Google Cloud account, a client ID or anything technical for this. The "Advanced" section on the Sync page is only for people who want to run their own Google project.
+
 ## What it does
 
 - **Activities** group related tasks. Each activity is a flat, ordered list.
@@ -21,7 +29,7 @@ Live copy: https://dmhmca.github.io/get-a-grip/
 
 Everything is stored in your own browser (`localStorage`, key `tasks.v1`). By default nothing leaves your device. There are no accounts, no analytics and no server belonging to this project.
 
-If you want your tasks to follow you between devices, the app has two optional kinds of sync, described below. Both use your own Google account. This project never receives or stores anyone's tasks.
+If you want your tasks to follow you between devices, the app has two optional kinds of sync, described below. Both use your own Google account. This project never receives or stores anyone's tasks. The full details are on the [privacy page](https://dmhmca.github.io/get-a-grip/privacy.html).
 
 ## Syncing (optional)
 
@@ -37,9 +45,9 @@ Keeps the same activities, tasks, archive and order on every device you use, for
 - Before a device first joins, the app saves a safety copy of its data in the browser.
 - What is shared: activities, tasks and a note of deletions. What stays on each device: settings, sign-in state and the Google Tasks setup below.
 
-### Google Tasks list
+### Google Tasks list (advanced)
 
-Keeps Master tasks in step with one list in Google Tasks, so that ticking a task in Gmail's side panel or the Google Tasks app ticks it here, and the reverse.
+This needs your own Google project (see "Using your own copy"), because Google treats permission to change Google Tasks as sensitive and asks apps to pass a formal review before the general public can use it. It lives under **Advanced** on the Sync page. Keeps Master tasks in step with one list in Google Tasks, so that ticking a task in Gmail's side panel or the Google Tasks app ticks it here, and the reverse.
 
 - You choose which list. The activity name is written at the top of each Google task's notes ("Activity: Health"), followed by the task's details.
 - Ticks, new tasks and edits pass both ways. Each can be switched off, and the direction can be limited to one way.
@@ -53,7 +61,9 @@ A shared database (Firebase, Supabase and similar) would mean that whoever runs 
 
 ## Using your own copy
 
-The sync features need a Google "client ID", which identifies an app to Google. The one used by the live copy belongs to its author and is limited to named test users, so if you run your own copy you should create your own. It costs nothing, and a client ID is not a secret.
+The sync features need a Google "client ID", which identifies an app to Google. The live copy has one built in that carries only the Drive permission, so Drive sync needs nothing from you. If you run your own copy, or you want the Google Tasks list features, you need your own client ID. It costs nothing, and a client ID is not a secret.
+
+To make Drive sync work for everyone who uses your copy without them setting anything up, put your client ID in the `DEFAULT_CID` line near the top of the script in `index.html`. For that shared project, enable only the Google Drive API, add only the `drive.appdata` scope, and publish the consent screen to production. That permission is classed as non-sensitive, so Google does not require a formal review for it. Keep the Google Tasks permission in a separate project, because it is sensitive and would trigger the review and the unverified-app warning.
 
 1. Fork this repository. In **Settings, then Pages**, set the source to "Deploy from a branch", `main`, `/ (root)`. After a minute your copy is at `https://YOURNAME.github.io/REPOSITORYNAME/`.
 2. In the Google Cloud console (https://console.cloud.google.com), create a project.
@@ -63,7 +73,7 @@ The sync features need a Google "client ID", which identifies an app to Google. 
    - `https://www.googleapis.com/auth/tasks` for the Google Tasks list.
 5. Under **Audience**, add your own Google account as a **test user**. While the app is in Testing mode only the people listed there can sign in, and Google may ask you to approve again every seven days. Google also shows an "unverified app" warning, which is expected for your own project.
 6. Under **Clients**, create an **OAuth client ID** of type **Web application**. Under "Authorised JavaScript origins" add the address of your copy, for example `https://YOURNAME.github.io`. No redirect address is needed.
-7. Copy the client ID (it ends in `.apps.googleusercontent.com`). In the app, open **Activities, then Sync**, and paste it in when asked. It is stored only in that browser.
+7. Copy the client ID (it ends in `.apps.googleusercontent.com`). In the app, open **Activities, then Sync, then Advanced**, and paste it in. It is stored only in that browser.
 
 The app works fully without any of this. Everything above is only for syncing.
 
@@ -83,6 +93,7 @@ One JSON object: `{ v, updatedAt, activities, tasks }`, plus optional sync field
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript, no libraries).
 - `sw.js`: the service worker. Pages are fetched from the network first so updates arrive; other files are cached. Bump the `CACHE` version on every release.
 - `manifest.webmanifest`, `icon-*.png`, `apple-touch-icon.png`: install details and icons.
+- `privacy.html`: the privacy page, linked from the Sync page. Google asks for one when a project is published.
 - `CLAUDE.md`: a working brief for the AI assistant that helps maintain this project, and a useful technical overview for anyone else.
 
 ## Updating

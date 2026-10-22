@@ -23,9 +23,10 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v12`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v13`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
+- `privacy.html`: plain-English privacy page, linked from the Sync page and meant for the Google consent screen. Keep it true to what the app does (it mentions Google Fonts and the Drive app-data file).
 - `README.md`: the public documentation for GitHub (what the app is, privacy, how the two syncs work, why there is no hosted database, how to use your own Google Cloud project). Keep it in step with the app. It replaces the old `README.txt` upload notes.
 
 ## Product rules the owner has agreed (do not change without asking)
@@ -72,7 +73,15 @@ Activities page, "Import from Google Tasks". One-off, read-only import.
 - Imported tasks carry `gid`, so re-importing skips ones already imported. Completed Google tasks are not imported. Due dates and notes are dropped. Subtasks arrive as ordinary tasks.
 - Google Cloud project: named `get-a-grip` (separate from the owner's SEO project). OAuth consent screen is External and in **Testing**, with the owner's Google account as the only test user. Authorised JavaScript origin: `https://dmhmca.github.io`. Google shows an "unverified app" warning, which is expected.
 
-## Sync between devices through Google Drive (built; needs a real-Google trial)
+## Making it easy for family and friends (built; waiting on one value)
+
+Owner's aim: family and friends can use it without Google Cloud work. How it is built:
+- `DEFAULT_CID` (top of the sign-in code in `index.html`) is the app's built-in Google client ID. It is EMPTY until the owner creates a second, family-only Google project and gives me its client ID (a client ID is public; only a client secret must never be shared, and this app has none). Put the ID in, bump the cache, push.
+- The family project must have ONLY the Google Drive API enabled and ONLY the `drive.appdata` scope (the owner confirmed Google lists it as non-sensitive), authorised JavaScript origin `https://dmhmca.github.io`, and be published to production, with `privacy.html` as the privacy policy and the app address as the homepage. Google may insist on proving ownership of the homepage; github.io pages can usually be proved through a Search Console URL-prefix property. The owner's existing `get-a-grip` project (Tasks scope, Testing mode) stays separate and must not be published.
+- `getCid()` = the user's own stored ID (`gag.clientId`) or else `DEFAULT_CID`. With only the built-in ID: Sync shows just "Between my devices" plus a folded "Advanced"; the Import row and the whole Google Tasks list section are hidden, because they need the Tasks scope. Pasting an own client ID in Advanced shows them. The owner's phone and PC already have their own ID stored, so nothing changes for them.
+- `sw.js` now leaves other pages (such as `privacy.html`) alone; before, any page navigation overwrote the saved offline copy of the app.
+
+## Sync between devices through Google Drive (built and working on the owner's phone and PC)
 
 Decided with the owner: a hosted database (Firebase etc.) is ruled out because the owner will not host or pay for other people's task lists, and wants the app usable by others. Each person's data therefore lives in their own Google account. Documented in `README.md`; keep that true.
 
@@ -81,7 +90,8 @@ Decided with the owner: a hosted database (Firebase etc.) is ruled out because t
 - `driveCycle`: find file, read, merge, apply locally (`applyMerged`), and write back only if the merged result differs (`stable` JSON compare), re-reading up to three times if the file's `version` changed meanwhile. First join asks for confirmation with counts and saves `tasks.v1.predrive`. There is no deletion confirmation screen for Drive; the safety copy is the protection.
 - `syncAll` runs Drive first, then the Google Tasks list, then Drive again if the list changed anything. All triggers (open, return, 4 seconds after a change, timer) call `syncAll`. One sign-in covers whichever scopes are switched on (`needScopes`).
 - The Google Tasks sync should run on ONE device only (the owner's phone); the others get its results through Drive. Running it on two at once risks duplicates in Google.
-- Tested against a pretend Drive and Tasks server with two simulated devices (36 checks) plus the 46 Tasks checks, all passing; NOT yet against real Google. Needs, in the Google Cloud project: Google Drive API enabled and the `drive.appdata` scope added under Data Access.
+- Tested against a pretend Drive and Tasks server with two simulated devices (36 checks) plus the 46 Tasks checks and 18 checks of the family/own-ID modes, all passing. The owner has since run it for real: phone turned on, PC joined, tasks, activities and archive all arrived. The Drive API is enabled and `drive.appdata` is added in the owner's own project.
+- Real-phone finding: on opening the app, the quiet sign-in renewal did not work and the "Tap to keep syncing" banner appeared; tapping Sign in worked. Whether the banner returns on every cold start is being watched. If it does, store the sign-in pass in `localStorage` for its one-hour life (security trade-off to be agreed first).
 - Not done: a Drive deletion confirmation screen, and sending drag-reordering to Google Tasks.
 
 ## Two-way Google Tasks sync (built; needs a real-Google trial)

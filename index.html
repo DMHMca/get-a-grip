@@ -101,6 +101,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .pad{padding:0 16px 16px}
 .pad .btn{width:100%;height:52px;font-size:17px}
 .sect{margin:0;padding:16px 16px 0;font-size:17px;font-weight:700}
+.adv{border-top:1px solid var(--line);margin-top:12px}
+.adv summary{cursor:pointer;padding:14px 16px;font-size:17px;font-weight:700;min-height:48px}
+.adv summary:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.foot a{color:var(--accent)}
 .pad.two{display:flex;gap:8px}
 .pad.two .btn{flex:1;width:auto;min-width:0;padding:0 8px}
 .sorts{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap}
@@ -411,8 +415,8 @@ function viewActivities(){
       h('span',{class:'t'},[h('b',{text:'Archive'}),h('small',{text:arch===1?'1 archived activity':arch+' archived activities'})]),svg(ICON.right,20)]),
     h('button',{class:'navrow',onclick:openSync},[
       h('span',{class:'t'},[h('b',{text:'Sync'}),h('small',{text:syncSummary()})]),svg(ICON.right,20)]),
-    h('button',{class:'navrow',onclick:openImport},[
-      h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]),
+    getCustomCid()?h('button',{class:'navrow',onclick:openImport},[
+      h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]):null,
     footEl()
   ]);
   return [pageHeader('Activities'),body,dots(1)];
@@ -452,7 +456,16 @@ function restoreFile(f){
 
 /* ---------- Google Tasks import ---------- */
 var gisReady=false,gisLoading=false;
-function getCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
+/* The app's own Google sign-in. Leave empty until the shared project exists; a client ID is public, not a secret.
+   It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
+var DEFAULT_CID='';
+function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
+function getCid(){return getCustomCid()||DEFAULT_CID;}
+function saveCid(v){
+  try{if(v)localStorage.setItem('gag.clientId',v);else localStorage.removeItem('gag.clientId');}catch(e){}
+  G.token=null;G.tokScope=null;G.status='idle';D.status='idle';G.err='';D.err='';
+  if(getCid())loadGIS();
+}
 function impState(){return ui.imp||(ui.imp={stage:'start',token:null,lists:[],listId:null,listName:'',items:[],bulk:'',busy:false,err:'',msg:'',only:(function(){try{return localStorage.getItem('gag.impOnly')!=='0';}catch(e){return true;}})()});}
 function loadGIS(){
   if(gisReady||gisLoading)return;
@@ -465,7 +478,7 @@ function loadGIS(){
 }
 function openImport(){ui.view='import';ui.sheet=null;if(getCid())loadGIS();render();}
 function connectGoogle(){
-  var I=impState(),cid=getCid();
+  var I=impState(),cid=getCustomCid();
   if(!gisReady||!window.google||!google.accounts){I.err='Google sign-in is still loading. Try again in a moment.';render();return;}
   I.err='';
   try{
@@ -546,7 +559,7 @@ function doImport(){
   commit();
 }
 function viewImport(){
-  var I=impState(),cid=getCid(),parts=[],bar=null;
+  var I=impState(),cid=getCustomCid(),parts=[],bar=null;
   if(I.err)parts.push(h('div',{class:'err',role:'alert',text:I.err}));
   if(!cid){
     var inp=h('input',{type:'text',class:'txt','aria-label':'Google client ID',placeholder:'Paste your client ID',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
@@ -1026,16 +1039,12 @@ function viewSync(){
     sel.addEventListener('change',function(e){fn(e.target.value);});
     return h('div',{style:'padding:6px 16px 10px'},[h('small',{style:'color:var(--muted);font-size:14px',text:label}),sel]);
   }
-  if(!getCid()){
-    parts.push(h('p',{class:'note',text:'To sync, the app needs your Google client ID, which you add once on the import page.'}));
-    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:openImport},['Go to the import page'])]));
-    return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
-  }
-
   /* 1. between devices */
   parts.push(h('h3',{class:'sect',text:'Between my devices'}));
-  parts.push(h('p',{class:'note',text:'Keeps the same activities, tasks, archive and order on your phone and your computer. It uses one hidden file in your own Google Drive, which only this app can open. Nothing is stored anywhere else.'}));
-  if(!d.enabled){
+  parts.push(h('p',{class:'note',text:'Keeps the same activities, tasks, archive and order on your phone and your computer. It uses one hidden file in your own Google Drive, which only this app can open. Nothing is sent to anyone else.'}));
+  if(!getCid()){
+    parts.push(h('p',{class:'note',text:'Syncing needs a Google sign-in to be set up first. Open “Advanced” below.'}));
+  }else if(!d.enabled){
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
   }else{
     parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
@@ -1044,53 +1053,69 @@ function viewSync(){
       h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
   }
 
-  /* 2. a Google Tasks list */
-  parts.push(h('h3',{class:'sect',text:'Google Tasks list'}));
-  if(!c.listId){
-    parts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list, so ticking in Gmail’s side panel ticks here. Turn this on for one device only, usually your phone. Start with a spare test list rather than your real one.'}));
-    if(G.busy)parts.push(h('p',{class:'note',text:'Connecting to Google…'}));
-    else if(!G.lists.length){
-      parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectForLists},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
-    }else{
-      parts.push(h('p',{class:'note',text:'Choose the list to keep in step.'}));
-      G.lists.forEach(function(l){
-        parts.push(h('button',{class:'navrow',onclick:function(){chooseList(l);}},[h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
-      });
-    }
-  }else{
-    var st=G.status==='syncing'?'Syncing…':G.status==='needs'?'Google needs you to sign in again.':G.status==='confirm'?'Ready for the first sync.':G.status==='error'?'The last sync did not finish.':'Last synced '+ago(c.last)+'.';
-    parts.push(h('p',{class:'note',style:'padding-bottom:4px'},[h('b',{text:'“'+c.listName+'”'}),h('br'),st]));
-    var P=G.plan;
-    if(G.status==='confirm'&&P){
-      var n=P.n;
-      parts.push(h('p',{class:'note',text:'If you go ahead, the app will add '+n.gNew+' task'+(n.gNew===1?'':'s')+' to Google and bring in '+n.aNew+' from Google'+((n.gEdit+n.aEdit)?', and update '+(n.gEdit+n.aEdit)+' that already match':'')+'. Nothing is deleted. A safety copy of your tasks is saved on this phone first.'}));
-      parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:startFirstSync},['Start syncing']),h('div',{style:'height:8px'}),h('button',{class:'btn',onclick:disconnectSync},['Cancel'])]));
-    }else{
-      if(G.pending){
-        var pd=G.pending,total=pd.app+pd.google;
-        parts.push(h('p',{class:'note',text:(pd.stopped?'That would remove '+total+' tasks, which is a lot, so I paused. ':'')+total+' deletion'+(total===1?' is':'s are')+' waiting for you: '+pd.google+' to remove from Google (you deleted them here) and '+pd.app+' to remove here (deleted in Google).'}));
-        parts.push(h('div',{class:'pad two'},[
-          h('button',{class:'btn ghost',onclick:applyPending},['Delete them']),
-          h('button',{class:'btn',onclick:keepPending},['Keep them'])]));
-      }
-      parts.push(h('div',{class:'pad two'},[
-        h('button',{class:'btn primary',disabled:G.status==='syncing',onclick:function(){syncNow('manual',{interactive:true});}},[G.status==='needs'?'Sign in and sync':'Sync now']),
-        h('button',{class:'btn',onclick:disconnectSync},['Disconnect'])]));
-      parts.push(pick('Direction',c.dir,[['both','Both ways'],['toApp','Google into the app only'],['toGoogle','App into Google only']],function(v){c.dir=v;commit();}));
-      parts.push(check('Pass ticks across',c.ticks,function(v){c.ticks=v;commit();}));
-      parts.push(check('Pass new tasks across',c.adds,function(v){c.adds=v;commit();}));
-      parts.push(check('Pass edits across (name, details, activity)',c.edits,function(v){c.edits=v;commit();}));
-      parts.push(pick('When a task is deleted',c.deletes,[['ask','Ask me first'],['carry','Carry the deletion across'],['never','Never (put the task back)']],function(v){c.deletes=v;commit();}));
-      parts.push(h('p',{class:'note',text:'As a safety stop, if one sync would delete more than about a third of your tasks, I pause and ask first, whatever you choose above.'}));
-    }
-  }
-
   /* 3. when to sync, for both */
   if(d.enabled||c.enabled){
     parts.push(h('h3',{class:'sect',text:'When to sync'}));
     parts.push(check('Sync automatically',c.auto,function(v){c.auto=v;commit();}));
     parts.push(pick('How often while the app is open',c.interval,[[0,'Only when I open the app or change something'],[2,'Every 2 minutes'],[5,'Every 5 minutes'],[15,'Every 15 minutes']],function(v){c.interval=+v;commit();}));
   }
+  /* Advanced: the user's own Google project, and the Google Tasks list that needs it */
+  var custom=getCustomCid(),tparts=[];
+  var cidIn=h('input',{type:'text',class:'txt','aria-label':'Google client ID',placeholder:'Paste a client ID',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
+  var advKids=[h('h3',{class:'sect',style:'padding-top:12px',text:'Your own Google project'}),
+    h('p',{class:'note',text:custom?'You are using your own Google project.':(DEFAULT_CID?'You are using the app’s built-in Google sign-in. Use your own project only if you want the Google Tasks list features, or prefer to run everything yourself. The README explains how.':'No Google sign-in is built in to this copy of the app, so add a client ID from your own Google project. The README explains how.')}),
+    h('div',{class:'pad'},[cidIn,h('div',{style:'height:10px'}),h('button',{class:'btn primary',onclick:function(){
+      var v=cidIn.value.trim();
+      if(!/\.apps\.googleusercontent\.com$/.test(v)){D.err='That does not look like a client ID. It should end in .apps.googleusercontent.com.';render();return;}
+      D.err='';saveCid(v);render();}},['Save client ID'])])];
+  if(custom)advKids.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:function(){D.err='';saveCid('');render();}},[DEFAULT_CID?'Use the built-in sign-in':'Remove client ID'])]));
+  /* 2. a Google Tasks list */
+  tparts.push(h('h3',{class:'sect',text:'Google Tasks list'}));
+  if(!c.listId){
+    tparts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list, so ticking in Gmail’s side panel ticks here. Turn this on for one device only, usually your phone. Start with a spare test list rather than your real one.'}));
+    if(G.busy)tparts.push(h('p',{class:'note',text:'Connecting to Google…'}));
+    else if(!G.lists.length){
+      tparts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectForLists},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
+    }else{
+      tparts.push(h('p',{class:'note',text:'Choose the list to keep in step.'}));
+      G.lists.forEach(function(l){
+        tparts.push(h('button',{class:'navrow',onclick:function(){chooseList(l);}},[h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
+      });
+    }
+  }else{
+    var st=G.status==='syncing'?'Syncing…':G.status==='needs'?'Google needs you to sign in again.':G.status==='confirm'?'Ready for the first sync.':G.status==='error'?'The last sync did not finish.':'Last synced '+ago(c.last)+'.';
+    tparts.push(h('p',{class:'note',style:'padding-bottom:4px'},[h('b',{text:'“'+c.listName+'”'}),h('br'),st]));
+    var P=G.plan;
+    if(G.status==='confirm'&&P){
+      var n=P.n;
+      tparts.push(h('p',{class:'note',text:'If you go ahead, the app will add '+n.gNew+' task'+(n.gNew===1?'':'s')+' to Google and bring in '+n.aNew+' from Google'+((n.gEdit+n.aEdit)?', and update '+(n.gEdit+n.aEdit)+' that already match':'')+'. Nothing is deleted. A safety copy of your tasks is saved on this phone first.'}));
+      tparts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:startFirstSync},['Start syncing']),h('div',{style:'height:8px'}),h('button',{class:'btn',onclick:disconnectSync},['Cancel'])]));
+    }else{
+      if(G.pending){
+        var pd=G.pending,total=pd.app+pd.google;
+        tparts.push(h('p',{class:'note',text:(pd.stopped?'That would remove '+total+' tasks, which is a lot, so I paused. ':'')+total+' deletion'+(total===1?' is':'s are')+' waiting for you: '+pd.google+' to remove from Google (you deleted them here) and '+pd.app+' to remove here (deleted in Google).'}));
+        tparts.push(h('div',{class:'pad two'},[
+          h('button',{class:'btn ghost',onclick:applyPending},['Delete them']),
+          h('button',{class:'btn',onclick:keepPending},['Keep them'])]));
+      }
+      tparts.push(h('div',{class:'pad two'},[
+        h('button',{class:'btn primary',disabled:G.status==='syncing',onclick:function(){syncNow('manual',{interactive:true});}},[G.status==='needs'?'Sign in and sync':'Sync now']),
+        h('button',{class:'btn',onclick:disconnectSync},['Disconnect'])]));
+      tparts.push(pick('Direction',c.dir,[['both','Both ways'],['toApp','Google into the app only'],['toGoogle','App into Google only']],function(v){c.dir=v;commit();}));
+      tparts.push(check('Pass ticks across',c.ticks,function(v){c.ticks=v;commit();}));
+      tparts.push(check('Pass new tasks across',c.adds,function(v){c.adds=v;commit();}));
+      tparts.push(check('Pass edits across (name, details, activity)',c.edits,function(v){c.edits=v;commit();}));
+      tparts.push(pick('When a task is deleted',c.deletes,[['ask','Ask me first'],['carry','Carry the deletion across'],['never','Never (put the task back)']],function(v){c.deletes=v;commit();}));
+      tparts.push(h('p',{class:'note',text:'As a safety stop, if one sync would delete more than about a third of your tasks, I pause and ask first, whatever you choose above.'}));
+    }
+  }
+
+  if(custom)advKids=advKids.concat(tparts);
+  var det=h('details',{class:'adv'},[h('summary',{text:'Advanced'})].concat(advKids));
+  det.open=ui.adv!==undefined?ui.adv:(!!custom||!getCid());
+  det.addEventListener('toggle',function(){ui.adv=det.open;});
+  parts.push(det);
+  parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'})]));
   return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
 }
 

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Get a grip: privacy</title>
+<style>
+:root{--bg:#F3F4F2;--text:#1B1F1D;--muted:#5B625E;--accent:#234E70;--line:#D9DCD8}
+@media (prefers-color-scheme:dark){:root{--bg:#15191A;--text:#E8ECEA;--muted:#A0A8A4;--accent:#7FB0D6;--line:#2F3639}}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.55 'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:640px;margin:0 auto;padding:24px 18px 48px}
+h1{font-size:26px;margin:0 0 4px;color:var(--accent)}
+h2{font-size:19px;margin:28px 0 6px}
+p,li{margin:8px 0}
+.muted{color:var(--muted);font-size:15px}
+a{color:var(--accent)}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+</style>
+</head>
+<body>
+<main>
+<p><a href="./">← Back to the app</a></p>
+<h1>Get a grip: privacy</h1>
+<p class="muted">Last updated 22 October 2026</p>
+
+<p>Get a grip is a simple to-do list. This page says plainly what happens to your information. The short version: your tasks stay on your own devices and in your own Google account. Nobody who runs this project can see them.</p>
+
+<h2>Where your tasks are kept</h2>
+<p>Your activities and tasks are stored in your own browser, on the device you are using. By default they go nowhere else. There are no accounts, no tracking and no analytics, and this project has no server that receives your data.</p>
+
+<h2>If you switch on syncing</h2>
+<p>Syncing is optional. If you turn it on, the app asks you to sign in with Google and uses that sign-in only to do what you asked.</p>
+<ul>
+<li><b>Between my devices.</b> The app saves one file in the hidden “app data” area of your own Google Drive and reads it back on your other devices. Only this app can open that file, and it is not shown among your normal Drive files. The only permission asked for is “See, create and delete its own configuration data in your Google Drive”. It cannot see or change any of your other files.</li>
+<li><b>Google Tasks list.</b> Only if you set up your own Google project and choose to use it, the app can read and change the tasks in the Google Tasks list you pick.</li>
+</ul>
+<p>Your Google sign-in pass is held in the app’s memory while you use it and is not sent anywhere except to Google. Your tasks are sent only between your own device and your own Google account. They are never sent to the person who made this app or to anyone else.</p>
+
+<h2>Google user data</h2>
+<p>Get a grip’s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. Information from your Google account is used only to provide the syncing you asked for. It is not sold, not used for advertising, and not read by people.</p>
+
+<h2>Fonts</h2>
+<p>The app loads its typeface (Atkinson Hyperlegible) from Google Fonts. Like any website that does this, that means Google can see that your device requested the font file.</p>
+
+<h2>Removing your data</h2>
+<ul>
+<li>To delete what is on a device, clear this site’s data in your browser, or remove the installed app.</li>
+<li>To delete the synced copy, open your Google account’s settings, go to “Third-party apps and services” (or “Data & privacy”), find Get a grip, and choose to delete its hidden app data and remove its access.</li>
+<li>You can also use “Download a backup” in the app to keep a copy of your tasks first.</li>
+</ul>
+
+<h2>Questions</h2>
+<p>This is a small, personal project. For questions or problems, open an issue at <a href="https://github.com/DMHMca/get-a-grip/issues">github.com/DMHMca/get-a-grip/issues</a>. The code is public at <a href="https://github.com/DMHMca/get-a-grip">github.com/DMHMca/get-a-grip</a>, so you can check for yourself what the app does.</p>
+<hr>
+<p class="muted">If this page changes, the date at the top will change with it.</p>
+</main>
+</body>
+</html>
