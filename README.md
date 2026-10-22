@@ -102,4 +102,4 @@ Push to `main` and GitHub Pages republishes. On a device, open the app while onl
 
 ## Licence
 
-No licence has been chosen yet. Until one is added, the default is that the author keeps all rights, even though the code is public.
+MIT. See the [LICENSE](LICENSE) file. You are welcome to use, copy and change this app, including for your own family and friends, as long as the copyright notice stays with it.

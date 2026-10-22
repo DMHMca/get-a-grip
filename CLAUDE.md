@@ -26,6 +26,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 - `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v15`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
+- `LICENSE`: the MIT licence.
 - `privacy.html`: plain-English privacy page, linked from the Sync page and meant for the Google consent screen. Keep it true to what the app does (it mentions Google Fonts and the Drive app-data file).
 - `README.md`: the public documentation for GitHub (what the app is, privacy, how the two syncs work, why there is no hosted database, how to use your own Google Cloud project). Keep it in step with the app. It replaces the old `README.txt` upload notes.
 
@@ -114,7 +115,7 @@ Activities page, "Sync", section "Google Tasks list" (`viewSync`, engine in the 
 
 - Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
 - Multi-device: a task arriving from Google Tasks whose notes name an activity that does not exist on that device lands with no activity. Largely solved by the Drive sync (activities travel with it); creating a missing activity on pull was proposed but the owner has not asked for it. A wider layout on large screens was also proposed and not yet answered.
-- No licence has been chosen for the public repository (README says so). Ask the owner.
+- Licence: MIT (`LICENSE`, copyright line "2026 DMHMca"; the owner may want their full name there instead).
 
 - On narrow phone screens the bottom-bar labels truncate ("Master ta…", and long activity names). Shorten or rebalance.
 - The top bar and the bottom bar partly duplicate navigation. The owner may want the top buttons dropped.
