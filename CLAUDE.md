@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v16`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v17`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `LICENSE`: the MIT licence.
@@ -95,6 +95,7 @@ Decided with the owner: a hosted database (Firebase etc.) is ruled out because t
 - Tested against a pretend Drive and Tasks server with two simulated devices (36 checks) plus the 46 Tasks checks and 18 checks of the family/own-ID modes, all passing. The owner has since run it for real: phone turned on, PC joined, tasks, activities and archive all arrived. The Drive API is enabled and `drive.appdata` is added in the owner's own project.
 - RUNAWAY BUG FIXED (v15): after the app had been closed for a while, the sign-in pass had expired, the quiet renewal failed, and Google's window opening and closing made the page lose and regain focus; the 'return to the app' trigger read that as a new visit and asked again, endlessly, redrawing the screen each time (the owner saw constant flashing on Android). Fixes: a failed quiet attempt is remembered for ten minutes (`silentFailAt`), only one quiet request at a time (`pendingTok`), focus changes within six seconds of a request are ignored (`askingUntil`), 'return' and 'timer' runs happen at most every 30 seconds and not at all while a sign-in waits for a tap, and a circuit breaker pauses automatic syncing for five minutes after more than eight runs in a minute. Reproduce with a Google stub that fails the quiet request and fires `visibilitychange`: Google should be asked once, not repeatedly.
 - Real-phone finding: on opening the app, the quiet sign-in renewal did not work and the "Tap to keep syncing" banner appeared; tapping Sign in worked. Whether the banner returns on every cold start is being watched. If it does, store the sign-in pass in `localStorage` for its one-hour life (security trade-off to be agreed first).
+- Diagnostic readout (v17): the Sync page shows how many activities and tasks this device has, which sign-in it uses (own project or built-in) and what Drive held at the last look, with the end of the file id (`D.seen`). Added when the owner's laptop and phone seemed not to share new items; a simulated laptop-to-phone run (7 checks) passed, so the suspected causes are device-specific: devices on different Google projects (separate hidden files), pressing the Google Tasks "Sync now" instead of the devices one, or a stale cached copy of the app.
 - Not done: a Drive deletion confirmation screen, and sending drag-reordering to Google Tasks.
 
 ## Two-way Google Tasks sync (built; needs a real-Google trial)

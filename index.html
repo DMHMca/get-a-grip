@@ -1080,6 +1080,7 @@ function viewSync(){
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
   }else{
     parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
+    parts.push(h('p',{class:'note',style:'padding-top:0;font-size:14px',text:'This device: '+S.activities.length+' activities, '+S.tasks.length+' tasks. Signed in through '+(getCustomCid()?'your own Google project':'the built-in sign-in')+'.'+(D.seen?' Google Drive held '+D.seen.a+' activities and '+D.seen.t+' tasks when this device last looked (file ending …'+String(D.seen.fileId).slice(-6)+').':'')}));
     parts.push(h('div',{class:'pad two'},[
       h('button',{class:'btn primary',disabled:D.status==='syncing',onclick:function(){driveNow('manual',{interactive:true});}},[D.status==='needs'?'Sign in and sync':'Sync now']),
       h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
@@ -1157,7 +1158,7 @@ var DB='https://www.googleapis.com/drive/v3/';
 var DU='https://www.googleapis.com/upload/drive/v3/';
 var DFILE='get-a-grip-data.json';
 /* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
-var D={status:'idle',err:'',running:false,again:false};
+var D={status:'idle',err:'',running:false,again:false,seen:null};
 function dcfg(){
   cfg();
   if(!S.drive)S.drive={};
@@ -1293,9 +1294,10 @@ function dupdate(id,doc){
 function driveCycle(n){
   return dfind().then(function(f){
     cfg();
-    if(!f)return dcreate(toDoc(S));
+    if(!f){D.seen={fileId:'new',a:S.activities.length,t:S.tasks.length};return dcreate(toDoc(S));}
     return dread(f.id).then(function(remote){
       var merged=mergeDocs(toDoc(S),remote);
+      D.seen={fileId:f.id,a:remote.activities.length,t:remote.tasks.length};
       applyMerged(merged);
       if(stable(merged)===stable(remote))return null;
       return dversion(f.id).then(function(v){
