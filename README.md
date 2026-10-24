@@ -82,7 +82,7 @@ The app works fully without any of this. Everything above is only for syncing.
 ## Limitations
 
 - Syncing runs only while the app is open or comes back into view. Nothing can sync in the background.
-- Google's sign-in gives the app a pass that lasts about an hour with no way to renew it silently. The app asks for a new one quietly, and shows a "Tap to keep syncing" banner on the occasions Google needs a tap.
+- Google's sign-in gives the app a pass that lasts about an hour, with no way to renew it silently. When the pass has run out, a strip appears on the main pages saying "Tap to keep syncing"; tap anywhere on it, approve the Google window, and syncing carries on. Your tasks are never lost while you wait.
 - Dragging a task to a new position is shared between devices through Drive, but is not sent to Google Tasks. Only new tasks go to the top there.
 - Alarms and reminders are out of scope: a web app cannot do them reliably.
 

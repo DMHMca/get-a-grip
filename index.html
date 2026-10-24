@@ -495,7 +495,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='25';
+var APP_VERSION='28';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -779,18 +779,19 @@ var silentFailAt=0,askingUntil=0,pendingTok=null;
 function getToken(interactive,extra,pick){
   var need=needScopes(extra);
   if(tokenValid(need))return Promise.resolve(G.token);
-  /* a quiet attempt that failed is not repeated for ten minutes: Google needs a tap, and retrying only makes the screen flash */
-  if(!interactive&&Date.now()-silentFailAt<600000)return Promise.reject({type:'quiet'});
-  if(!interactive&&pendingTok)return pendingTok;
+  /* No quiet renewal: on the owner's phone and laptop Google refused it every time (popup_failed_to_open, popup_closed),
+     and an unanswered one froze the sync, so without a valid pass the app simply asks for a tap */
+  if(!interactive)return Promise.reject({type:'quiet'});
   var pr=new Promise(function(res,rej){
     var cid=getCid();
     if(!cid){rej({type:'noclient'});return;}
-    function fail(t){if(!interactive)silentFailAt=Date.now();rej({type:t});}
+    var timer=setTimeout(function(){fail('timeout');},interactive?120000:20000);
+    function fail(t){clearTimeout(timer);if(!interactive)silentFailAt=Date.now();rej({type:t});}
     function start(){
       try{
         var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:need.join(' '),
           callback:function(r){
-            if(r&&r.access_token){silentFailAt=0;D.user=null;G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
+            if(r&&r.access_token){silentFailAt=0;clearTimeout(timer);D.user=null;G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
             else fail((r&&r.error)||'denied');
           },
           error_callback:function(e){fail((e&&e.type)||'blocked');}});
@@ -1069,11 +1070,22 @@ function syncSummary(){
 }
 function syncBanner(){
   var c=cfg(),d=dcfg();
-  var needs=(c.enabled&&c.listId&&G.status==='needs')||(d.enabled&&D.status==='needs');
-  if(!needs)return null;
-  return h('div',{class:'strip'},[
-    h('div',null,[h('small',{text:'Sync'}),h('span',{text:'Tap to keep syncing'})]),
-    h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){syncAll('manual',{interactive:true});}},['Sign in'])]);
+  var tOn=!!(c.enabled&&c.listId),dOn=!!d.enabled;
+  var needs=(tOn&&G.status==='needs')||(dOn&&D.status==='needs');
+  var err=(dOn&&D.status==='error'&&D.err)||(tOn&&G.status==='error'&&G.err)||'';
+  if(!needs&&!err&&!D.tapped)return null;
+  var label=D.tapped?'Signing in…':(err?'Sync problem':'Tap to keep syncing');
+  var detail=D.tapped?'A Google window may open. Approve it.':(err||'');
+  /* the whole strip is the button: a tap anywhere on it signs in */
+  function tap(){
+    if(D.tapped)return;
+    D.tapped=true;softRender();
+    var done=function(){D.tapped=false;softRender();};
+    syncAll('manual',{interactive:true}).then(done,done);
+  }
+  return h('div',{class:'strip',role:'status',style:'cursor:pointer',onclick:tap},[
+    h('div',null,[h('small',{text:'Sync'}),h('span',{text:label}),detail?h('small',{text:detail}):null]),
+    h('button',{type:'button',class:'btn ghost',style:'min-width:88px',disabled:D.tapped},[err&&!needs?'Try again':'Sign in'])]);
 }
 
 function viewSync(){
@@ -1187,7 +1199,7 @@ var DB='https://www.googleapis.com/drive/v3/';
 var DU='https://www.googleapis.com/upload/drive/v3/';
 var DFILE='get-a-grip-data.json';
 /* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
-var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,files:[],skew:null,log:[]};
+var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,files:[],skew:null,log:[],startedAt:0,tapped:false};
 function dlog(m){D.log.push(new Date().toISOString().slice(11,19)+' '+m);if(D.log.length>16)D.log.shift();}
 function dcfg(){
   cfg();
@@ -1363,9 +1375,13 @@ function driveNow(reason,opts){
   var d=dcfg();
   if(checkSignIn()){commitSync();return Promise.resolve();}
   if(!d.enabled||!d.confirmed)return Promise.resolve();
-  if(D.running){D.again=true;return Promise.resolve();}
+  if(D.running){
+    var age=Date.now()-D.startedAt;
+    if(opts.interactive&&age>15000){dlog('previous sync looked stuck ('+Math.round(age/1000)+' s); starting again');D.running=false;pendingTok=null;}
+    else{dlog('skipped ('+reason+'): another sync is still running ('+Math.round(age/1000)+' s)');D.again=true;return Promise.resolve();}
+  }
   if(!opts.interactive&&(reason==='change'||reason==='timer')&&D.status==='needs'&&!tokenValid(needScopes([DRIVE])))return Promise.resolve();
-  D.running=true;D.err='';D.status='syncing';
+  D.running=true;D.startedAt=Date.now();D.err='';D.status='syncing';
   dlog('sync started ('+reason+(opts.interactive?', interactive':'')+')');
   if(ui.view==='sync')softRender();
   return getToken(!!opts.interactive,[DRIVE]).then(function(){return driveCycle(0);}).then(function(){
