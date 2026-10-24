@@ -479,7 +479,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='19';
+var APP_VERSION='20';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1101,6 +1101,7 @@ function viewSync(){
     h('div',{class:'pad'},[cidIn,h('div',{style:'height:10px'}),h('button',{class:'btn primary',onclick:function(){
       var v=cidIn.value.trim();
       if(!/\.apps\.googleusercontent\.com$/.test(v)){D.err='That does not look like a client ID. It should end in .apps.googleusercontent.com.';render();return;}
+      if(DEFAULT_CID&&v===DEFAULT_CID){D.err='That is the app’s own built-in client ID, not one from your own project. Paste the client ID from your own Google project instead. To use the built-in one, leave this box empty.';render();return;}
       D.err='';saveCid(v);render();}},['Save client ID'])])];
   if(custom)advKids.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:function(){D.err='';saveCid('');render();}},[DEFAULT_CID?'Use the built-in sign-in':'Remove client ID'])]));
   /* 2. a Google Tasks list */
