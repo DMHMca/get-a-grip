@@ -495,7 +495,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='24';
+var APP_VERSION='25';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1099,7 +1099,7 @@ function viewSync(){
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
   }else{
     parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
-    parts.push(h('p',{class:'note',style:'padding-top:0;font-size:14px',text:'This device: '+S.activities.length+' activities, '+S.tasks.length+' tasks. Signed in through '+(getCustomCid()?'your own Google project':'the built-in sign-in')+'.'+(D.user?' Google account: '+D.user+'.':'')+(D.seen?' Google Drive held '+D.seen.a+' activities and '+D.seen.t+' tasks when this device last looked (file ending …'+String(D.seen.fileId).slice(-6)+').':'')}));
+    parts.push(h('p',{class:'note',style:'padding-top:0;font-size:14px',text:'This device: '+S.activities.length+' activities, '+S.tasks.length+' tasks. Signed in through '+(getCustomCid()?'your own Google project':'the built-in sign-in')+'.'+(D.user?' Google account: '+D.user+'.':'')+' Codes to compare with your other devices: data '+dataCode()+', order '+orderCode()+'.'+(D.seen?' Google Drive held '+D.seen.a+' activities and '+D.seen.t+' tasks when this device last looked (file ending …'+String(D.seen.fileId).slice(-6)+').':'')}));
     parts.push(h('div',{class:'pad two'},[
       h('button',{class:'btn primary',disabled:D.status==='syncing',onclick:function(){driveNow('manual',{interactive:true});}},[D.status==='needs'?'Sign in and sync':'Sync now']),
       h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
@@ -1417,6 +1417,10 @@ function enableDrive(){
     render();
   });
 }
+/* short codes for comparing devices at a glance: same code = same data, same order */
+function codeOf(str){var h=5381;for(var i=0;i<str.length;i++){h=((h<<5)+h+str.charCodeAt(i))|0;}return (h>>>0).toString(16).toUpperCase().padStart(8,'0');}
+function dataCode(){cfg();return codeOf(stable(toDoc(S)));}
+function orderCode(){return codeOf(S.tasks.map(function(t){return t.id;}).join(',')+'|'+S.activities.map(function(a){return a.id;}).join(','));}
 function diagText(){
   var d=dcfg(),c=cfg(),cid=getCid(),open=0,hid=0,done=0;
   S.tasks.forEach(function(t){if(t.done)done++;else if(t.nm)hid++;else open++;});
@@ -1432,6 +1436,7 @@ function diagText(){
     'Files named '+DFILE+' in Drive: '+D.files.length+(D.files.length?' -> '+D.files.map(function(f){return '…'+String(f.id).slice(-6)+' v'+f.version+' made '+String(f.createdTime||'').slice(0,19)+' changed '+String(f.modifiedTime||'').slice(0,19);}).join('; '):''),
     'Drive held at last look: '+(D.seen?D.seen.a+' activities, '+D.seen.t+' tasks (file …'+String(D.seen.fileId).slice(-6)+')':'no look yet'),
     'This device: '+S.activities.length+' activities ('+S.activities.filter(function(a){return a.archived;}).length+' archived), '+S.tasks.length+' tasks ('+open+' in Master, '+hid+' hidden from Master, '+done+' ticked)',
+    'Codes to compare between devices: data '+dataCode()+', order '+orderCode(),
     'Google Tasks list: '+(c.enabled&&c.listId?'on':'off'),
     'Recent events:'].concat(D.log.length?D.log:['(none yet)']);
   return L.join('\n');
