@@ -484,7 +484,7 @@ function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}cat
 function getCid(){return getCustomCid()||DEFAULT_CID;}
 function saveCid(v){
   try{if(v)localStorage.setItem('gag.clientId',v);else localStorage.removeItem('gag.clientId');}catch(e){}
-  G.token=null;G.tokScope=null;G.status='idle';D.status='idle';G.err='';D.err='';
+  G.token=null;G.tokScope=null;G.status='idle';D.status='idle';G.err='';D.err='';D.seen=null;silentFailAt=0;
   if(getCid())loadGIS();
 }
 function impState(){return ui.imp||(ui.imp={stage:'start',token:null,lists:[],listId:null,listName:'',items:[],bulk:'',busy:false,err:'',msg:'',only:(function(){try{return localStorage.getItem('gag.impOnly')!=='0';}catch(e){return true;}})()});}
