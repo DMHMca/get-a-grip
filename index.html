@@ -479,6 +479,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
+var APP_VERSION='19';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1148,7 +1149,7 @@ function viewSync(){
   det.open=ui.adv!==undefined?ui.adv:(!!custom||!getCid());
   det.addEventListener('toggle',function(){ui.adv=det.open;});
   parts.push(det);
-  parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'})]));
+  parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'}),' · Version '+APP_VERSION]));
   return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
 }
 
