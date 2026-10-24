@@ -23,7 +23,7 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 ## Files
 
 - `index.html`: the whole app (HTML, CSS and vanilla JavaScript in one file, no libraries).
-- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v15`) on every release.**
+- `sw.js`: service worker. Pages are fetched network-first so updates arrive; other files are cached. **Bump the `CACHE` version string (currently `get-a-grip-v16`) on every release.**
 - `manifest.webmanifest`: install details (name, colours, icons).
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`: the icon (six white dots, 2 by 3, on navy).
 - `LICENSE`: the MIT licence.
@@ -42,7 +42,8 @@ It is a Progressive Web App (PWA): static files on GitHub Pages, installed on th
 8. Navigation: bottom bar with four buttons, in this order: Archive, Activities, Master tasks, then the last-used activity (named). Swiping left and right moves along the same order. The top bar also has "Master tasks", the current activity tab (tap for the "Go to activity" switcher) and a "+" for a new activity.
 9. Tapping a task opens an edit sheet (change text, move to another activity, delete).
 10. **Details** (agreed later): any task can carry optional free-text details (a web address, a phone number, extra information). Nothing is shown for a task without details, so there are no empty boxes. A task with details shows a small chevron beside the grip handle that opens and closes the details under the task (closed by default, remembered only until the page is reloaded). Details are added in the task's edit sheet through an "Add details" button, which only then reveals the text box. Web addresses become links and phone numbers (9 to 15 digits) become tap-to-call; everything else stays plain text. Archive search also looks inside details.
-11. Alarms and reminders are out of scope (a web app cannot do them reliably).
+11. **Add several** (agreed later): a small "Add several" button beside the add box (on an activity page it targets that activity; on Master tasks it targets the picked activity, or none) opens a sheet where a pasted list, one task per line, is added at the TOP in the order given (`addMany`). It only adds: blank lines and lines already in that activity are skipped, every new task gets a fresh id with `created` and `updated` set, and it refuses to save if any existing task would change. Activities are still created the normal way first.
+12. Alarms and reminders are out of scope (a web app cannot do them reliably).
 
 ## Design
 

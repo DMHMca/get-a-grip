@@ -235,6 +235,25 @@ function addTask(text,activityId){
   S.tasks.unshift({id:uid(),text:text,activityId:activityId||null,created:iso(),done:null,updated:iso()});
   commit();return true;
 }
+/* Adds several new tasks at the top, in the order given. Nothing existing is touched; if that cannot be shown, nothing is added. */
+function addMany(text,actId){
+  if(actId&&!act(actId))return {error:true};
+  var lines=text.split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+  var have={};
+  S.tasks.forEach(function(t){if((t.activityId||null)===(actId||null))have[t.text.trim().toLowerCase()]=1;});
+  var fresh=[],skipped=0,now=iso();
+  lines.forEach(function(x){
+    var k=x.toLowerCase();
+    if(have[k]){skipped++;return;}
+    have[k]=1;
+    fresh.push({id:uid(),text:x,activityId:actId||null,created:now,done:null,updated:now});
+  });
+  var before=JSON.stringify(S.tasks),n=S.tasks.length;
+  S.tasks=fresh.concat(S.tasks);
+  if(S.tasks.length!==n+fresh.length||JSON.stringify(S.tasks.slice(fresh.length))!==before){S.tasks=JSON.parse(before);return {error:true};}
+  if(fresh.length)commit();
+  return {added:fresh.length,skipped:skipped};
+}
 function toggle(id){
   var t=task(id);if(!t)return;
   if(t.done){t.done=null;if(ui.lastTicked===id)ui.lastTicked=null;}
@@ -336,7 +355,7 @@ function taskRow(t,showAct){
   ]);
 }
 
-function addBox(placeholder,aria,onAdd,withPicker){
+function addBox(placeholder,aria,onAdd,withPicker,actId){
   var input=h('input',{type:'text',id:'addin','aria-label':aria,placeholder:placeholder,value:ui.draft,autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
     oninput:function(e){ui.draft=e.target.value;},
     onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
@@ -348,13 +367,15 @@ function addBox(placeholder,aria,onAdd,withPicker){
     setTimeout(function(){var i=document.getElementById('addin');if(i)i.focus();},0);
   }
   var box=h('div',{class:'addbox'},[input,h('button',{class:'go','aria-label':'Add task',onclick:doAdd},[svg(ICON.up)])]);
-  var kids=[box];
+  var kids=[box],chips=[];
   if(withPicker){
     var a=ui.pick?act(ui.pick):null;
     if(ui.pick&&(!a||a.archived))ui.pick=null,a=null;
-    kids.push(h('button',{class:'chip','aria-label':'Choose activity for this task',onclick:function(){ui.sheet={type:'pick'};render();}},[
+    chips.push(h('button',{class:'chip','aria-label':'Choose activity for this task',onclick:function(){ui.sheet={type:'pick'};render();}},[
       'Activity:',h('b',{text:a?a.name:'No activity'}),svg(ICON.down,16)]));
   }
+  chips.push(h('button',{class:'chip','aria-label':'Add several tasks at once',onclick:function(){ui.sheet={type:'bulk',actId:withPicker?(ui.pick||null):(actId||null)};render();}},['Add several']));
+  kids.push(h('div',{style:'display:flex;gap:8px;flex-wrap:wrap'},chips));
   return h('div',{class:'addwrap'},kids);
 }
 
@@ -386,7 +407,7 @@ function viewActivity(){
     h('div',{class:'acts'},[
       h('button',{class:'btn',onclick:function(){ui.sheet={type:'rename'};render();}},['Rename']),
       h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
-  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false),meta,list].concat(syncBanner()||[],[dots(3)]);
+  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,list].concat(syncBanner()||[],[dots(3)]);
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
   return kids;
@@ -1378,6 +1399,23 @@ function sheetEl(){
     live().forEach(function(a){inner.push(opt(a.name,a.id,openCount(a.id)+' open'));});
     inner.push(h('div',{class:'sep'}));
     inner.push(h('button',{class:'opt link',onclick:function(){ui.afterCreate='pick';ui.sheet={type:'new'};render();}},[svg(ICON.plus),h('span',{class:'l',text:'New activity'})]));
+  }else if(s.type==='bulk'){
+    var ba=s.actId?act(s.actId):null;
+    inner.push(h('h2',{text:'Add several tasks'}));
+    if(s.msg){
+      inner.push(h('p',{class:'note',text:s.msg}));
+      inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Done'])])]));
+    }else{
+      var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
+      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
+      inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),h('div',{class:'btns'},[
+        h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+        h('button',{class:'btn primary',onclick:function(){
+          if(!bta.value.trim())return;
+          var r=addMany(bta.value,s.actId);
+          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
+          ui.sheet={type:'bulk',actId:s.actId,msg:m};render();}},['Add'])])]));
+    }
   }else if(s.type==='switch'){
     inner.push(h('h2',{text:'Go to activity'}));
     live().forEach(function(a){
@@ -1461,6 +1499,7 @@ function render(){
     if(q&&q!==document.activeElement){try{q.focus({preventScroll:true});q.setSelectionRange(keep.s,keep.e);}catch(x){}}
   }
   if(ui.focusHandle){var fh=app.querySelector('[data-handle="'+ui.focusHandle+'"]');if(fh)fh.focus();ui.focusHandle=null;}
+  if(ui.sheet&&ui.sheet.type==='bulk'&&!ui.sheet.msg){var bi=document.getElementById('bulkin');if(bi)bi.focus();}
   if(ui.sheet&&(ui.sheet.type==='new'||ui.sheet.type==='rename'||ui.sheet.type==='edit')){
     var si=document.getElementById('sheetin');if(si){si.focus();si.select();}
   }

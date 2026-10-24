@@ -20,6 +20,7 @@ You do not need a Google Cloud account, a client ID or anything technical for th
 - **Master tasks** shows every open task in one list, whichever activity it belongs to. Tasks can also have no activity.
 - New tasks go at the top. Drag the grip handle to reorder (or use the up and down arrow keys on the handle). Activities can be reordered the same way.
 - Ticking a task removes it from Master tasks but leaves it struck through in its activity, so progress stays visible. A "Just ticked" strip offers a one-tap restore.
+- **Add several** at once: the "Add several" button under the add box takes a pasted list, one task per line, and adds them at the top in the order given. It only adds; nothing already there is changed, and lines already in that activity are skipped.
 - A task can carry optional **details**, for example a web address or a phone number. They stay folded away until you open them, and web addresses and phone numbers become tappable.
 - Activities can be **archived**. The archive is searchable and sortable, and the search covers the tasks inside.
 - Backups: download everything as one JSON file, or restore from one.
