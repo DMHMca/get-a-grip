@@ -236,7 +236,7 @@ function addTask(text,activityId){
   commit();return true;
 }
 /* Adds several new tasks at the top, in the order given. Nothing existing is touched; if that cannot be shown, nothing is added. */
-function addMany(text,actId){
+function addMany(text,actId,quiet){
   if(actId&&!act(actId))return {error:true};
   var lines=text.split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
   var have={};
@@ -246,13 +246,25 @@ function addMany(text,actId){
     var k=x.toLowerCase();
     if(have[k]){skipped++;return;}
     have[k]=1;
-    fresh.push({id:uid(),text:x,activityId:actId||null,created:now,done:null,updated:now});
+    var nt={id:uid(),text:x,activityId:actId||null,created:now,done:null,updated:now};
+    if(quiet&&actId)nt.nm=true;
+    fresh.push(nt);
   });
   var before=JSON.stringify(S.tasks),n=S.tasks.length;
   S.tasks=fresh.concat(S.tasks);
   if(S.tasks.length!==n+fresh.length||JSON.stringify(S.tasks.slice(fresh.length))!==before){S.tasks=JSON.parse(before);return {error:true};}
   if(fresh.length)commit();
   return {added:fresh.length,skipped:skipped};
+}
+/* hide or show every open task of one activity in Master tasks */
+function setActivityMaster(actId,show){
+  var now=iso();
+  S.tasks.forEach(function(t){
+    if(t.activityId!==actId||t.done)return;
+    if(show){if(t.nm){delete t.nm;t.updated=now;}}
+    else if(!t.nm){t.nm=true;t.updated=now;}
+  });
+  commit();
 }
 function toggle(id){
   var t=task(id);if(!t)return;
@@ -380,13 +392,13 @@ function addBox(placeholder,aria,onAdd,withPicker,actId){
 }
 
 function viewMaster(){
-  var open=S.tasks.filter(function(t){return !t.done;});
+  var open=S.tasks.filter(function(t){return !t.done&&!t.nm;});
   var list=h('div',{class:'list'},open.length?open.map(function(t){return taskRow(t,true);}):[
     h('div',{class:'empty',text:'Nothing left to do. Add a task above.'})]);
   var kids=[topbar(),addBox('Add a task','New task',function(txt){return addTask(txt,ui.pick);},true),
     h('div',{style:'height:8px'}),list];
   var lt=ui.lastTicked?task(ui.lastTicked):null;
-  if(lt&&lt.done){
+  if(lt&&lt.done&&!lt.nm){
     kids.push(h('div',{class:'strip'},[
       h('div',null,[h('small',{text:'Just ticked'}),h('span',{text:lt.text})]),
       h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){restore(lt.id);}},['Restore'])]));
@@ -407,7 +419,11 @@ function viewActivity(){
     h('div',{class:'acts'},[
       h('button',{class:'btn',onclick:function(){ui.sheet={type:'rename'};render();}},['Rename']),
       h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
-  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,list].concat(syncBanner()||[],[dots(3)]);
+  var openTs=ts.filter(function(t){return !t.done;}),hid=openTs.filter(function(t){return t.nm;}).length;
+  var mrow=openTs.length?h('div',{class:'meta',style:'padding-top:0'},[
+    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from Master tasks':'All open tasks show in Master tasks'}),
+    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in Master':'Hide from Master'])]):null;
+  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,mrow,list].filter(Boolean).concat(syncBanner()||[],[dots(3)]);
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
   return kids;
@@ -479,7 +495,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='21';
+var APP_VERSION='22';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -487,6 +503,7 @@ function saveCid(v){
   try{if(v)localStorage.setItem('gag.clientId',v);else localStorage.removeItem('gag.clientId');}catch(e){}
   G.token=null;G.tokScope=null;G.status='idle';D.status='idle';G.err='';D.err='';D.seen=null;D.user=null;silentFailAt=0;
   if(getCid())loadGIS();
+  if(checkSignIn())commit(true);
 }
 function impState(){return ui.imp||(ui.imp={stage:'start',token:null,lists:[],listId:null,listName:'',items:[],bulk:'',busy:false,err:'',msg:'',only:(function(){try{return localStorage.getItem('gag.impOnly')!=='0';}catch(e){return true;}})()});}
 function loadGIS(){
@@ -913,7 +930,7 @@ function buildPlan(gtasks){
       var id=linkOf(t,pre);
       if(id&&gmap[id])return;
       if(id){if(recreate.indexOf(t)>-1)ins.push(t);return;}
-      if(c.adds)ins.push(t);
+      if(c.adds&&!t.nm)ins.push(t);
     });
   }
   ins.slice().reverse().forEach(function(t){
@@ -1078,6 +1095,7 @@ function viewSync(){
   if(!getCid()){
     parts.push(h('p',{class:'note',text:'Syncing needs a Google sign-in to be set up first. Open “Advanced” below.'}));
   }else if(!d.enabled){
+    if(d.notice)parts.push(h('p',{class:'note',role:'status',style:'color:var(--text);font-weight:700',text:d.notice}));
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
   }else{
     parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
@@ -1161,7 +1179,7 @@ var DB='https://www.googleapis.com/drive/v3/';
 var DU='https://www.googleapis.com/upload/drive/v3/';
 var DFILE='get-a-grip-data.json';
 /* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
-var D={status:'idle',err:'',running:false,again:false,seen:null,user:null};
+var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,notice:''};
 function dcfg(){
   cfg();
   if(!S.drive)S.drive={};
@@ -1319,6 +1337,7 @@ function driveCycle(n){
 function driveNow(reason,opts){
   opts=opts||{};
   var d=dcfg();
+  if(checkSignIn()){commitSync();return Promise.resolve();}
   if(!d.enabled||!d.confirmed)return Promise.resolve();
   if(D.running){D.again=true;return Promise.resolve();}
   if(!opts.interactive&&(reason==='change'||reason==='timer')&&D.status==='needs'&&!tokenValid(needScopes([DRIVE])))return Promise.resolve();
@@ -1338,9 +1357,20 @@ function driveNow(reason,opts){
     if(D.again){D.again=false;setTimeout(function(){driveNow('again');},500);}
   });
 }
+/* If this device's Google sign-in is no longer the one it joined with, switch syncing off and ask, instead of quietly using another file */
+function checkSignIn(){
+  var d=dcfg();
+  if(!d.enabled)return false;
+  var now=getCid();
+  if(!d.cid){d.cid=now;return false;}
+  if(d.cid===now)return false;
+  d.enabled=false;d.confirmed=false;d.last=null;D.seen=null;D.user=null;D.status='idle';
+  d.notice='Your Google sign-in changed, so syncing between your devices was switched off to protect your tasks. Turn it on again and I will show what each side holds before joining.';
+  return true;
+}
 function enableDrive(){
   var d=dcfg();
-  D.err='';D.status='syncing';render();
+  D.err='';d.notice='';D.status='syncing';render();
   function back(){D.status='idle';render();}
   getToken(true,[DRIVE]).then(dfind).then(function(f){
     return f?dread(f.id).then(function(r){return {f:f,r:r};}):{f:null};
@@ -1353,7 +1383,7 @@ function enableDrive(){
     }
     if(!confirm(msg)){back();return null;}
     try{localStorage.setItem('tasks.v1.predrive',JSON.stringify(S));}catch(e){}
-    d.enabled=true;d.confirmed=true;
+    d.enabled=true;d.confirmed=true;d.cid=getCid();d.notice='';
     return driveNow('manual',{interactive:true});
   }).catch(function(e){
     D.status='error';
@@ -1369,7 +1399,7 @@ function switchAccount(){
   });
 }
 function disableDrive(){
-  var d=dcfg();d.enabled=false;d.confirmed=false;d.last=null;D.status='idle';D.err='';
+  var d=dcfg();d.enabled=false;d.confirmed=false;d.last=null;D.status='idle';D.err='';d.notice='';
   commit(true);
 }
 function anySync(){var c=cfg(),d=dcfg();return !!((c.enabled&&c.listId&&c.confirmed)||(d.enabled&&d.confirmed));}
@@ -1391,6 +1421,7 @@ function syncAll(reason,opts){
     if(runLog.length>8){pausedUntil=t+300000;return Promise.resolve();}
   }
   var c=cfg(),d=dcfg();
+  checkSignIn();
   var tasksOn=!!(c.enabled&&c.listId&&c.confirmed),driveOn=!!(d.enabled&&d.confirmed);
   var before=null;
   return (driveOn?driveNow(reason,opts):Promise.resolve()).then(function(){
@@ -1426,12 +1457,21 @@ function sheetEl(){
     }else{
       var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
       inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
-      inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),h('div',{class:'btns'},[
+      var qcb=null;
+      if(ba){
+        var qv=false;try{qv=localStorage.getItem('gag.bulkQuiet')==='1';}catch(e){}
+        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of Master tasks'});
+      }
+      inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),
+        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of Master tasks'})]):null,
+        h('div',{class:'btns'},[
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:function(){
           if(!bta.value.trim())return;
-          var r=addMany(bta.value,s.actId);
-          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
+          var quiet=!!(qcb&&qcb.checked);
+          if(qcb){try{localStorage.setItem('gag.bulkQuiet',quiet?'1':'0');}catch(e){}}
+          var r=addMany(bta.value,s.actId,quiet);
+          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of Master tasks':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
           ui.sheet={type:'bulk',actId:s.actId,msg:m};render();}},['Add'])])]));
     }
   }else if(s.type==='switch'){
@@ -1469,6 +1509,9 @@ function sheetEl(){
     var sel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(
       S.activities.filter(function(a){return !a.archived||a.id===t.activityId;}).map(function(a){return h('option',{value:a.id,text:a.name+(a.archived?' (archived)':'')});})));
     sel.value=t.activityId||'';
+    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in Master tasks'});
+    shownCb.disabled=!sel.value;
+    sel.addEventListener('change',function(){shownCb.disabled=!sel.value;if(!sel.value)shownCb.checked=true;});
     var hasN=!!(t.notes&&t.notes.trim());
     var nt=h('textarea',{id:'sheetnotes','aria-label':'Details',placeholder:'A web address, a phone number, anything useful',autocapitalize:'sentences'});
     nt.value=t.notes||'';
@@ -1477,13 +1520,15 @@ function sheetEl(){
     function saveEdit(){
       var v=ti.value.trim();if(!v)return;
       t.text=v;t.activityId=sel.value||null;t.updated=iso();
+      if(t.activityId&&!shownCb.checked)t.nm=true;else delete t.nm;
       var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
       ui.sheet=null;commit();
     }
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),hasN?notesBox:addN,
+    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
@@ -1612,7 +1657,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)cl
 
 render();
 (function(){
-  var c=cfg(),d=dcfg();
+  var c=cfg(),d=dcfg(),hadCid=d.cid;
+  if(checkSignIn()||d.cid!==hadCid)commit(true);
   if((c.enabled&&c.listId)||d.enabled){
     if(getCid())loadGIS();
     if(c.auto&&anySync())setTimeout(function(){syncAll('open');},800);

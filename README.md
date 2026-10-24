@@ -20,7 +20,7 @@ You do not need a Google Cloud account, a client ID or anything technical for th
 - **Master tasks** shows every open task in one list, whichever activity it belongs to. Tasks can also have no activity.
 - New tasks go at the top. Drag the grip handle to reorder (or use the up and down arrow keys on the handle). Activities can be reordered the same way.
 - Ticking a task removes it from Master tasks but leaves it struck through in its activity, so progress stays visible. A "Just ticked" strip offers a one-tap restore.
-- **Add several** at once: the "Add several" button under the add box takes a pasted list, one task per line, and adds them at the top in the order given. It only adds; nothing already there is changed, and lines already in that activity are skipped.
+- **Add several** at once: the "Add several" button under the add box takes a pasted list, one task per line, and adds them at the top in the order given. It only adds; nothing already there is changed, and lines already in that activity are skipped. Inside an activity you can tick "Keep these out of Master tasks", so a long list of minor tasks does not bury the one thing you need to do next. Hidden tasks still show in their activity and sync between your devices; a button on each activity page hides or shows all its open tasks at once, and each task has a "Show in Master tasks" tick.
 - A task can carry optional **details**, for example a web address or a phone number. They stay folded away until you open them, and web addresses and phone numbers become tappable.
 - Activities can be **archived**. The archive is searchable and sortable, and the search covers the tasks inside.
 - Backups: download everything as one JSON file, or restore from one.
@@ -44,6 +44,7 @@ Keeps the same activities, tasks, archive and order on every device you use, for
 - Merging works item by item. If two devices change the same task, the later change wins. Deleting a task on one device deletes it on the others, unless it was changed after the deletion. If two devices each create an activity with the same name, they become one.
 - Order follows whichever device reordered last. Tasks added elsewhere appear at the top.
 - Before a device first joins, the app saves a safety copy of its data in the browser.
+- If a device's Google sign-in ever changes while syncing is on (for example a different client ID is entered), the app switches syncing off and says why, instead of quietly switching to a different file. Turning it on again shows what each side holds before joining.
 - What is shared: activities, tasks and a note of deletions. What stays on each device: settings, sign-in state and the Google Tasks setup below.
 
 ### Google Tasks list (advanced)
