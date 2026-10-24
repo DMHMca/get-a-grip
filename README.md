@@ -42,7 +42,7 @@ Keeps the same activities, tasks, archive and order on every device you use, for
 
 - Each device merges with the file when the app opens, shortly after you make a change, and on a timer while the app is open. A web page cannot sync while it is closed, so changes made on one device reach another when that device next opens the app.
 - Merging works item by item. If two devices change the same task, the later change wins. Deleting a task on one device deletes it on the others, unless it was changed after the deletion. If two devices each create an activity with the same name, they become one.
-- Order follows whichever device reordered last. Tasks added elsewhere appear at the top.
+- Order follows whichever device reordered last; if two devices are equally recent they settle on the same order. Tasks added elsewhere appear at the top. A button on the Sync page, "Use this device's order everywhere", lets you choose which device's order the others follow.
 - Before a device first joins, the app saves a safety copy of its data in the browser.
 - If a device's Google sign-in ever changes while syncing is on (for example a different client ID is entered), the app switches syncing off and says why, instead of quietly switching to a different file. Turning it on again shows what each side holds before joining.
 - What is shared: activities, tasks and a note of deletions. What stays on each device: settings, sign-in state and the Google Tasks setup below.

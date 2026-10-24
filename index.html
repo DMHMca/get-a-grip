@@ -495,7 +495,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='23';
+var APP_VERSION='24';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1104,6 +1104,8 @@ function viewSync(){
       h('button',{class:'btn primary',disabled:D.status==='syncing',onclick:function(){driveNow('manual',{interactive:true});}},[D.status==='needs'?'Sign in and sync':'Sync now']),
       h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
     parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:switchAccount},['Use a different Google account'])]));
+    parts.push(h('p',{class:'note',style:'padding-bottom:6px',text:'If your devices show the same tasks in a different order, press this on the device whose order you want, then sync the others.'}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:useMyOrder},['Use this device’s order everywhere'])]));
   }
 
   /* 3. when to sync, for both */
@@ -1203,12 +1205,14 @@ function stable(o){
 }
 /* what is shared: activities, tasks, a note of deletions and when each list was last reordered.
    Settings, tokens and the Google Tasks links of the other sync stay on the device. */
+function stripGs(t){if(!t||t.gs===undefined)return t;var c=Object.assign({},t);delete c.gs;return c;}
 function toDoc(st){
-  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks,gone:st.gone||[],ord:st.ord||{t:'',a:''}}));
+  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks.map(stripGs),gone:st.gone||[],ord:st.ord||{t:'',a:''}}));
 }
 function stampOf(x){return x.updated||x.created||'';}
 var lastAlias={};
 function mergeDocs(L,R){
+  R=Object.assign({},R,{tasks:(R.tasks||[]).map(stripGs)});
   var cutoff=new Date(Date.now()-90*86400000).toISOString();
   var gone={};
   (L.gone||[]).concat(R.gone||[]).forEach(function(g){if(!gone[g.id]||gone[g.id]<g.at)gone[g.id]=g.at;});
@@ -1243,7 +1247,7 @@ function mergeDocs(L,R){
       var w=Object.assign({},r);
       if(l.sid){w.sid=l.sid;w.gs=l.gs;}
       tasks[r.id]=w;
-    }
+    }else if(!l.sid&&r.sid){tasks[r.id]=Object.assign({},l,{sid:r.sid});}
   });
   /* a deletion stands unless the task was changed after it was deleted */
   Object.keys(tasks).forEach(function(id){if(gone[id]&&gone[id]>=stampOf(tasks[id]))delete tasks[id];});
@@ -1261,7 +1265,9 @@ function mergeDocs(L,R){
 
   /* order: whichever device reordered last decides; tasks the other side has that this one lacks go on top, new activities at the end */
   var lOrd=L.ord||{},rOrd=R.ord||{};
-  var tWin=(lOrd.t||'')>=(rOrd.t||''),aWin=(lOrd.a||'')>=(rOrd.a||'');
+  function idsOf(list){return (list||[]).map(function(x){return x.id;}).join(',');}
+  var tWin=(lOrd.t||'')>(rOrd.t||'')||((lOrd.t||'')===(rOrd.t||'')&&idsOf(L.tasks)>=idsOf(R.tasks));
+  var aWin=(lOrd.a||'')>(rOrd.a||'')||((lOrd.a||'')===(rOrd.a||'')&&idsOf(L.activities)>=idsOf(R.activities));
   function order(win,lose,items,top){
     var seen={},base=[],extra=[];
     (win||[]).forEach(function(x){var id=alias[x.id]||x.id;if(items[id]&&!seen[id]){seen[id]=1;base.push(id);}});
@@ -1282,6 +1288,8 @@ function applyMerged(doc){
   Object.keys(ui.open).forEach(function(id){if(!have[id])delete ui.open[id];});
   if(ui.lastTicked&&!have[ui.lastTicked])ui.lastTicked=null;
   ['pick','activityId','lastActivityId'].forEach(function(k){if(ui[k]&&lastAlias[ui[k]])ui[k]=lastAlias[ui[k]];});
+  var gsKeep={};S.tasks.forEach(function(t){if(t.gs)gsKeep[t.id]=t.gs;});
+  doc.tasks.forEach(function(t){if(!t.gs&&gsKeep[t.id])t.gs=gsKeep[t.id];});
   S.activities=doc.activities;S.tasks=doc.tasks;S.gone=doc.gone;S.ord=doc.ord;
   return true;
 }
@@ -1342,7 +1350,7 @@ function driveCycle(n){
       dlog('read …'+String(f.id).slice(-6)+': '+remote.activities.length+' activities, '+remote.tasks.length+' tasks ('+D.files.length+' file(s) with this name)');
       var changedHere=applyMerged(merged);
       dlog('merged: '+merged.activities.length+' activities, '+merged.tasks.length+' tasks; this device '+(changedHere?'changed':'unchanged'));
-      if(stable(merged)===stable(remote)){dlog('Drive already matches, nothing to write');return null;}
+      if(stable(merged)===stable(toDoc({activities:remote.activities,tasks:remote.tasks,gone:remote.gone,ord:remote.ord}))){dlog('Drive already matches, nothing to write');return null;}
       return dversion(f.id).then(function(v){
         if(v!==f.version&&n<3)return driveCycle(n+1);
         return dupdate(f.id,merged).then(noteWrite);
@@ -1432,6 +1440,13 @@ function showDiag(){
   var t=diagText();ui.diag=t;ui.diagCopied=false;
   try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){ui.diagCopied=true;render();},function(){});}}catch(e){}
   render();
+}
+/* make this device's order of tasks and activities the one every device follows */
+function useMyOrder(){
+  if(!confirm('Make your other devices follow the order of tasks and activities on this device? Nothing is added or removed, only the order changes.'))return;
+  cfg();var now=iso();S.ord.t=now;S.ord.a=now;
+  commit(true);
+  driveNow('manual',{interactive:true});
 }
 function switchAccount(){
   var d=dcfg();
