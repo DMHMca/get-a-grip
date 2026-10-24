@@ -495,7 +495,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='22';
+var APP_VERSION='23';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1169,6 +1169,12 @@ function viewSync(){
   det.open=ui.adv!==undefined?ui.adv:(!!custom||!getCid());
   det.addEventListener('toggle',function(){ui.adv=det.open;});
   parts.push(det);
+  parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:showDiag},['Show a diagnostic report'])]));
+  if(ui.diag){
+    parts.push(h('p',{class:'note',text:ui.diagCopied?'Copied to the clipboard. Paste it into the chat. The same text is below if you need to copy it by hand. It includes your Google email address but no passwords or tokens.':'Select all of the text below, copy it and paste it into the chat. It includes your Google email address but no passwords or tokens.'}));
+    var dta=h('textarea',{readonly:'',rows:'14','aria-label':'Diagnostic report',style:'width:calc(100% - 32px);margin:0 16px 12px;font-size:13px;font-family:monospace;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:10px'});
+    dta.value=ui.diag;parts.push(dta);
+  }
   parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'}),' · Version '+APP_VERSION]));
   return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
 }
@@ -1179,7 +1185,8 @@ var DB='https://www.googleapis.com/drive/v3/';
 var DU='https://www.googleapis.com/upload/drive/v3/';
 var DFILE='get-a-grip-data.json';
 /* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
-var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,notice:''};
+var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,files:[],skew:null,log:[]};
+function dlog(m){D.log.push(new Date().toISOString().slice(11,19)+' '+m);if(D.log.length>16)D.log.shift();}
 function dcfg(){
   cfg();
   if(!S.drive)S.drive={};
@@ -1290,8 +1297,8 @@ function dfetch(method,url,headers,body){
   });
 }
 function dfind(){
-  return dfetch('GET',DB+'files?spaces=appDataFolder&q='+enc("name='"+DFILE+"' and trashed=false")+'&fields='+enc('files(id,version)'))
-    .then(function(r){return r.json();}).then(function(d){return (d.files&&d.files[0])||null;});
+  return dfetch('GET',DB+'files?spaces=appDataFolder&orderBy=createdTime&pageSize=20&q='+enc("name='"+DFILE+"' and trashed=false")+'&fields='+enc('files(id,version,createdTime,modifiedTime)'))
+    .then(function(r){return r.json();}).then(function(d){D.files=d.files||[];return D.files[0]||null;});
 }
 function dread(id){
   return dfetch('GET',DB+'files/'+enc(id)+'?alt=media').then(function(r){return r.text();}).then(function(t){
@@ -1306,10 +1313,10 @@ function dcreate(doc){
   var bd='gag'+Date.now();
   var body='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:DFILE,parents:['appDataFolder']})+
     '\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(doc)+'\r\n--'+bd+'--';
-  return dfetch('POST',DU+'files?uploadType=multipart&fields=id,version',{'Content-Type':'multipart/related; boundary='+bd},body);
+  return dfetch('POST',DU+'files?uploadType=multipart&fields=id,version,modifiedTime',{'Content-Type':'multipart/related; boundary='+bd},body);
 }
 function dupdate(id,doc){
-  return dfetch('PATCH',DU+'files/'+enc(id)+'?uploadType=media&fields=id,version',{'Content-Type':'application/json'},JSON.stringify(doc));
+  return dfetch('PATCH',DU+'files/'+enc(id)+'?uploadType=media&fields=id,version,modifiedTime',{'Content-Type':'application/json'},JSON.stringify(doc));
 }
 /* read, merge, save. If someone else saved in between, start again (up to three times). */
 function ensureUser(){
@@ -1318,18 +1325,27 @@ function ensureUser(){
     D.user=(d.user&&d.user.emailAddress)||'';
   }).catch(function(e){if(e&&e.auth)throw e;D.user='';});
 }
+function noteWrite(r){
+  return r.json().then(function(j){
+    if(j&&j.id&&!D.files.some(function(f){return f.id===j.id;}))D.files=D.files.concat([{id:j.id,version:j.version,createdTime:j.modifiedTime,modifiedTime:j.modifiedTime}]);
+    if(j&&j.modifiedTime){D.skew=Date.parse(j.modifiedTime)-Date.now();dlog('wrote file …'+String(j.id).slice(-6)+' (version '+j.version+')');}
+    else dlog('wrote file');
+  }).catch(function(){dlog('wrote file');});
+}
 function driveCycle(n){
   return ensureUser().then(dfind).then(function(f){
     cfg();
-    if(!f){D.seen={fileId:'new',a:S.activities.length,t:S.tasks.length};return dcreate(toDoc(S));}
+    if(!f){D.seen={fileId:'new',a:S.activities.length,t:S.tasks.length};dlog('no file found, creating one');return dcreate(toDoc(S)).then(noteWrite);}
     return dread(f.id).then(function(remote){
       var merged=mergeDocs(toDoc(S),remote);
       D.seen={fileId:f.id,a:remote.activities.length,t:remote.tasks.length};
-      applyMerged(merged);
-      if(stable(merged)===stable(remote))return null;
+      dlog('read …'+String(f.id).slice(-6)+': '+remote.activities.length+' activities, '+remote.tasks.length+' tasks ('+D.files.length+' file(s) with this name)');
+      var changedHere=applyMerged(merged);
+      dlog('merged: '+merged.activities.length+' activities, '+merged.tasks.length+' tasks; this device '+(changedHere?'changed':'unchanged'));
+      if(stable(merged)===stable(remote)){dlog('Drive already matches, nothing to write');return null;}
       return dversion(f.id).then(function(v){
         if(v!==f.version&&n<3)return driveCycle(n+1);
-        return dupdate(f.id,merged);
+        return dupdate(f.id,merged).then(noteWrite);
       });
     });
   });
@@ -1342,10 +1358,12 @@ function driveNow(reason,opts){
   if(D.running){D.again=true;return Promise.resolve();}
   if(!opts.interactive&&(reason==='change'||reason==='timer')&&D.status==='needs'&&!tokenValid(needScopes([DRIVE])))return Promise.resolve();
   D.running=true;D.err='';D.status='syncing';
+  dlog('sync started ('+reason+(opts.interactive?', interactive':'')+')');
   if(ui.view==='sync')softRender();
   return getToken(!!opts.interactive,[DRIVE]).then(function(){return driveCycle(0);}).then(function(){
-    D.status='idle';d.last=new Date().toISOString();
+    D.status='idle';d.last=new Date().toISOString();dlog('sync finished');
   }).catch(function(e){
+    dlog('stopped: '+((e&&(e.message||e.type))||'unknown'));
     if(e&&e.type==='noclient'){D.status='error';D.err='Add your Google client ID on the Import page first.';}
     else if(e&&(e.auth||(e.type&&!opts.interactive))){D.status='needs';D.err='';}
     else if(e&&e.type){D.status='error';D.err='Google did not give access ('+e.type+').';}
@@ -1390,6 +1408,30 @@ function enableDrive(){
     D.err=e&&e.type?(e.type==='noclient'?'Add your Google client ID on the Import page first.':'Google did not give access ('+e.type+').'):((e&&e.message)||'Could not connect to Google Drive.');
     render();
   });
+}
+function diagText(){
+  var d=dcfg(),c=cfg(),cid=getCid(),open=0,hid=0,done=0;
+  S.tasks.forEach(function(t){if(t.done)done++;else if(t.nm)hid++;else open++;});
+  var L=['Get a grip diagnostic report (no passwords or tokens in it)',
+    'Version: '+APP_VERSION,
+    'Time on this device: '+new Date().toISOString(),
+    'Clock compared with Google: '+(D.skew===null?'not measured yet (sync once first)':Math.round(D.skew/1000)+' seconds (positive = this device is behind Google)'),
+    'Sign-in: '+(getCustomCid()?'own project':'built-in')+', client ID starts '+cid.slice(0,22),
+    'Sign-in status: '+D.status+(G.token?', has a pass':', no pass right now'),
+    'Google account: '+(D.user||'unknown'),
+    'Devices sync: '+(d.enabled?'on':'off')+', confirmed '+d.confirmed+', joined with ID starting '+String(d.cid||'none').slice(0,22)+', last '+(d.last||'never'),
+    'Automatic: '+c.auto+', every '+c.interval+' min',
+    'Files named '+DFILE+' in Drive: '+D.files.length+(D.files.length?' -> '+D.files.map(function(f){return '…'+String(f.id).slice(-6)+' v'+f.version+' made '+String(f.createdTime||'').slice(0,19)+' changed '+String(f.modifiedTime||'').slice(0,19);}).join('; '):''),
+    'Drive held at last look: '+(D.seen?D.seen.a+' activities, '+D.seen.t+' tasks (file …'+String(D.seen.fileId).slice(-6)+')':'no look yet'),
+    'This device: '+S.activities.length+' activities ('+S.activities.filter(function(a){return a.archived;}).length+' archived), '+S.tasks.length+' tasks ('+open+' in Master, '+hid+' hidden from Master, '+done+' ticked)',
+    'Google Tasks list: '+(c.enabled&&c.listId?'on':'off'),
+    'Recent events:'].concat(D.log.length?D.log:['(none yet)']);
+  return L.join('\n');
+}
+function showDiag(){
+  var t=diagText();ui.diag=t;ui.diagCopied=false;
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){ui.diagCopied=true;render();},function(){});}}catch(e){}
+  render();
 }
 function switchAccount(){
   var d=dcfg();
