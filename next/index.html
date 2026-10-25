@@ -846,7 +846,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n20';
+var APP_VERSION='n21';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2475,8 +2475,7 @@ function sheetEl(){
     var hasN=!!(t.notes&&t.notes.trim());
     var nt=h('textarea',{id:'sheetnotes','aria-label':isBig(t)?'Thinking':'Details',placeholder:isBig(t)?'Think it through here: what are the parts of this?':'A list of steps, a web address, a phone number, anything useful',autocapitalize:'sentences',style:'min-height:120px;resize:none;overflow:hidden',
       oninput:function(e){grow(e.target);}});
-    nt.value=t.notes||'';setTimeout(function(){grow(nt);},0);
-    var notesBox=h('label',null,[isBig(t)?'Thinking':'Details',nt]);
+    nt.value=t.notes||'';
     function saveEdit(openParts){
       var v=ti.value.trim();if(!v)return false;
       if(nowBig!==wasBig)setSize(t,nowBig);
@@ -2503,23 +2502,27 @@ function sheetEl(){
       return {el:h('div',{style:'flex:1;min-width:0'},[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
     }
     var durRadio=radioGroup('dur','How long it takes',DURS,t.dur),devRadio=radioGroup('dev','Needs at least',DEVS,t.dev);
-    var tagNow=tagText(t);
-    var fold=h('details',{style:'border:1.5px solid var(--border);border-radius:12px;padding:0 14px'},[
-      h('summary',{style:'min-height:48px;display:flex;align-items:center;font-size:16px;cursor:pointer',text:'Time and equipment'+(tagNow?': '+tagNow:'')}),
-      h('div',{style:'display:flex;gap:14px;padding-bottom:10px'},[durRadio.el,devRadio.el])]);
+    var panelT=h('div',{style:'display:flex;gap:14px'},[durRadio.el,devRadio.el]);
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
       if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
     var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
     inner.push(h('h2',{text:'Edit task'}));
-    var firstLine=(t.notes||'').split(/\r?\n/).filter(Boolean)[0]||'';
-    var dfold=h('details',{style:'border:1.5px solid var(--border);border-radius:12px;padding:0 14px'},[
-      h('summary',{style:'min-height:48px;display:flex;align-items:center;font-size:16px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis',text:(isBig(t)?'Thinking':'Details')+(firstLine?': '+firstLine:'')}),
-      h('div',{style:'padding-bottom:12px;display:flex;flex-direction:column;gap:10px'},[notesBox,(linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null])]);
-    dfold.open=!!(t.notes&&t.notes.trim());
-    dfold.addEventListener('toggle',function(){grow(nt);});
-    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),dfold,
-      h('label',null,['Activity',sel]),fold,
+    var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,(linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null]);
+    var tagNow=tagText(t);
+    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[isBig(t)?'Thinking':'Details']);
+    var bT=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='t'?'':'t');}},['Time and equipment']);
+    var panel=h('div',{style:'border:1.5px solid var(--border);border-radius:12px;padding:12px',hidden:true},[panelD,panelT]);
+    var shown='';
+    function showPanel(w){
+      shown=w;
+      panel.hidden=!w;panelD.hidden=w!=='d';panelT.hidden=w!=='t';
+      bD.setAttribute('aria-pressed',w==='d'?'true':'false');bT.setAttribute('aria-pressed',w==='t'?'true':'false');
+      if(w==='d')setTimeout(function(){grow(nt);},0);
+    }
+    if(t.notes&&t.notes.trim())showPanel('d');
+    inner.push(h('div',{class:'field'},[h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),
+      h('div',{class:'seg',role:'group','aria-label':'Panels'},[bD,bT]),panel,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
