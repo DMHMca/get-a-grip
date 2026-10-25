@@ -902,7 +902,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n33';
+var APP_VERSION='n34';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2416,7 +2416,7 @@ function sheetEl(){
     var have={};childrenOf(lt).forEach(function(c){have[c.text.trim().toLowerCase()]=1;});
     var cbs=[];
     inner.push(h('h2',{text:'Turn lines into subtasks'}));
-    inner.push(h('p',{class:'note',text:'Tick the lines you want as subtasks of “'+lt.text+'”. They are added at the bottom, in this order. Your thinking stays as it is.'}));
+    inner.push(h('p',{class:'note',text:'Tick the lines you want as subtasks of “'+lt.text+'”. They are added at the bottom, in this order, and those lines are taken out of the details. Any line you leave unticked stays there.'}));
     var box2=h('div',{class:'field'});
     lines.forEach(function(ln){
       var dup=!!have[ln.toLowerCase()];
@@ -2427,7 +2427,14 @@ function sheetEl(){
     if(!lines.length)box2.appendChild(h('p',{class:'note',text:'There are no lines to use yet.'}));
     box2.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel']),
       h('button',{class:'btn primary',onclick:function(){
-        var n=0;cbs.forEach(function(x){if(x[0].checked&&!x[0].disabled){addSub(lt.id,x[1]);n++;}});
+        var n=0,used={};
+        cbs.forEach(function(x){if(x[0].checked&&!x[0].disabled){addSub(lt.id,x[1]);n++;}if(x[0].disabled||x[0].checked)used[x[1].toLowerCase()]=1;});
+        if(n){
+          var keep=(lt.notes||'').split(/\r?\n/).filter(function(raw){var c=raw.replace(/^[\s\-*•\d.)]+/,'').trim();return !(c&&used[c.toLowerCase()]);});
+          var rest=keep.join('\n').replace(/^\s*\n+|\n\s*$/g,'').replace(/\n{3,}/g,'\n\n').trim();
+          if(rest)lt.notes=rest;else delete lt.notes;
+          lt.updated=iso();
+        }
         if(n){ui.partsOpen[lt.id]=true;ui.bigCards[lt.id]=true;}
         ui.sheet=null;if(n)commit();else render();}},['Make subtasks'])]));
     inner.push(box2);
