@@ -878,7 +878,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n29';
+var APP_VERSION='n30';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2413,7 +2413,7 @@ function sheetEl(){
     function choiceRow(label,opts,key){
       return h('div',null,[h('p',{class:'note',style:'padding:6px 20px 2px',text:label}),
         h('div',{class:'tags'},opts.map(function(o){
-          return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];render();}},[o[1]]);}))]);
+          return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];sl.more=false;render();}},[o[1]]);}))]);
     }
     inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','1 hour']],'mins'));
     inner.push(choiceRow('What have you got with you?',[['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
@@ -2443,9 +2443,12 @@ function sheetEl(){
         return h('div',{style:'border-bottom:1px solid var(--line)'},kids);
       }
       inner.push(h('div',{class:'sep'}));
-      inner.push(h('h2',{text:fit.length?fit.length+(fit.length===1?' task fits':' tasks fit'):'Nothing tagged fits yet'}));
+      var allFit=fit.length;
+      if(!sl.more)fit=fit.slice(0,3);
+      inner.push(h('h2',{text:allFit?(allFit>fit.length?'First '+fit.length+' of '+allFit+' that fit':(allFit+(allFit===1?' task fits':' tasks fit'))):'Nothing tagged fits yet'}));
       if(!fit.length)inner.push(h('p',{class:'note',text:untagged.length?'Tag a few tasks below and they will show up here.':'Tag tasks with how long they take and what they need, from the edit screen of any task.'}));
       fit.forEach(function(r){inner.push(slotRow(r,false));});
+      if(allFit>fit.length)inner.push(h('div',{style:'padding:6px 20px'},[h('button',{class:'btn',style:'height:40px;font-size:15px',onclick:function(){sl.more=true;render();}},['Show the other '+(allFit-fit.length)])]));
       if(untagged.length){
         inner.push(h('h2',{style:'color:var(--muted);font-size:15px',text:'Not tagged yet ('+untagged.length+')'}));
         untagged.slice(0,6).forEach(function(r){inner.push(slotRow(r,true));});
