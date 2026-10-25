@@ -155,17 +155,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .bi .tk,.tile .tk{flex:none;width:34px;height:34px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
 .bi .tk svg,.tile .tk svg{width:21px;height:21px}
 .bi .chg{flex:none;height:40px;padding:0 6px;border:0;background:none;color:var(--accent);font-size:13px;font-weight:700}
-.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.tile{background:var(--surface);border:1.5px solid var(--border);border-left:5px solid var(--small);border-radius:12px;padding:6px 8px 6px 4px;min-height:56px;font-size:13px;line-height:1.3;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0}
-.tile .top{display:flex;align-items:flex-start;gap:2px}
-.tile .top svg.hs{margin-top:3px;margin-right:3px}
-.tile .tx{flex:1;min-width:0;overflow-wrap:anywhere;padding-top:6px}
-.tile .sb{color:var(--muted);font-size:11.5px;padding:0 0 0 38px;overflow-wrap:anywhere}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.tile{background:var(--surface);border:1.5px solid var(--border);border-left:5px solid var(--small);border-radius:10px;padding:2px 5px 5px 3px;height:86px;font-size:12px;line-height:1.28;cursor:pointer;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.tile .top{display:flex;align-items:center;gap:1px;flex:none}
+.tile .tk{flex:none;width:30px;height:30px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
+.tile .tk svg{width:19px;height:19px}
+.tile .top svg.hs{margin:0 0 0 1px;width:14px;height:14px}
+.tile .tx{padding:0 2px 0 4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tile .sb{color:var(--muted);font-size:11.5px;padding:2px 2px 0 4px;overflow-wrap:anywhere}
 .tile.done .tx{color:var(--muted);text-decoration:line-through}
-.tile.open{grid-column:1/3;background:var(--tint);border-color:var(--accent);border-left-color:var(--small)}
-.tile .acts{display:flex;gap:8px;padding:6px 0 2px 38px}
-.tile .acts button{height:38px;padding:0 12px;border-radius:9px;border:1.5px solid var(--accent);background:none;color:var(--accent);font-weight:700;font-size:13px}
-.tile.add{border-style:dashed;border-left-style:dashed;color:var(--muted);align-items:center;justify-content:center;flex-direction:row;gap:6px}
+.tile.open{grid-column:1/4;height:auto;background:var(--tint);border-color:var(--accent);border-left-color:var(--small);font-size:14px;overflow:visible}
+.tile.open .tx{display:block;-webkit-line-clamp:unset;padding:2px 4px 0}
+.tile .acts{display:flex;gap:8px;padding:8px 0 2px 4px}
+.tile .acts button{height:40px;padding:0 14px;border-radius:9px;border:1.5px solid var(--accent);background:none;color:var(--accent);font-weight:700;font-size:13px}
+.tile.add{border-style:dashed;border-left-style:dashed;color:var(--muted);align-items:center;justify-content:center;flex-direction:column;gap:2px;text-align:center;font-size:12px}
 .dayrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px;color:var(--muted);font-size:14px;min-height:36px}
 .dayrow .sorts{padding:0;gap:6px}
 .dayrow .sorts .btn{height:32px;font-size:13px;padding:0 10px}
@@ -817,7 +820,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n7';
+var APP_VERSION='n8';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1988,7 +1991,8 @@ function planBlocks(pl){
   groups.forEach(function(g){
     var a=g.par&&g.par.activityId?act(g.par.activityId):null;
     var ps=g.par?childrenOf(g.par):[],dn=g.par?partsDone(g.par):0;
-    var blk=h('div',{class:'bblock'},[h('div',{class:'tt'},[house(true),h('span',{text:g.title})])]);
+    var openId=g.par?g.par.id:g.items[0].tid;
+    var blk=h('div',{class:'bblock'},[h('button',{class:'tt','aria-label':'Open task: '+g.title,style:'border:0;background:none;padding:0;text-align:left;width:100%;color:inherit;font:inherit;font-weight:700;cursor:pointer',onclick:function(){if(task(openId)){ui.editId=openId;ui.sheet={type:'edit'};render();}}},[house(true),h('span',{text:g.title})])]);
     if(a)blk.appendChild(h('div',{class:'sm',text:a.name}));
     if(ps.length){blk.appendChild(h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]));blk.appendChild(h('div',{class:'sm',text:dn+' of '+ps.length+' subtasks done'}));}
     g.items.forEach(function(it){
@@ -2005,19 +2009,18 @@ function planBlocks(pl){
   var grid=h('div',{class:'tgrid'});
   lit.forEach(function(it){
     var r=resolveItem(it),open=!!ui.tileOpen[it.tid];
-    var parts=[];
     var top=h('div',{class:'top'},[
       h('button',{class:'tk','aria-label':(r.done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(ev){ev.stopPropagation();tickItem(it);}},[tickIcon(r.done)]),
-      house(false),h('span',{class:'tx',text:r.text})]);
+      house(false),h('span',{style:'flex:1'})]);
     top.querySelectorAll('svg')[1].setAttribute('class','hs');
-    var chev=h('button',{class:'tk','aria-expanded':open?'true':'false','aria-label':(open?'Fewer options: ':'More options: ')+r.text,style:'width:30px;margin-left:auto',
-      onclick:function(ev){ev.stopPropagation();if(ui.tileOpen[it.tid])delete ui.tileOpen[it.tid];else ui.tileOpen[it.tid]=true;render();}},[svg(open?ICON.chevup:ICON.down,18)]);
+    var chev=h('button',{class:'tk','aria-expanded':open?'true':'false','aria-label':(open?'Fewer options: ':'More options: ')+r.text,
+      onclick:function(ev){ev.stopPropagation();if(ui.tileOpen[it.tid])delete ui.tileOpen[it.tid];else ui.tileOpen[it.tid]=true;render();}},[svg(open?ICON.chevup:ICON.down,16)]);
     top.appendChild(chev);
     var tile=h('div',{class:'tile'+(r.done?' done':'')+(open?' open':''),role:'button',tabindex:'0','aria-label':'Open task: '+r.text,
       onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}},
-      onkeydown:function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}}},[top]);
+      onkeydown:function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}}},[top,h('div',{class:'tx',text:r.text})]);
     var sb=r.parent?'subtask of '+r.parent:r.sub;
-    if(sb)tile.appendChild(h('div',{class:'sb',text:sb}));
+    if(sb&&open)tile.appendChild(h('div',{class:'sb',text:sb}));
     if(r.gone)tile.appendChild(h('div',{class:'sb',text:'No longer in your list'}));
     if(open)tile.appendChild(h('div',{class:'acts'},[
       h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,'')]));
