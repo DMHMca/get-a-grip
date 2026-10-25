@@ -356,6 +356,32 @@ function masterRows(){
   return out;
 }
 function valueOf(t){return isChild(t)?'P:'+t.parent+':'+t.id:'T:'+t.id;}
+/* ---------- "I've got a slot": time and equipment tags, and a filter ---------- */
+var DURS=[['quick','15 minutes or less'],['30','About 30 minutes'],['60','About an hour'],['long','Two hours or more']];
+var DEVS=[['phone','Phone'],['tablet','Tablet'],['laptop','Laptop or PC']];
+function durRank(v){return DURS.findIndex(function(x){return x[0]===v;});}
+function devRank(v){return DEVS.findIndex(function(x){return x[0]===v;});}
+function tagText(t){
+  var d=DURS.find(function(x){return x[0]===t.dur;}),v=DEVS.find(function(x){return x[0]===t.dev;});
+  return [d?d[1]:'',v?v[1]:''].filter(Boolean).join(' · ');
+}
+function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
+/* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
+function slotCandidates(){
+  var pl=planFor(todayKey());
+  return masterRows().filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
+}
+function addToDay(r){
+  var t=r.t,kind=(r.owner!==t&&isBig(r.owner))?'big':'little';
+  var it=mkItem(kind,t.id);if(!it)return;
+  var key=todayKey(),pl=planFor(key);
+  if(!pl){pl=newPlan(key,'custom',[it]);}
+  else{
+    if(kind==='little'&&pl.items.filter(function(x){return x.k!=='big';}).length>=5){alert('Your day already has five small ones. Swap one out first.');return;}
+    pl.items.push(it);
+  }
+  ui.planDay='today';ui.view='today';ui.sheet=null;ui.cust=null;touchPlan(pl);
+}
 /* subtasks sit in the order they were added: the newest goes at the bottom of the group, and can be dragged elsewhere */
 function placeLast(child,parent){
   S.tasks=S.tasks.filter(function(x){return x!==child;});
@@ -791,7 +817,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n5';
+var APP_VERSION='n6';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1824,7 +1850,7 @@ function viewToday(){
   var tog=(pl||other)?h('div',{class:'sorts'},[
       h('button',{class:'btn','aria-pressed':!forTom?'true':'false',onclick:function(){ui.planDay='today';ui.cust=null;render();}},['Today']),
       h('button',{class:'btn','aria-pressed':forTom?'true':'false',onclick:function(){ui.planDay='tomorrow';ui.cust=null;render();}},['Tomorrow'])]):null;
-  var kids=[titleBar(forTom?'Tomorrow':'Today',[h('button',{class:'btn icon','aria-label':'Add a task',onclick:function(){ui.sheet={type:'quick'};render();}},[svg(ICON.plus)])]),
+  var kids=[titleBar(forTom?'Tomorrow':'Today',[h('button',{class:'btn','aria-label':'I’ve got a slot',onclick:function(){ui.slot=ui.slot||{mins:'',dev:''};ui.sheet={type:'slot'};render();}},['Slot']),h('button',{class:'btn icon','aria-label':'Add a task',onclick:function(){ui.sheet={type:'quick'};render();}},[svg(ICON.plus)])]),
     h('div',{class:'dayrow'},[h('span',{text:niceDate(key)}),tog])];
   var body=[];
   if(pl)body.push(planView(pl));
@@ -2314,6 +2340,52 @@ function sheetEl(){
         var n=0;cbs.forEach(function(x){if(x[0].checked&&!x[0].disabled){addSub(lt.id,x[1]);n++;}});
         ui.sheet=null;if(n)commit();else render();}},['Make subtasks'])]));
     inner.push(box2);
+  }else if(s.type==='slot'){
+    var sl=ui.slot=ui.slot||{mins:'',dev:''};
+    inner.push(h('h2',{text:'I’ve got a slot'}));
+    function choiceRow(label,opts,key){
+      return h('div',null,[h('p',{class:'note',style:'padding:6px 20px 2px',text:label}),
+        h('div',{class:'tags'},opts.map(function(o){
+          return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];render();}},[o[1]]);}))]);
+    }
+    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','An hour'],['long','2 hours or more']],'mins'));
+    inner.push(choiceRow('What have you got with you?',[['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
+    if(sl.mins&&sl.dev){
+      var cand=slotCandidates(),fit=[],untagged=[];
+      cand.forEach(function(r){
+        var t=r.t;
+        if(!t.dur||!t.dev){untagged.push(r);return;}
+        if(durRank(t.dur)<=durRank(sl.mins)&&devRank(t.dev)<=devRank(sl.dev))fit.push(r);
+      });
+      function slotRow(r,tagging){
+        var t=r.t,sub=[];
+        if(r.owner!==t)sub.push('subtask of '+r.owner.text);
+        var tg=tagText(t);if(tg)sub.push(tg);
+        var kids=[h('div',{class:'item',style:'border:0;background:none;padding:0 14px 0 20px'},[
+          h('button',{class:'itext','aria-label':'Open task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[h('span',{text:t.text}),sub.length?h('small',{text:sub.join(' · ')}):null]),
+          tagging?null:h('button',{class:'chg','aria-label':'Add to my day: '+t.text,onclick:function(){addToDay(r);}},['Add to my day'])])];
+        if(tagging){
+          function mk(label,arr,key){
+            var sel=h('select',{class:'sel','aria-label':label+': '+t.text,style:'margin:0;flex:1'},[h('option',{value:'',text:label+'…'})].concat(arr.map(function(o){return h('option',{value:o[0],text:o[1]});})));
+            sel.value=t[key]||'';
+            sel.addEventListener('change',function(){setTag(t,key,sel.value);});
+            return sel;
+          }
+          kids.push(h('div',{style:'display:flex;gap:8px;padding:0 20px 10px'},[mk('How long',DURS,'dur'),mk('Needs at least',DEVS,'dev')]));
+        }
+        return h('div',{style:'border-bottom:1px solid var(--line)'},kids);
+      }
+      inner.push(h('div',{class:'sep'}));
+      inner.push(h('h2',{text:fit.length?fit.length+(fit.length===1?' task fits':' tasks fit'):'Nothing tagged fits yet'}));
+      if(!fit.length)inner.push(h('p',{class:'note',text:untagged.length?'Tag a few tasks below and they will show up here.':'Tag tasks with how long they take and what they need, from the edit screen of any task.'}));
+      fit.forEach(function(r){inner.push(slotRow(r,false));});
+      if(untagged.length){
+        inner.push(h('h2',{style:'color:var(--muted);font-size:15px',text:'Not tagged yet ('+untagged.length+')'}));
+        untagged.slice(0,6).forEach(function(r){inner.push(slotRow(r,true));});
+        if(untagged.length>6)inner.push(h('p',{class:'note',text:'And '+(untagged.length-6)+' more. Tag these and the rest will appear.'}));
+      }
+    }
+    inner.push(h('div',{class:'field',style:'padding-top:12px'},[h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Close'])])]));
   }else if(s.type==='quick'){
     var qi=h('textarea',{rows:'1',id:'quickin','aria-label':'New task',class:'tt',placeholder:'Add a task to Master tasks',autocapitalize:'sentences',style:'width:100%;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:14px;resize:none;overflow:hidden;line-height:1.3',
       oninput:function(e){e.target.value=e.target.value.replace(/\n/g,' ');grow(e.target);},
@@ -2377,6 +2449,8 @@ function sheetEl(){
       if(nowBig!==wasBig)setSize(t,nowBig);
       if(openParts===true)ui.partsOpen[t.id]=true;
       t.text=v;t.activityId=sel.value||null;t.updated=iso();
+      if(durSel.value)t.dur=durSel.value;else delete t.dur;
+      if(devSel.value)t.dev=devSel.value;else delete t.dev;
       if(psel){var pv=psel.value,po=task(pv);if(pv&&po&&!isChild(po)){t.parent=pv;t.activityId=po.activityId||null;}else if(!pv)delete t.parent;}
       if(asel2&&asel2.value){var ax=task(asel2.value);if(ax){attachTo(ax,t);ui.partsOpen[t.id]=true;}}
       if(t.activityId&&!shownCb.checked)t.nm=true;else delete t.nm;
@@ -2388,6 +2462,10 @@ function sheetEl(){
     var wasBig=isBig(t),nowBig=wasBig;
     var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
     var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big']);
+    var durSel=h('select',{'aria-label':'How long it takes'},[h('option',{value:'',text:'Not set'})].concat(DURS.map(function(o){return h('option',{value:o[0],text:o[1]});})));
+    durSel.value=t.dur||'';
+    var devSel=h('select',{'aria-label':'Needs at least'},[h('option',{value:'',text:'Not set'})].concat(DEVS.map(function(o){return h('option',{value:o[0],text:o[1]});})));
+    devSel.value=t.dev||'';
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
     var hasKids=childrenOf(t).length>0;
     var psel=null,asel2=null;
@@ -2403,7 +2481,7 @@ function sheetEl(){
       }
     }
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
+    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),h('label',null,['How long it takes',durSel]),h('label',null,['Needs at least',devSel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,addP,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){

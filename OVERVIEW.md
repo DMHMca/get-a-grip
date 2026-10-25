@@ -54,9 +54,9 @@ It is a web app that installs on a phone like any other app. There is no server 
 
 **Sync.** Optional. Keeps the same data on several devices through a hidden file in your own Google Drive. An advanced option keeps one Google Tasks list in step with Master tasks, for people who also use Google Tasks elsewhere.
 
-## Picking something for a spare slot (proposed, not built)
+## Picking something for a spare slot
 
-Sometimes the day plan is not the question. You simply have half an hour and a phone and want something useful to do. The idea: each task can optionally carry two tags, roughly how long it takes and the least equipment it needs (phone, tablet or laptop). A button on Today, "I've got a slot", asks how long you have and what you have with you, and shows only the tasks that fit, with a one-tap way to add one to your day. Untagged tasks would be listed separately and could be tagged on the spot. This is a filter, not a schedule, and it needs the owner's go-ahead because it relaxes the earlier rule of "no time estimates".
+Sometimes the day plan is not the question. You simply have half an hour and a phone and want something useful to do. Every task can optionally carry two tags, set from its edit screen: roughly how long it takes (15 minutes or less, about 30 minutes, about an hour, two hours or more) and the least equipment it needs (phone, tablet, laptop or PC). On Today, the "Slot" button asks how long you have got and what you have with you, then lists only the tasks that fit. A task fits if it takes no longer than your slot and needs no more than what you have, so a phone task fits anywhere and a laptop task only fits a laptop. Tasks missing either tag are listed separately as "Not tagged yet", with two small dropdowns so you can tag them on the spot and watch them join the list. One tap adds a task to your day. Only the next step of each big task is offered, as in Master tasks. This is a filter, not a schedule: nothing is ever assigned a time.
 
 ## What exists today
 
@@ -73,7 +73,7 @@ Sometimes the day plan is not the question. You simply have half an hour and a p
 | Master tasks fed one subtask at a time | No | Yes |
 | Today page: Automatic, Custom, blocks and list, Tomorrow | No | Yes |
 | Finish the day, notes, Past days | No | Yes |
-| "I've got a slot" | No | Not yet |
+| "I've got a slot" (time and equipment tags, Slot button) | No | Yes |
 
 The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it.
 
