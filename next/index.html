@@ -848,7 +848,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n24';
+var APP_VERSION='n25';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2517,7 +2517,7 @@ function sheetEl(){
         return h('div',{style:'display:flex;align-items:center;gap:8px;min-height:36px;font-size:15px'+(c.done?';color:var(--muted);text-decoration:line-through':'')},[h('span',{text:c.done?'✓':'•',style:'width:18px;text-align:center;color:var(--accent);font-weight:700'}),h('span',{text:c.text,style:'overflow-wrap:anywhere'})]);}))):null;
     var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,(linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null,subList]);
     var tagNow=tagText(t);
-    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[isBig(t)?'Thinking':'Details']);
+    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[(isBig(t)?'Thinking':'Details')+(((t.notes&&t.notes.trim())||subNow.length)?' •':'')]);
     var bT=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='t'?'':'t');}},['Time and equipment']);
     var panel=h('div',{style:'border:1.5px solid var(--border);border-radius:12px;padding:12px',hidden:true},[panelD,panelT]);
     var shown='';
@@ -2527,9 +2527,9 @@ function sheetEl(){
       bD.setAttribute('aria-pressed',w==='d'?'true':'false');bT.setAttribute('aria-pressed',w==='t'?'true':'false');
       if(w==='d')setTimeout(function(){grow(nt);},0);
     }
-    if((t.notes&&t.notes.trim())||subNow.length)showPanel('d');
+    showPanel('t');
     inner.push(h('div',{class:'field'},[h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),
-      h('div',{class:'seg',role:'group','aria-label':'Panels'},[bD,bT]),panel,
+      h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
