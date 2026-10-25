@@ -298,13 +298,21 @@ function partsDone(t){return childrenOf(t).filter(function(p){return p.done;}).l
 function isChild(t){return !!(t&&t.parent&&task(t.parent));}
 function topLevel(t){return !isChild(t);}
 function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&!x.done&&!isChild(x)&&!childrenOf(x).length;});}
+/* subtasks sit in the order they were added: the newest goes at the bottom of the group, and can be dragged elsewhere */
+function placeLast(child,parent){
+  S.tasks=S.tasks.filter(function(x){return x!==child;});
+  var at=S.tasks.findIndex(function(x){return x.id===parent.id;});
+  S.tasks.forEach(function(x,i){if(x.parent===parent.id&&i>at)at=i;});
+  S.tasks.splice(at+1,0,child);
+}
 function attachTo(child,parent){
   child.parent=parent.id;child.activityId=parent.activityId||null;child.updated=iso();
+  placeLast(child,parent);
 }
 function addSub(parentId,text){
   var t=task(parentId);text=(text||'').trim();if(!t||!text)return null;
   var n={id:uid(),text:text,activityId:t.activityId||null,created:iso(),done:null,updated:iso(),parent:t.id};
-  S.tasks.unshift(n);t.updated=iso();return n;
+  S.tasks.push(n);placeLast(n,t);t.updated=iso();return n;
 }
 /* older preview data kept parts inside the task; turn them into ordinary subtasks (same ids, so every device agrees) */
 function migrateParts(){
@@ -399,8 +407,8 @@ function itemFromValue(v,kind){
 }
 function choiceSelect(label,ch,extra){
   var sel=h('select',{class:'sel','aria-label':label},[h('option',{value:'',text:extra||'Choose…'})]);
-  if(ch.jobs.length){var g=h('optgroup',{label:'Small jobs'});ch.jobs.forEach(function(o){g.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g);}
-  if(ch.parts.length){var g2=h('optgroup',{label:'Subtasks of small jobs'});ch.parts.forEach(function(o){g2.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g2);}
+  if(ch.jobs.length){var g=h('optgroup',{label:'Small'});ch.jobs.forEach(function(o){g.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g);}
+  if(ch.parts.length){var g2=h('optgroup',{label:'Subtasks of small tasks'});ch.parts.forEach(function(o){g2.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g2);}
   return sel;
 }
 
@@ -559,7 +567,7 @@ function taskRow(t,showAct){
   var big=isBig(t),ps=childrenOf(t),pOpen=!!ui.partsOpen[t.id],child=isChild(t);
   var kids=[
     h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
-    h('button',{class:'rowtext','aria-label':(big?'Big job. ':'')+'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
+    h('button',{class:'rowtext','aria-label':(big?'Big. ':'')+'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
       h('span',{class:'rtl'},[house(big),h('span',{text:t.text})]),sub]),
     hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
       onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
@@ -568,7 +576,7 @@ function taskRow(t,showAct){
       [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]),
     isOpen?h('div',{class:'details'},richText(t.notes)):null
   ];
-  /* subtasks: folded behind a count; a big job always offers them, a small job only once it has some (or "Add subtasks" was chosen) */
+  /* subtasks: folded behind a count; a big task always offers them, a small one only once it has some (or "Add subtasks" was chosen) */
   if(!child&&(ps.length||big||pOpen)){
     var label=ps.length?[h('b',{text:partsDone(t)+' of '+ps.length}),' subtasks done']:(big?['Add the first subtask']:['Subtasks']);
     kids.push(h('button',{class:'partsbar','aria-expanded':pOpen?'true':'false','aria-label':(pOpen?'Hide subtasks: ':'Show subtasks: ')+t.text,
@@ -626,7 +634,7 @@ function viewMaster(){
   var lk=[];
   if(bigs.length){
     lk.push(h('button',{class:'bigtoggle','aria-expanded':ui.bigOpen?'true':'false',onclick:function(){ui.bigOpen=!ui.bigOpen;render();}},[
-      house(true),h('span',{class:'l',text:'Big jobs ('+bigs.length+')'}),svg(ui.bigOpen?ICON.chevup:ICON.down,20)]));
+      house(true),h('span',{class:'l',text:'Big ('+bigs.length+')'}),svg(ui.bigOpen?ICON.chevup:ICON.down,20)]));
     if(ui.bigOpen)lk.push(h('div',{class:'biglist'},bigs.map(function(t){return taskRow(t,true);})));
   }
   if(smalls.length)lk.push(h('div',{class:'smalllist'},smalls.map(function(t){return taskRow(t,true);})));
@@ -724,7 +732,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n2';
+var APP_VERSION='n3';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1781,10 +1789,10 @@ function startView(key){
     h('div',{class:'two',style:'margin-top:10px'},[
       h('button',{class:'btn primary',onclick:function(){
         var items=autoItems();
-        if(!items.length){alert('There is nothing to suggest yet. Add a few tasks first, or mark a job as big and give it parts.');return;}
+        if(!items.length){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
         newPlan(key,'auto',items);commit();}},['Automatic']),
       h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',littles:[]};render();}},['Custom'])]),
-    h('p',{text:'Automatic builds a standard day: the next subtask of the big job you touched most recently, and up to five little jobs from the top of your list. Custom lets you choose.'})]);
+    h('p',{text:'Automatic builds a standard day: the next subtask of the big task you touched most recently, and up to five small ones from the top of your list. Custom lets you choose.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
@@ -1795,19 +1803,19 @@ function customView(key){
   function maxLittles(){return c.kind==='light'?2:5;}
   if(c.step===1){
     box.appendChild(h('h3',{text:'What sort of day is it?'}));
-    [['both','A big piece and some little jobs','One subtask of a big job, plus up to five little ones'],
-     ['little','Little jobs only','Up to five little jobs'],
-     ['light','A light day','Up to two little jobs']].forEach(function(o){
+    [['both','A big piece and some small ones','One subtask of a big task, plus up to five small ones'],
+     ['little','Small ones only','Up to five small ones'],
+     ['light','A light day','Up to two small ones']].forEach(function(o){
       box.appendChild(h('button',{class:'choice',onclick:function(){c.kind=o[0];c.littles=c.littles.slice(0,o[0]==='light'?2:5);next(o[0]==='both'?2:3);}},[h('span',null,[o[1],h('small',{text:o[2]})])]));
     });
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[cancelBtn()]));
   }else if(c.step===2){
     var bigs=S.tasks.filter(function(t){return !t.done&&isBig(t);});
-    box.appendChild(h('h3',{text:'Which big job, and which subtask?'}));
+    box.appendChild(h('h3',{text:'Which big task, and which subtask?'}));
     if(!bigs.length){
-      box.appendChild(h('p',{text:'You have no big jobs yet. Open any job and choose “Big job” to make one. You can carry on without a big piece.'}));
+      box.appendChild(h('p',{text:'You have no big tasks yet. Open any task and choose “Big” to make one. You can carry on without a big piece.'}));
     }else{
-      var bs=h('select',{class:'sel','aria-label':'Big job'},[h('option',{value:'',text:'Choose a big job…'})].concat(bigs.map(function(t){return h('option',{value:t.id,text:t.text});})));
+      var bs=h('select',{class:'sel','aria-label':'Big task'},[h('option',{value:'',text:'Choose a big task…'})].concat(bigs.map(function(t){return h('option',{value:t.id,text:t.text});})));
       bs.value=c.bigId;
       bs.addEventListener('change',function(e){c.bigId=e.target.value;c.partId='';c.newPart='';render();});
       box.appendChild(bs);
@@ -1815,7 +1823,7 @@ function customView(key){
       if(bt){
         var undone=partsOf(bt).filter(function(p){return !p.done;});
         if(undone.length){
-          var ps=h('select',{class:'sel','aria-label':'Subtask of the big job'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__new',text:'A new subtask…'})]));
+          var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__new',text:'A new subtask…'})]));
           ps.value=c.partId;
           ps.addEventListener('change',function(e){c.partId=e.target.value;render();});
           box.appendChild(ps);
@@ -1837,7 +1845,7 @@ function customView(key){
         }
         next(3);}},['Next'])]));
   }else if(c.step===3){
-    box.appendChild(h('h3',{text:'Little jobs'}));
+    box.appendChild(h('h3',{text:'Small ones'}));
     box.appendChild(h('p',{text:c.littles.length+' of '+maxLittles()+' chosen.'}));
     c.littles.forEach(function(v){
       var it=itemFromValue(v,'little');if(!it)return;
@@ -1846,7 +1854,7 @@ function customView(key){
         h('button',{class:'chg','aria-label':'Take out: '+it.text,onclick:function(){c.littles=c.littles.filter(function(x){return x!==v;});render();}},['Take out'])]));
     });
     if(c.littles.length<maxLittles()){
-      var ch=littleChoices(null,c),sel=choiceSelect('Add a little job',ch,'Add a little job…');
+      var ch=littleChoices(null,c),sel=choiceSelect('Add a small one',ch,'Add a small one…');
       sel.addEventListener('change',function(e){if(e.target.value){c.littles.push(e.target.value);render();}});
       box.appendChild(sel);
       box.appendChild(h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',onclick:function(){
@@ -1887,9 +1895,9 @@ function planView(pl){
   if(big.length)big.forEach(function(x){L.appendChild(itemRow(pl,x,true));});
   else L.appendChild(h('div',{class:'empty',style:'padding:8px 20px'},['No big piece today. ',
     h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])]));
-  R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Little jobs ('+lit.length+' of 5)'})]));
+  R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+lit.length+' of 5)'})]));
   lit.forEach(function(x){R.appendChild(itemRow(pl,x,true));});
-  if(lit.length<5)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a little job'})])]));
+  if(lit.length<5)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
   var out=h('div',null,[
     h('div',{class:'prog',role:'status',text:pl.items.length?doneN+' of '+pl.items.length+' done':'Nothing planned'}),
     h('div',{class:'daygrid'},[L,R]),
@@ -2020,14 +2028,14 @@ function sheetEl(){
     }else{
       var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
       inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
-      var qcb=null,bigcb=h('input',{type:'checkbox','aria-label':'Make these big jobs'});
+      var qcb=null,bigcb=h('input',{type:'checkbox','aria-label':'Make these big'});
       if(ba){
         var qv=false;try{qv=localStorage.getItem('next.gag.bulkQuiet')==='1';}catch(e){}
         qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of Master tasks'});
       }
       inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),
         qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of Master tasks'})]):null,
-        h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[bigcb,h('span',{text:'Make these big jobs'})]),
+        h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[bigcb,h('span',{text:'Make these big'})]),
         h('div',{class:'btns'},[
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:function(){
@@ -2042,7 +2050,7 @@ function sheetEl(){
     var sw=ui.swap||{},spl=plans().find(function(x){return x.id===sw.pid;});
     if(!spl)return null;
     var kind=sw.item?sw.item.k:sw.kind,isBg=kind==='big';
-    inner.push(h('h2',{text:sw.item?(isBg?'Change the big piece':'Change this little job'):(isBg?'Add a big piece':'Add a little job')}));
+    inner.push(h('h2',{text:sw.item?(isBg?'Change the big piece':'Change this small one'):(isBg?'Add a big piece':'Add a small one')}));
     var chosen=null;
     var fld=[];
     var sel2,sel3=null;
@@ -2054,7 +2062,7 @@ function sheetEl(){
     }
     if(isBg){
       var bgs=S.tasks.filter(function(t){return !t.done&&isBig(t);});
-      sel2=h('select',{class:'sel','aria-label':'Big job'},[h('option',{value:'',text:'Choose a big job…'})].concat(bgs.map(function(t){return h('option',{value:t.id,text:t.text});})));
+      sel2=h('select',{class:'sel','aria-label':'Big task'},[h('option',{value:'',text:'Choose a big task…'})].concat(bgs.map(function(t){return h('option',{value:t.id,text:t.text});})));
       var holder=h('div',null);
       sel2.addEventListener('change',function(){
         holder.replaceChildren();sel3=null;
@@ -2075,7 +2083,7 @@ function sheetEl(){
       };
     }else{
       var chs=littleChoices(spl,null);
-      sel2=choiceSelect('Little job',chs);
+      sel2=choiceSelect('Small one',chs);
       fld=[sel2];
       var use=function(){if(sel2.value)replaceWith(itemFromValue(sel2.value,'little'));};
     }
@@ -2163,8 +2171,8 @@ function sheetEl(){
       ui.sheet=null;commit();
     }
     var wasBig=isBig(t),nowBig=wasBig;
-    var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small job']);
-    var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big job']);
+    var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
+    var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big']);
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
     var hasKids=childrenOf(t).length>0;
     var psel=null,asel2=null;
@@ -2180,7 +2188,7 @@ function sheetEl(){
       }
     }
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size of job'},[bSmall,bBig]),h('label',null,['Activity',sel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
+    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,addP,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
