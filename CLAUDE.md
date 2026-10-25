@@ -123,6 +123,32 @@ Activities page, "Sync", section "Google Tasks list" (`viewSync`, engine in the 
 - Not done yet: sending drag-reordering to Google (only new tasks go to the top; order from Google is not applied to existing tasks).
 - Syncs never redraw over a text box or an open sheet (`softRender`, `patchAround`); keep that rule.
 
+## Planned feature: a "Today" page, big and small jobs, and parts (DESIGN AGREED IN DISCUSSION, NOT BUILT)
+
+The owner asked for this to be recorded. Nothing below exists yet. Do not build it without the owner saying so; they want to discuss first and may refine it. Speech-to-text mangles what the owner says (they have been misread before), so check anything odd.
+
+**Why, and the owner's way of working.** The owner is retired and structures their own time. They have no deadlines apart from the odd government one (for example the UK tax return). Times, schedules and project-management habits have never worked for them, even in a senior executive job. They want to handle things in the most efficient way as the day goes. A huge, growing list of unachieved items is demoralising, so the app must not show a pile of "missed" things. No due dates and no priorities, confirmed again by the owner (rule 7 stands; a deadline can simply be written into the job text or details). The planner is a MENU FOR THE DAY, not a timetable: items are a pool, not a sequence, nothing is overdue or late, and nothing is scheduled by time. Your own list order already expresses priority, so no priority labels.
+
+**Big and small jobs.** The owner marks each job big or small (default small; only a few are big). Big jobs run over days, weeks or months (remediating both websites, the Uzbekistan trip notes, the UK tax form); small jobs take about an hour or less. An optional rough number of days for a big job was mentioned, but "3 of 7 parts done" shows progress better and the estimate may be left out.
+
+**Parts (sub-items).** Any job can have optional parts, folded away by default like details (nothing shown for a job that has none; no empty boxes). The purpose is partly psychological: eating the elephant in small bites so a big job is startable today. One level of parts is assumed; parts within parts have NOT been confirmed. Parts must NOT appear individually in Master tasks (that flooded it before). Master tasks could group big jobs in their own folded section. This relaxes the original "no nesting" and rule 1 (flat lists); say so in rule 1 when it is built.
+
+**The Today page.** One plan at a time, never more than a day ahead. When made, it is for today or tomorrow; a tomorrow plan becomes today at midnight. It STARTS BLANK every day with two buttons at the top, Automatic and Custom. Nothing is carried over; yesterday's plan goes into the history.
+- Automatic asks nothing: it builds a standard day of one part of a big job (the big job touched most recently, with its next undone part) plus up to five little jobs (nearest the top of the owner's own ordering). The big piece has a "Take it out" button for days with no room for it. It could later adapt to how many little jobs the owner typically manages.
+- Custom is a short conversation: (1) What sort of day is it? Big piece plus little jobs / little jobs only / a light day. (2) If a big piece: pick the big job from a dropdown, then a part, or if it has none, ask "What's today's piece?" and create that part from the answer. (3) Little jobs: pick up to five from a dropdown, or "fill the rest for me". (4) Review and start.
+- After either, any item can be swapped with the same dropdowns. Big side: parts of big jobs. Little side: small jobs and parts of small jobs; each counts as one of the five. Cap of five little jobs ("five is a terrific day").
+- Items are labelled with their parent ("Samarkand notes, part of Uzbekistan trip notes"). Ticking an item ticks the real task or part. Progress is shown plainly ("4 of 6").
+- On a phone the big piece sits above the little jobs; side by side on the laptop. No drag-and-drop mosaic, no tile sizes, no time estimates, no waiting parts, no contexts (at desk, out and about).
+- Suggestions are simple rules, not AI: the app has no server, so it cannot call Claude.
+
+**History.** A folded "Past days" section on the same page, so only one new page exists. What was achieved is worked out from the ticks' existing time stamps and the saved plan, with no logging effort. Closing the day is one tap, or happens automatically. An optional note for the day replaces "what went wrong", with tap choices that run both ways ("took longer", "waiting on someone", "had a good day out") and perhaps a free-text line. Neutral wording: no streaks, scores or red; never scold. STILL OPEN: should the record count only what was planned, or also anything else ticked that day? And tap choices versus free text for the note.
+
+**Where it lives.** Name it "Today". Proposal (awaiting the owner's answer): make it the page the app opens on, with Master tasks as the backlog, and replace the fourth bottom button (last-used activity, which duplicates the top-bar activity tab) with it, because the bottom bar is crowded.
+
+**Suggested build order, each stage useful alone:** (1) big/small marker and parts, with Master tidied; (2) the Today page with manual picking; (3) Automatic suggestions; (4) the history.
+
+**Technical notes for when it is built.** Store parts, plans and day records as separate records with ids and `updated` stamps so the Drive merge handles them (a plan or day record: later `updated` wins; day records keyed by date). Keep parts out of the Google Tasks list (it mirrors Master tasks). Extend `toDoc`/`mergeDocs` and the backup format compatibly; old backups must still load. Update README.md and rule 1, rule 2 and the data notes when built.
+
 ## Smaller open items
 
 - Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
