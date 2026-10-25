@@ -202,6 +202,8 @@ The owner approved building all of this ("get right on with the whole redesign")
 
 ## Working agreements
 
+- **Confirm understanding before building (owner's rule, set after two wrong builds).** The owner often thinks aloud and dictates by speech-to-text, which mangles words. When they are discussing, or an instruction could be read more than one way, FIRST restate in one or two plain sentences what you understand they want and what you would change, and WAIT for a yes before writing code. When an instruction is clear and explicit ("build X", "yes, do it"), just do it. If the wording looks garbled, quote back what you think they meant. Never remove or rename something they have not clearly asked to remove (they lost the Master list this way).
+
 - Keep it a single static site. No frameworks or build tooling unless there is a strong reason and the owner agrees.
 - Make small, safe commits with plain-English messages. Push to `main` so GitHub Pages republishes.
 - After pushing, tell the owner how to see the update: wait for the green tick under the repository's Actions tab, then close and reopen the installed app once or twice.
