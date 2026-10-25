@@ -1,64 +1,84 @@
 # Get a grip: an overview
 
-This is the plain-English map of the app: what it is for, the ideas behind it, how the parts fit together, and what exists today. It is meant to be read by its owner when the number of moving parts gets hard to hold in one head, and as the start of the documentation for anyone else who picks the app up. It changes as the app does. See "Keeping this up to date" at the end.
+This is the plain-English map of the app: the idea at its heart, how the parts fit around it, and what exists today. It is meant to be read by its owner when the number of moving parts gets hard to hold in one head, and as the start of the documentation for anyone else who picks the app up. It changes as the app does. See "Keeping this up to date" at the end.
 
 For the technical detail (files, data format, sync internals) see `CLAUDE.md`. For setting up your own copy see `README.md`.
 
-## What it is
+## The idea at the heart of it
 
-Get a grip is a to-do list for people who plan their own time and find diaries, deadlines and project-management tools more of a burden than a help. It has no due dates and no priorities, ever. Instead it helps you decide, as the day goes, what is worth doing now, and it never shows you a growing pile of things you failed to do.
+**Every day, make progress on one big task, and fit in as many small tasks as you can.**
 
-It is a web app that installs on a phone like any other app. There is no server and no account with us. Your tasks live on your own device, and if you want them on more than one device they travel through your own Google Drive.
+Big tasks are the things that actually move you forward. They are the pieces of work you can look back on at the end of the year and say, "I really achieved that": the tax return, the website overhaul, the trip notes. Small tasks are what keeps life going, and you need a mixture of both. A day of only small tasks leaves nothing to show for the year. A day of only big work lets everything else slide.
 
-## The ideas behind it
+So the heart of the app is a daily mix. When you get up, the app builds a menu for the day: one bite of a big task, with as many small tasks around it as you can reasonably fit. It can build that menu for you (Automatic) or you can build it yourself (Custom), and you can rejig it all day.
 
-**Freeform, not scheduled.** Nothing in the app belongs to a time of day. You never say "do this at 11:45". A day plan is a menu of what you might do today, not a timetable. Nothing is overdue or late.
+The second idea is the **Slot**. Whenever you find yourself with fifteen minutes to spare and only a phone in your hand, the app finds the most useful and effective thing you could do with that time and that equipment.
 
-**One list order is your priority.** Where a task sits in your list is the only statement of importance. There are no priority labels.
+Everything else in the app is built around those two ideas.
 
-**No pile of failure.** What you did not get to simply stays where it was. The record of past days shows what you did, in neutral words, with no scores, streaks or red.
+## Why there are no dates, times or deadlines
 
-**Small bites make big things startable.** A big piece of work becomes a series of small subtasks, so that today you do one bite, not the whole elephant.
+Nobody ever manages to get every task they assign themselves done on the date it was supposed to be done. What you end up with is a mass of missed dates, and a list that makes you feel you have failed before the day has started.
 
-**Your data is yours.** Everything is stored on your device. Syncing, if you want it, uses your own Google account and a hidden file only this app can read. Nobody running the app can see your tasks.
+So the app removes dates, schedules, project deadlines and project-management methods altogether. Instead, each day you build a menu of tasks that fit the time you actually have. Nothing is overdue. Nothing is late. What you did not get to simply stays where it was. A real deadline, such as the UK tax return, can be written into the task's text or details, but the app never nags you about it.
+
+Where a task sits in your own list is the only statement of importance, so there are no priority labels either.
+
+## The other principles
+
+**No pile of failure.** The record of past days shows what you did, in neutral words, with no scores, streaks or red.
+
+**Small bites make big things startable.** A big task becomes a series of subtasks, so today you do one bite, not the whole elephant.
+
+**Your data is yours.** Everything is stored on your device. Syncing, if you want it, uses your own Google account and a hidden file only this app can read. Nobody running the app can see your tasks. It is a web app that installs on a phone like any other app, with no server and no account with us.
 
 **Colour-blind safe.** No red and no green anywhere. Blue and amber carry meaning, and nothing relies on colour alone.
 
 ## The building blocks
 
-**Activities** are broad areas of work or life that never finish: Finance, AI SEO, Health, Travel. You do not tick off an activity. You archive it when it goes dormant. Activities are a flat list, with no activities inside activities.
+**Big tasks** are bounded pieces of work that you can finish but that take days or weeks. A big task is marked with a large blue house, and you put your big tasks in your own order by dragging. The data stores the word "big", never the icon.
 
-**Tasks** are the things you do. Every task can belong to one activity or to none. A task can be ticked, edited, moved and reordered by dragging. New tasks go at the top. A task can carry optional details (a web address, a phone number, anything useful), which are shown only when you ask.
+**Small tasks** are the default: usually an hour or less, marked with a small amber house. You put them in your own order too.
 
-**Small tasks** are the default: usually an hour or less.
+**Subtasks** are ordinary tasks that sit under another task, one level deep. Big tasks nearly always have them, because a big task is made startable by its subtasks. You add a subtask exactly as you add any task, you can attach an existing task from a dropdown, and you can drag subtasks into the order you want to do them. New subtasks go at the bottom.
 
-**Big tasks** are bounded pieces of work that you can finish but that take days or weeks: the UK tax return, remediating two websites, the Uzbekistan trip notes. A big task is marked with a large blue house, and a small task with a small amber house. The data stores the words "big" or "small", never the icon.
+**Thinking** is a roomy writing box on every big task, for working out what its parts might be. Write loosely, then use "Turn lines into subtasks" to turn the lines you choose into real subtasks. That option works on any task, big or small: write a list in a task's details, then turn it into subtasks in one tap.
 
-**Subtasks** are ordinary tasks that sit under another task, one level deep. Any task can have them, but big tasks nearly always do. You add a subtask exactly as you add any task, you can attach an existing task to a big task from a dropdown, and you can drag subtasks into the order you want to do them. Newly added subtasks go at the bottom.
+**Tags** are two optional labels on any task: roughly how long it takes (15 minutes, 30 minutes or 1 hour) and the least equipment it needs (phone, tablet or laptop). They exist for the Slot finder. They are never shown on ordinary rows.
 
-**Turn lines into subtasks** works on any task: write a list in a task's details, then tap "Turn lines of the details into subtasks" in its edit screen (or from a big task's card).
+**Activities** are broad areas of work or life that never finish: Finance, AI SEO, Health, Travel. You do not tick off an activity, you archive it when it goes dormant. Activities are a flat list, with no activities inside activities. A task can belong to one activity or to none.
 
-**Thinking** is a roomy writing box on every big task, for working out what its parts might be. You can write loosely, and later tap "Turn lines into subtasks" to turn the lines you choose into real subtasks.
+**Details** are optional free text on any task (a web address, a phone number, anything useful). Web addresses become links and phone numbers become tap-to-call.
 
 ## The pages
 
-**Today.** The heart of the app. Each day starts blank, with two buttons: Automatic and Custom. Automatic builds a standard day for you: the first big task in your own order (you sort the big tasks by dragging, on the Big page) with its subtasks, plus the first six small tiles from the top of your Small list. Custom asks a few questions (what sort of day is it, which big piece, which small ones) and builds the day from your answers. Automatic puts the first big task in your Big list in the big block with up to three of its remaining subtasks, then takes the first six small tiles from the top of your Small list (a small task with subtasks is represented by its subtasks). The plan is shown as a block for the big piece, with the big task as its heading and today's subtasks inside, and a grid of small tiles for the small ones. Tap anything to open the original task and change it. Any item can be swapped, taken out or added to at any time, so the day is something you keep rejigging, not a contract. "Finish" adds an optional note, "Redo" clears the plan so you can start again, "Slot" finds something for a spare gap, and "Past days" keeps a quiet record of what was done. Planning is for today only.
+**Today.** Where the idea lives. Each day starts blank, with two buttons: Automatic and Custom.
 
-**Small.** Your small tasks, in the order you choose by dragging. Most are single items. A bigger small task can have subtasks: it is one row that opens to show them all, and you tick the parent off yourself. Big tasks and their subtasks never appear here, they live on the Big page. Tasks can be kept out of the Small and Master lists when you do not want them in the way.
+Automatic builds the standard day for you. It takes the first big task in your own order and puts up to three of its remaining subtasks in a big block. It then takes the first six small tiles from the top of your Small list. A small task with subtasks is represented by its subtasks, each tile headed by the parent's name.
 
-**Master.** A reference list of everything you could do next (the day is built from Big and Small, not from here): the small tasks that have no subtasks, plus the next unfinished subtask of every parent task, big or small, each with a clear "Part of:" tag naming its parent. A parent task is never listed itself. It sits to the right of Small in the bottom bar, and is only a reference. Automatic and the "I've got a slot" finder both work from your sorted Big and Small lists.
+Custom asks a few questions (what sort of day it is, which big piece, which small ones) and builds the day from your answers.
 
-**Activities.** Your list of broad areas, in the order you choose. Open an activity to see all its tasks, big and small, with subtasks tucked under their parents.
+The plan is shown as a block for the big piece, with the big task as its heading and today's subtasks inside, and a grid of small tiles for the small ones. Tap anything to open the original task and change it. Any item can be swapped, taken out or added to at any time, so the day is something you keep rejigging, not a contract. "Finish" adds an optional note, "Redo" clears the plan so you can start again, "Slot" finds something for a spare gap, and "Past days" keeps a quiet record of what was done. Planning is for today only.
 
-**Archive** (from the three-dot menu). Activities you have put away, searchable by name, date and the text of the tasks inside them. Restore brings one back.
+**Big.** Your big tasks as cards, in your own order. Each card opens to show its Thinking box and its subtasks, with a progress bar once there is more than one subtask. The first big task in this list is the one Automatic chooses.
+
+**Small.** Your small tasks, in the order you choose by dragging. Most are single items. A bigger small task can have subtasks: it is one row that opens to show them, and you tick the parent off yourself.
+
+**Master.** A reference list of everything you could do next: the small tasks that have no subtasks, plus the next unfinished subtask of every parent task, each with a "Part of:" tag naming its parent. A parent task is never listed itself. The day is built from Big and Small, not from here, so Master is only a place to look.
+
+**Activities.** Your broad areas, in the order you choose. Open an activity to see all its tasks, big and small, with subtasks tucked under their parents.
 
 **The three-dot menu** (top right of every page) is the one home for housekeeping, one line per item: Tag tasks (with a count of what is waiting), Archive, Sync, Download a backup, Restore from backup, Appearance (follow the phone, always light, always dark), Today layout (blocks or list), Copy my live tasks (preview only), Privacy and About this app. The preview's version number is a plain line at the bottom. There is no separate Settings page.
 
-**Sync.** Optional. Keeps the same data on several devices through a hidden file in your own Google Drive. An advanced option keeps one Google Tasks list in step with Master tasks, for people who also use Google Tasks elsewhere.
+**Archive** holds activities you have put away, searchable by name, date and the text of the tasks inside them. Restore brings one back.
 
-## Picking something for a spare slot
+**Sync** is optional. It keeps the same data on several devices through a hidden file in your own Google Drive. In the live app, an advanced option also keeps one Google Tasks list in step with Master tasks, for people who use Google Tasks elsewhere.
 
-Sometimes the day plan is not the question. You simply have half an hour and a phone and want something useful to do. Every task can optionally carry two tags, set from its edit screen: roughly how long it takes (15 minutes, 30 minutes or 1 hour) and the least equipment it needs (phone, tablet, laptop or PC). On Today, the "Slot" button asks how long you have got and what you have with you, then lists only the tasks that fit. A task fits if it takes no longer than your slot and needs no more than what you have, so a phone task fits anywhere and a laptop task only fits a laptop. Tasks missing either tag are listed separately as "Not tagged yet", with two small dropdowns so you can tag them on the spot and watch them join the list. One tap adds a task to your day. It looks through your Small list in your order; a box, "Include big tasks", unticked by default, adds the unfinished subtasks of big tasks after the small ones. This is a filter, not a schedule: nothing is ever assigned a time.
+## The Slot finder in detail
+
+On Today, the "Slot" button asks how long you have and what you have with you, then lists the first three tasks that fit, with a button to show the rest. A task fits if it takes no longer than your slot and needs no more than what you have, so a phone task fits anywhere and a laptop task only fits a laptop. It looks through your Small list in your own order. A box, "Include big tasks", is unticked by default and adds the unfinished subtasks of big tasks after the small ones, because a scrap of time suits small work and big work needs more context.
+
+Tasks missing either tag are listed separately as "Not tagged yet", with two small dropdowns so you can tag them on the spot. "Tag tasks" in the three-dot menu steps through every untagged task in one go. One tap adds a task to your day. The Slot finder is a filter, not a schedule: nothing is ever assigned a time.
 
 ## What exists today
 
@@ -69,25 +89,25 @@ Sometimes the day plan is not the question. You simply have half an hour and a p
 | Sync between devices through Google Drive | Yes | Yes (its own separate file) |
 | Two-way Google Tasks list sync | Yes | No |
 | Backup and restore | Yes | Yes |
-| Three-dot menu (all housekeeping), appearance choice | No | Yes |
 | Big and small tasks, subtasks, attach existing task | No | Yes |
 | Big page, Thinking box, lines into subtasks | No | Yes |
 | Master tasks fed one subtask at a time | No | Yes |
-| Today page: Automatic, Custom, blocks and list, Tomorrow | No | Yes |
+| Today page: Automatic, Custom, blocks and list | No | Yes |
 | Finish the day, notes, Past days | No | Yes |
-| "I've got a slot" (time and equipment tags, Slot button) | No | Yes |
+| Slot finder, time and equipment tags, Tag tasks | No | Yes |
+| Three-dot menu for all housekeeping, appearance choice | No | Yes |
 
-The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it.
+The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it, but only when the owner says so.
 
 ## Is it new?
 
 Honestly, no single feature is. Nested tasks, big and small tasks, day planning, filtering by time or device, and notes on a project all exist in other apps, usually spread across menus, settings, plug-ins or paid tiers, and generally built around due dates, priorities or calendar time-blocking. (This comes from general knowledge, not a survey, so treat the comparison as a fair impression and not a checked claim.)
 
-What is unusual here is the combination and the stance. The app deliberately has no dates, no priorities and no timetable. It treats the day as a small menu that you rebuild whenever you like. It feeds big work in one bite at a time so lists stay short. It records what you did without ever counting what you did not. It gives you a place to think a big task through before it becomes subtasks. And it does all this as a free static web app whose data stays in your own Google account. I do not know of another app that puts those together, but that is a statement of my knowledge, not proof that none exists.
+What is unusual is the idea at the heart of it and the stance that follows. The app is built around a daily mix of one bite of a big task and as many small tasks as fit, made automatically or by hand each morning. It has a Slot finder for the spare quarter of an hour. And it deliberately has no dates, no priorities and no timetable, so there is never a mass of missed dates. It records what you did without ever counting what you did not, and it is a free static web app whose data stays in your own Google account. I do not know of another app that puts those together, but that is a statement of my knowledge, not proof that none exists.
 
 ## For someone picking this up
 
-You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync in the three-dot menu and sign in with Google.
+You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync from the Activities page and sign in with Google.
 
 To run your own copy, fork the repository on GitHub, switch on GitHub Pages for it, and follow `README.md` if you want Google sync under your own Google project. The whole app is a few static files (`index.html`, `sw.js`, a manifest and icons) with no build step.
 

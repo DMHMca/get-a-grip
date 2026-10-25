@@ -218,6 +218,8 @@ The owner approved building all of this ("get right on with the whole redesign")
 
 **Technical notes (partly done in the preview).** Store parts, plans and day records as separate records with ids and `updated` stamps so the Drive merge handles them (a plan or day record: later `updated` wins; day records keyed by date). Keep parts out of the Google Tasks list (it mirrors Master tasks). Extend `toDoc`/`mergeDocs` and the backup format compatibly; old backups must still load. Update README.md and rule 1, rule 2 and the data notes when built.
 
+**THE HEART OF THE APP (owner's own words, restated and confirmed, 2026-10): every day you want to make progress on a BIG task and fit in as many LITTLE tasks as you can. Big tasks are what move you forward and what you can look back on at the end of the year and say "I really achieved that"; little tasks keep life going, and you need a mixture. The innovation is the automatic or manual building, every morning, of a day of as many big and little tasks as fit, plus the SLOT: with 15 spare minutes and a phone, find the most useful and effective thing to do. Everything else is built around that. There are no dates, times, deadlines or project-management methods because nobody completes everything on the date they set, which leaves a mass of missed dates; instead each day is built from tasks that fit the time available. `OVERVIEW.md` is structured around this (idea first, then why no dates, then the building blocks); keep it that way and do not bury it under features.**
+
 ## Smaller open items
 
 - Idea from the owner: a "Utilities" page gathering Google sync, import, backup and restore (and future extras), leaving the Activities page for activities. Not built; do it when there is another utility to add.
