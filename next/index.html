@@ -398,7 +398,7 @@ function addToDay(r){
   var key=todayKey(),pl=planFor(key);
   if(!pl){pl=newPlan(key,'custom',[it]);}
   else{
-    if(kind==='little'&&pl.items.filter(function(x){return x.k!=='big';}).length>=5){alert('Your day already has five small ones. Swap one out first.');return;}
+    if(kind==='little'&&pl.items.filter(function(x){return x.k!=='big';}).length>=6){alert('Your day already has six small ones. Swap one out first.');return;}
     pl.items.push(it);
   }
   ui.planDay='today';ui.view='today';ui.sheet=null;ui.cust=null;touchPlan(pl);
@@ -494,14 +494,14 @@ function bigCandidates(){
   });
 }
 /* Automatic takes the FIRST big task in the owner's own order that still has something to do: its remaining unfinished subtasks (up to three), or the task itself if it has none */
-/* up to n small tasks for a day, from Master. When the next step is a subtask of a SMALL parent, all of that parent's
-   unfinished subtasks come together, in order (each is its own tile, labelled with the parent). Big tasks' subtasks are left to the big block. */
+/* up to n small tiles for a day, taken from the top of the SMALL list in the owner's order. A small task that has unfinished subtasks
+   is represented by ALL of them together, in order (each its own tile, headed by the parent's name); a task with none is one tile. */
 function smallPicks(n,skip){
   var out=[],seen={};
-  masterRows().forEach(function(r){
+  smallRows().forEach(function(r){
     if(out.length>=n)return;
-    if(r.owner!==r.t&&isBig(r.owner))return;
-    var group=(r.owner!==r.t)?childrenOf(r.owner).filter(function(c){return !c.done;}):[r.t];
+    var kids=childrenOf(r.t).filter(function(c){return !c.done;});
+    var group=kids.length?kids:[r.t];
     group.forEach(function(c){
       if(out.length>=n||seen[c.id]||(skip&&skip(c)))return;
       seen[c.id]=1;out.push(c);
@@ -512,11 +512,11 @@ function smallPicks(n,skip){
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
-    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,3);
+    var ps=partsOf(best).filter(function(x){return !x.done;});
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
   }
-  smallPicks(5).forEach(function(c){out.push(mkItem('little',c.id));});
+  smallPicks(6).forEach(function(c){out.push(mkItem('little',c.id));});
   return out.filter(Boolean);
 }
 function littleChoices(pl,cust){
@@ -867,7 +867,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n26';
+var APP_VERSION='n27';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1920,7 +1920,7 @@ function startView(key){
         newPlan(key,'auto',items);commit();}},['Automatic']),
       h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',littles:[]};render();}},['Custom'])]),
     h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
-    h('p',{text:'Automatic builds a standard day: the remaining subtasks (up to three) of your first big task, and up to five small ones from the top of your Small and Master lists. Custom lets you choose. Slot suggests something for a spare gap.'})]);
+    h('p',{text:'Automatic builds a standard day: all the remaining subtasks of your first big task, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
@@ -1928,13 +1928,13 @@ function customView(key){
   var c=ui.cust,box=h('div',{class:'card'});
   function next(n){c.step=n;render();}
   function cancelBtn(){return h('button',{class:'btn',onclick:function(){ui.cust=null;render();}},['Cancel']);}
-  function maxLittles(){return c.kind==='light'?2:5;}
+  function maxLittles(){return c.kind==='light'?2:6;}
   if(c.step===1){
     box.appendChild(h('h3',{text:'What sort of day is it?'}));
-    [['both','A big piece and some small ones','One subtask of a big task, plus up to five small ones'],
-     ['little','Small ones only','Up to five small ones'],
+    [['both','A big piece and some small ones','One subtask of a big task, plus up to six small ones'],
+     ['little','Small ones only','Up to six small ones'],
      ['light','A light day','Up to two small ones']].forEach(function(o){
-      box.appendChild(h('button',{class:'choice',onclick:function(){c.kind=o[0];c.littles=c.littles.slice(0,o[0]==='light'?2:5);next(o[0]==='both'?2:3);}},[h('span',null,[o[1],h('small',{text:o[2]})])]));
+      box.appendChild(h('button',{class:'choice',onclick:function(){c.kind=o[0];c.littles=c.littles.slice(0,o[0]==='light'?2:6);next(o[0]==='both'?2:3);}},[h('span',null,[o[1],h('small',{text:o[2]})])]));
     });
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[cancelBtn()]));
   }else if(c.step===2){
@@ -2070,7 +2070,7 @@ function planBlocks(pl){
       h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,'')]));
     grid.appendChild(tile);
   });
-  if(lit.length<5)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
+  if(lit.length<6)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
   wrap.appendChild(grid);
   return wrap;
 }
@@ -2085,9 +2085,9 @@ function planView(pl){
     if(big.length)big.forEach(function(x){L.appendChild(itemRow(pl,x,true));});
     else L.appendChild(h('div',{class:'empty',style:'padding:8px 20px'},['No big piece today. ',
       h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])]));
-    R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+lit.length+' of 5)'})]));
+    R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+lit.length+' of 6)'})]));
     lit.forEach(function(x){R.appendChild(itemRow(pl,x,true));});
-    if(lit.length<5)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
+    if(lit.length<6)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
     main=h('div',{class:'daygrid'},[L,R]);
   }
   return h('div',null,[
