@@ -1,0 +1,1851 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Get a grip (preview)</title>
+<meta name="description" content="Get a grip: a plain to-do list with activities.">
+<meta name="theme-color" content="#5B3A7A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Grip preview">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F4F2; --surface:#ffffff; --text:#1B1F1D; --muted:#5B625E;
+  --line:#D9DCD8; --border:#BFC5C0; --accent:#5B3A7A; --on-accent:#ffffff;
+  --tint:#ECE5F2; --scrim:rgba(27,31,29,.5); --dot:#B5BBB6; --danger:#8A4B00;
+  --big:#1F5F99; --big-edge:#123E66; --small:#E8A317; --small-edge:#7A5200;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191A; --surface:#1F2527; --text:#E8ECEA; --muted:#A0A8A4;
+    --line:#2F3639; --border:#4A5357; --accent:#C3A5E6; --on-accent:#21102F;
+    --tint:#2E2638; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F0B45A;
+    --big:#7FB6E8; --big-edge:#BFE0FA; --small:#F0B93A; --small-edge:#FFE2A0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191A; --surface:#1F2527; --text:#E8ECEA; --muted:#A0A8A4;
+  --line:#2F3639; --border:#4A5357; --accent:#C3A5E6; --on-accent:#21102F;
+  --tint:#2E2638; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F0B45A;
+  --big:#7FB6E8; --big-edge:#BFE0FA; --small:#F0B93A; --small-edge:#FFE2A0;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:17px;-webkit-text-size-adjust:100%}
+#app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.topbar{display:flex;align-items:center;gap:8px;padding:16px 16px 8px}
+.btn{flex:none;height:44px;padding:0 16px;border-radius:12px;border:1.5px solid var(--border);background:transparent;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.btn.ghost{border-color:var(--accent);color:var(--accent);font-weight:700}
+.btn.danger{border-color:var(--danger);color:var(--danger);font-weight:700}
+.btn.icon{width:44px;padding:0}
+.tab{flex:1;min-width:0;justify-content:space-between;text-align:left;padding:0 10px 0 14px}
+.tab span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title{flex:1;margin:0;font-size:20px;font-weight:700}
+.apphead{flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 8px 0 16px;min-height:52px}
+.apphead + .topbar{padding-top:2px}
+.brand{flex:1;min-width:0;margin:0;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:.02em;color:var(--accent)}
+.menubtn{flex:none;width:48px;height:48px;border:0;background:none;padding:0;color:var(--text);display:flex;align-items:center;justify-content:center;border-radius:12px}
+.addwrap{padding:8px 16px 0}
+.addbox{display:flex;align-items:center;height:56px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:0 6px 0 16px;gap:8px}
+.addbox input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:inherit;font-size:17px;color:var(--text);height:48px}
+.addbox input:focus-visible{outline:0}
+.addbox:focus-within{border-color:var(--accent)}
+.addbox .go{flex:none;width:44px;height:44px;border-radius:10px;border:0;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;padding:0}
+.chip{margin-top:8px;height:40px;padding:0 12px;border-radius:10px;border:1.5px solid var(--border);background:transparent;font-size:15px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;max-width:100%}
+.chip b{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 16px 8px}
+.meta .count{font-size:15px;color:var(--muted)}
+.meta .acts{display:flex;gap:8px}
+.list{flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line);-webkit-overflow-scrolling:touch}
+.row{display:flex;flex-wrap:wrap;align-items:center;min-height:60px;padding:0 4px 0 4px;border-bottom:1px solid var(--line)}
+.tick{flex:none;width:48px;height:48px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
+.rowtext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:8px 0;text-align:left;background:none;border:0;font-size:17px;line-height:1.3;color:var(--text);overflow-wrap:anywhere}
+.rowtext small{font-size:14px;color:var(--muted)}
+.more{flex:none;width:44px;height:48px;border:0;background:none;padding:0;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.more[aria-expanded="true"]{color:var(--accent)}
+.details{flex:0 0 100%;padding:0 52px 12px 48px;font-size:16px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.details a{color:var(--accent);text-decoration:underline}
+.field textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px 14px;resize:vertical}
+.field textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row.done .rowtext{color:var(--muted);text-decoration:line-through}
+.empty{padding:28px 20px;color:var(--muted);line-height:1.45}
+.strip{margin:8px 16px 0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 16px}
+.strip div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.strip small{font-size:14px;color:var(--muted)}
+.strip span{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.nav{flex:none;position:relative;display:flex;border-top:1px solid var(--line);background:var(--surface);margin-top:8px}
+.navscroll{flex:1;min-width:0;display:flex;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.navscroll::-webkit-scrollbar{display:none}
+.navscroll button{flex:1 0 96px;height:64px;border:0;border-top:3px solid transparent;background:transparent;font-size:15px;line-height:1.15;color:var(--muted);padding:0 8px;display:flex;align-items:center;justify-content:center;text-align:center}
+.navscroll button span{min-width:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.navscroll button[aria-current="page"]{color:var(--accent);font-weight:700;border-top-color:var(--accent);background:var(--tint)}
+.navarrow{flex:none;width:40px;height:64px;border:0;border-top:3px solid transparent;background:var(--surface);color:var(--accent);display:flex;align-items:center;justify-content:center;padding:0}
+.navarrow[hidden]{display:none}
+.handle{flex:none;width:44px;height:48px;border:0;background:none;padding:0;color:var(--muted);display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
+.row.dragging,.arow.dragging{position:relative;z-index:5;background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.25);border-radius:12px}
+.arow{display:flex;align-items:center;border-bottom:1px solid var(--line);padding-right:4px}
+.arow .navrow{border-bottom:0;flex:1;min-width:0;width:auto}
+.navrow{display:flex;width:100%;align-items:center;gap:12px;min-height:68px;padding:10px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;font-size:17px}
+.navrow .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.navrow b{font-weight:700;overflow-wrap:anywhere}
+.navrow small{font-size:14px;color:var(--muted)}
+.navrow.static{cursor:default}
+.pad{padding:0 16px 16px}
+.pad .btn{width:100%;height:52px;font-size:17px}
+.sect{margin:0;padding:16px 16px 0;font-size:17px;font-weight:700}
+.adv{border-top:1px solid var(--line);margin-top:12px}
+.adv summary{cursor:pointer;padding:14px 16px;font-size:17px;font-weight:700;min-height:48px}
+.adv summary:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.foot a{color:var(--accent)}
+.pad.two{display:flex;gap:8px}
+.pad.two .btn{flex:1;width:auto;min-width:0;padding:0 8px}
+.sorts{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap}
+.sorts .btn{height:40px;font-size:15px;padding:0 12px}
+.sorts .btn[aria-pressed="true"]{background:var(--tint);border-color:var(--accent);font-weight:700}
+.hit{font-size:14px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.foot{padding:14px 16px;font-size:14px;color:var(--muted);line-height:1.4}
+.foot button{background:none;border:0;padding:0;color:var(--accent);font-size:14px;text-decoration:underline}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:560px;margin:0 auto;background:var(--surface);border-radius:20px 20px 0 0;padding:10px 0 calc(20px + env(safe-area-inset-bottom,0px));max-height:82%;overflow-y:auto}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 8px}
+.sheet h2{margin:0;padding:8px 20px;font-size:17px;font-weight:700}
+.opt{display:flex;width:100%;align-items:center;gap:12px;min-height:56px;padding:0 20px 0 54px;border:0;background:transparent;text-align:left;font-size:17px}
+.opt span.l{flex:1;min-width:0;overflow-wrap:anywhere}
+.opt small{font-size:14px;color:var(--muted)}
+.opt.sel{background:var(--tint);font-weight:700;padding-left:20px}
+.opt.link{padding-left:20px;font-weight:700;color:var(--accent)}
+.sep{margin:6px 20px 0;border-top:1px solid var(--line)}
+.field{padding:8px 20px 0;display:flex;flex-direction:column;gap:12px}
+.field input[type=text],.field select{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:0 14px}
+.field label{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.field .btns{display:flex;gap:8px}
+.field .btns .btn{flex:1;height:48px}
+.txt{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:16px;padding:0 14px}
+.sel{width:100%;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:15px;padding:0 10px;margin-top:6px}
+.note{margin:0;padding:12px 16px;color:var(--muted);line-height:1.45;font-size:15px}
+.err{padding:8px 16px;color:var(--danger);font-size:15px;line-height:1.4}
+.ok{padding:8px 16px;color:var(--accent);font-size:15px;font-weight:700}
+.bar{flex:none;display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.bar .btn{flex:1;min-width:0;height:48px;padding:0 8px;font-size:15px}
+.bar .btn[disabled]{opacity:.45}
+input[type=checkbox]{width:24px;height:24px;accent-color:var(--accent)}
+@media (prefers-reduced-motion: no-preference){
+  .sheet{animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+
+/* ---------- state ---------- */
+var KEY='next.tasks.v1';var LIVEKEY='tasks.v1';
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function iso(){return new Date().toISOString();}
+function seed(){
+  return {v:1,updatedAt:0,activities:[],tasks:[]};
+}
+function loadLocal(){
+  try{var r=localStorage.getItem(KEY);if(r){var s=JSON.parse(r);if(s&&s.activities&&s.tasks)return s;}}catch(e){}
+  return null;
+}
+var S=loadLocal()||seed();
+
+var ui={view:'today',back:[],activityId:null,lastActivityId:null,sheet:null,draft:'',pick:null,lastTicked:null,
+  q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device',open:{},dirty:false,dragging:false};
+
+/* ---------- persistence ---------- */
+function commit(fromSync){
+  S.updatedAt=Date.now();
+  var ok=true;
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){ok=false;}
+  ui.status=ok?'device':'failed';
+  if(fromSync===true){softRender();}else{render();scheduleSync();}
+}
+if(navigator.storage&&navigator.storage.persist){try{navigator.storage.persist();}catch(e){}}
+
+/* ---------- helpers ---------- */
+function act(id){return S.activities.find(function(a){return a.id===id;})||null;}
+function task(id){return S.tasks.find(function(t){return t.id===id;})||null;}
+function live(){return S.activities.filter(function(a){return !a.archived;});}
+function archived(){return S.activities.filter(function(a){return a.archived;});}
+function tasksOf(id){return S.tasks.filter(function(t){return t.activityId===id;});}
+function openCount(id){return tasksOf(id).filter(function(t){return !t.done;}).length;}
+function fmt(d){try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return '';}}
+function summary(a){
+  var ts=tasksOf(a.id),o=ts.filter(function(t){return !t.done;}).length,d=ts.length-o;
+  if(!ts.length)return 'No tasks yet';
+  if(!o)return 'All '+ts.length+' done';
+  return o+' open, '+(d?d+' done':'none done');
+}
+function svg(inner,size,extra){
+  var s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('width',size||22);s.setAttribute('height',size||22);s.setAttribute('viewBox','0 0 24 24');
+  s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2.3');
+  s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');s.setAttribute('aria-hidden','true');
+  s.style.flex='none';
+  s.innerHTML=inner;return s;
+}
+var ICON={
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+  down:'<path d="M6 9l6 6 6-6"/>',
+  right:'<path d="M9 6l6 6-6 6"/>',
+  box:'<path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"/>',
+  list:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  chevup:'<path d="M6 15l6-6 6 6"/>'
+};
+function h(tag,attrs,kids){
+  var e=document.createElement(tag);
+  if(attrs)for(var k in attrs){
+    var v=attrs[k];
+    if(v===null||v===undefined||v===false)continue;
+    if(k==='class')e.className=v;
+    else if(k==='text')e.textContent=v;
+    else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k,v===true?'':v);
+  }
+  (kids||[]).forEach(function(c){if(c)e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function tickIcon(done){
+  var s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('width',26);s.setAttribute('height',26);s.setAttribute('viewBox','0 0 26 26');s.setAttribute('aria-hidden','true');
+  s.innerHTML=done
+    ?'<circle cx="13" cy="13" r="12" fill="var(--accent)"/><path d="M7.5 13.5l4 4 7-8" fill="none" stroke="var(--on-accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    :'<circle cx="13" cy="13" r="11" fill="none" stroke="var(--text)" stroke-width="2"/>';
+  return s;
+}
+
+/* ---------- actions ---------- */
+function addTask(text,activityId){
+  text=(text||'').trim();if(!text)return false;
+  S.tasks.unshift({id:uid(),text:text,activityId:activityId||null,created:iso(),done:null,updated:iso()});
+  commit();return true;
+}
+/* Adds several new tasks at the top, in the order given. Nothing existing is touched; if that cannot be shown, nothing is added. */
+function addMany(text,actId,quiet){
+  if(actId&&!act(actId))return {error:true};
+  var lines=text.split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+  var have={};
+  S.tasks.forEach(function(t){if((t.activityId||null)===(actId||null))have[t.text.trim().toLowerCase()]=1;});
+  var fresh=[],skipped=0,now=iso();
+  lines.forEach(function(x){
+    var k=x.toLowerCase();
+    if(have[k]){skipped++;return;}
+    have[k]=1;
+    var nt={id:uid(),text:x,activityId:actId||null,created:now,done:null,updated:now};
+    if(quiet&&actId)nt.nm=true;
+    fresh.push(nt);
+  });
+  var before=JSON.stringify(S.tasks),n=S.tasks.length;
+  S.tasks=fresh.concat(S.tasks);
+  if(S.tasks.length!==n+fresh.length||JSON.stringify(S.tasks.slice(fresh.length))!==before){S.tasks=JSON.parse(before);return {error:true};}
+  if(fresh.length)commit();
+  return {added:fresh.length,skipped:skipped};
+}
+/* hide or show every open task of one activity in Master tasks */
+function setActivityMaster(actId,show){
+  var now=iso();
+  S.tasks.forEach(function(t){
+    if(t.activityId!==actId||t.done)return;
+    if(show){if(t.nm){delete t.nm;t.updated=now;}}
+    else if(!t.nm){t.nm=true;t.updated=now;}
+  });
+  commit();
+}
+function toggle(id){
+  var t=task(id);if(!t)return;
+  if(t.done){t.done=null;if(ui.lastTicked===id)ui.lastTicked=null;}
+  else{t.done=iso();ui.lastTicked=id;}
+  t.updated=iso();
+  commit();
+}
+function restore(id){var t=task(id);if(t){t.done=null;t.updated=iso();}ui.lastTicked=null;commit();}
+function createActivity(name){
+  name=(name||'').trim();if(!name)return null;
+  var a={id:uid(),name:name,created:iso(),archived:null,updated:iso()};
+  S.activities.push(a);return a;
+}
+function openActivity(id){ui.view='activity';ui.activityId=id;ui.lastActivityId=id;ui.sheet=null;render();}
+var MAIN={today:1,master:1,activities:1};
+function go(view){ui.view=view;ui.sheet=null;if(MAIN[view])ui.back=[];render();}
+/* open a page that sits on top of the one you were on (Settings, Archive, Sync) so Back returns to it */
+function goSub(view){
+  ui.back=ui.back||[];
+  ui.back.push({view:ui.view,activityId:ui.activityId});
+  ui.view=view;ui.sheet=null;render();
+}
+function goBack(){
+  var b=(ui.back||[]).pop();
+  if(!b){go('today');return;}
+  ui.view=b.view;if(b.activityId)ui.activityId=b.activityId;ui.sheet=null;render();
+}
+function archiveActivity(id){
+  var a=act(id);if(!a)return;
+  a.archived=iso();a.updated=iso();
+  if(ui.lastActivityId===id)ui.lastActivityId=null;
+  ui.view='activities';commit();
+}
+function unarchive(id){var a=act(id);if(a){a.archived=null;a.updated=iso();}commit();}
+function closeSheet(){ui.sheet=null;ui.afterCreate=null;render();}
+
+/* ---------- views ---------- */
+var app=document.getElementById('app');
+
+function lastAct(){
+  var a=act(ui.lastActivityId);
+  if(a&&!a.archived)return a;
+  var l=live();return l.length?l[l.length-1]:null;
+}
+
+function appHeader(){
+  return h('div',{class:'apphead'},[h('p',{class:'brand',text:'Get a grip (preview)'}),
+    h('button',{class:'menubtn','aria-label':'More: Archive and Settings',onclick:function(){ui.sheet={type:'menu'};render();}},
+      [svg('<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/>',26)])]);
+}
+function titleBar(title){return h('div',{class:'topbar'},[h('h2',{class:'title',text:title})]);}
+
+/* the row at the top of an activity page: the activity's name (tap to switch) and a new-activity button */
+function topbar(){
+  var a=act(ui.activityId);
+  var kids=[];
+  if(a){
+    kids.push(h('button',{class:'btn tab on','aria-label':'Switch activity: '+a.name,onclick:function(){ui.sheet={type:'switch'};render();}},
+      [h('span',{text:a.name}),svg(ICON.down,18)]));
+  }
+  kids.push(h('button',{class:'btn icon','aria-label':'New activity',onclick:function(){ui.afterCreate='open';ui.sheet={type:'new'};render();}},[svg(ICON.plus)]));
+  return h('div',{class:'topbar'},kids);
+}
+
+/* the bottom bar: three buttons now. Labels wrap, and if more buttons are ever added it scrolls sideways
+   with a small arrow at each end that shows only when there is more that way */
+var NAVS=[['today','Today'],['master','Master tasks'],['activities','Activities']];
+function navBar(cur){
+  var sc=h('div',{class:'navscroll'},NAVS.map(function(n){
+    return h('button',{'aria-current':n[0]===cur?'page':null,onclick:function(){go(n[0]);}},[h('span',{text:n[1]})]);
+  }));
+  var left=h('button',{class:'navarrow',hidden:true,'aria-label':'Show buttons to the left',onclick:function(){sc.scrollBy({left:-160});}},[svg('<path d="M15 6l-6 6 6 6"/>',22)]);
+  var right=h('button',{class:'navarrow',hidden:true,'aria-label':'Show buttons to the right',onclick:function(){sc.scrollBy({left:160});}},[svg(ICON.right,22)]);
+  function sync(){
+    var over=sc.scrollWidth>sc.clientWidth+2;
+    left.hidden=!over||sc.scrollLeft<=2;
+    right.hidden=!over||sc.scrollLeft+sc.clientWidth>=sc.scrollWidth-2;
+  }
+  sc.addEventListener('scroll',sync);
+  setTimeout(function(){
+    var cb=sc.querySelector('[aria-current]');
+    if(cb&&cb.scrollIntoView)cb.scrollIntoView({block:'nearest',inline:'nearest'});
+    sync();
+  },0);
+  return h('nav',{class:'nav','aria-label':'Pages'},[left,sc,right]);
+}
+
+/* turns web addresses and phone numbers in a note into tappable links; everything else stays plain text */
+function richText(str){
+  var out=[],re=/(https?:\/\/[^\s<>]+|www\.[^\s<>]+)|(\+?\d[\d ().-]{7,}\d)/gi,last=0,m;
+  while((m=re.exec(str))){
+    if(m.index>last)out.push(str.slice(last,m.index));
+    var s=m[0];
+    if(m[1]){
+      var tr=s.match(/[.,;:!?)\]'"”’]+$/);
+      if(tr){s=s.slice(0,-tr[0].length);re.lastIndex=m.index+s.length;}
+      out.push(h('a',{href:/^www\./i.test(s)?'https://'+s:s,target:'_blank',rel:'noopener noreferrer',text:s}));
+    }else{
+      var d=s.replace(/\D/g,'');
+      if(d.length>=9&&d.length<=15)out.push(h('a',{href:'tel:'+(s.charAt(0)==='+'?'+':'')+d,text:s}));
+      else out.push(s);
+    }
+    last=re.lastIndex;
+  }
+  if(last<str.length)out.push(str.slice(last));
+  return out;
+}
+
+function taskRow(t,showAct){
+  var a=t.activityId?act(t.activityId):null;
+  var sub=showAct&&a?h('small',{text:a.name}):null;
+  var hasNotes=!!(t.notes&&t.notes.trim()),isOpen=hasNotes&&!!ui.open[t.id];
+  return h('div',{class:'row'+(t.done?' done':''),'data-id':t.id},[
+    h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
+    h('button',{class:'rowtext','aria-label':'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
+      h('span',{text:t.text}),sub]),
+    hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
+      onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
+    h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder: '+t.text+'. Drag, or use the up and down arrow keys.',
+      onpointerdown:function(e){startDrag(e,t.id);},onkeydown:function(e){nudge(e,t.id);}},
+      [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]),
+    isOpen?h('div',{class:'details'},richText(t.notes)):null
+  ]);
+}
+
+function addBox(placeholder,aria,onAdd,withPicker,actId){
+  var input=h('input',{type:'text',id:'addin','aria-label':aria,placeholder:placeholder,value:ui.draft,autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
+    oninput:function(e){ui.draft=e.target.value;},
+    onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
+  function doAdd(){
+    var txt=ui.draft;
+    if(!txt||!txt.trim())return;
+    ui.draft='';
+    if(!onAdd(txt))ui.draft=txt;
+    setTimeout(function(){var i=document.getElementById('addin');if(i)i.focus();},0);
+  }
+  var box=h('div',{class:'addbox'},[input,h('button',{class:'go','aria-label':'Add task',onclick:doAdd},[svg(ICON.up)])]);
+  var kids=[box],chips=[];
+  if(withPicker){
+    var a=ui.pick?act(ui.pick):null;
+    if(ui.pick&&(!a||a.archived))ui.pick=null,a=null;
+    chips.push(h('button',{class:'chip','aria-label':'Choose activity for this task',onclick:function(){ui.sheet={type:'pick'};render();}},[
+      'Activity:',h('b',{text:a?a.name:'No activity'}),svg(ICON.down,16)]));
+  }
+  chips.push(h('button',{class:'chip','aria-label':'Add several tasks at once',onclick:function(){ui.sheet={type:'bulk',actId:withPicker?(ui.pick||null):(actId||null)};render();}},['Add several']));
+  kids.push(h('div',{style:'display:flex;gap:8px;flex-wrap:wrap'},chips));
+  return h('div',{class:'addwrap'},kids);
+}
+
+function viewMaster(){
+  var open=S.tasks.filter(function(t){return !t.done&&!t.nm;});
+  var list=h('div',{class:'list'},open.length?open.map(function(t){return taskRow(t,true);}):[
+    h('div',{class:'empty',text:'Nothing left to do. Add a task above.'})]);
+  var kids=[titleBar('Master tasks'),addBox('Add a task','New task',function(txt){return addTask(txt,ui.pick);},true),
+    h('div',{style:'height:8px'}),list];
+  var lt=ui.lastTicked?task(ui.lastTicked):null;
+  if(lt&&lt.done&&!lt.nm){
+    kids.push(h('div',{class:'strip'},[
+      h('div',null,[h('small',{text:'Just ticked'}),h('span',{text:lt.text})]),
+      h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){restore(lt.id);}},['Restore'])]));
+  }
+  var sb=syncBanner();if(sb)kids.push(sb);
+  kids.push(navBar('master'));
+  return kids;
+}
+
+function viewActivity(){
+  var a=act(ui.activityId);
+  if(!a||a.archived){ui.view='activities';return viewActivities();}
+  var ts=tasksOf(a.id),done=ts.filter(function(t){return t.done;}).length;
+  var list=h('div',{class:'list'},ts.length?ts.map(function(t){return taskRow(t,false);}):[
+    h('div',{class:'empty',text:'No tasks in this activity yet. Add the first one above.'})]);
+  var meta=h('div',{class:'meta'},[
+    h('span',{class:'count',text:done+' of '+ts.length+' done'}),
+    h('div',{class:'acts'},[
+      h('button',{class:'btn',onclick:function(){ui.sheet={type:'rename'};render();}},['Rename']),
+      h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
+  var openTs=ts.filter(function(t){return !t.done;}),hid=openTs.filter(function(t){return t.nm;}).length;
+  var mrow=openTs.length?h('div',{class:'meta',style:'padding-top:0'},[
+    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from Master tasks':'All open tasks show in Master tasks'}),
+    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in Master':'Hide from Master'])]):null;
+  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,mrow,list].filter(Boolean).concat(syncBanner()||[],[navBar('activities')]);
+  var lt=ui.lastTicked?task(ui.lastTicked):null;
+  if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
+  return kids;
+}
+
+function pageHeader(title){
+  return h('div',{class:'topbar'},[
+    h('button',{class:'btn','aria-label':'Back',onclick:goBack},[svg('<path d="M15 6l-6 6 6 6"/>',20),h('span',{text:'Back'})]),
+    h('h2',{class:'title',text:title})]);
+}
+
+function viewActivities(){
+  var rows=live().map(function(a){
+    return h('div',{class:'arow','data-id':a.id},[
+      h('button',{class:'navrow',onclick:function(){openActivity(a.id);}},[
+        h('span',{class:'t'},[h('b',{text:a.name}),h('small',{text:summary(a)})]),svg(ICON.right,20)]),
+      h('button',{class:'handle','data-handle':a.id,'aria-label':'Reorder activity: '+a.name+'. Drag, or use the up and down arrow keys.',
+        onpointerdown:function(e){startDrag(e,a.id,'.arow',applyActOrder);},onkeydown:function(e){nudge(e,a.id,'.arow',applyActOrder);}},
+        [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)])]);
+  });
+  var body=h('div',{style:'flex:1;min-height:0;overflow-y:auto'},[
+    h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:function(){ui.afterCreate='open';ui.sheet={type:'new'};render();}},[svg(ICON.plus),h('span',{text:'New activity'})])]),
+    h('div',{style:'border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:'No activities yet. Create one to group related tasks.'})])
+  ]);
+  return [titleBar('Activities'),body,navBar('activities')];
+}
+
+function footEl(){
+  var msg=ui.status==='failed'?'Could not save. Your device storage may be full or blocked.':'Saved on this phone only. Download a backup now and then.';
+  var file=h('input',{type:'file',accept:'application/json,.json',id:'restorefile',style:'display:none',onchange:function(e){restoreFile(e.target.files&&e.target.files[0]);e.target.value='';}});
+  return h('div',{class:'foot'},[h('span',{text:msg}),h('br'),
+    h('button',{onclick:backup},['Download a backup']),' ',
+    h('button',{onclick:function(){document.getElementById('restorefile').click();}},['Restore from backup']),file]);
+}
+function backup(){
+  try{
+    var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download='get-a-grip-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  }catch(e){alert('Could not create the backup file.');}
+}
+function restoreFile(f){
+  if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(!d||!Array.isArray(d.activities)||!Array.isArray(d.tasks))throw new Error('bad');
+      if(!confirm('Replace everything in the app with this backup ('+d.activities.length+' activities, '+d.tasks.length+' tasks)?'))return;
+      S=d;ui.view='master';ui.lastTicked=null;ui.lastActivityId=null;commit();
+    }catch(e){alert('That file is not a Get a grip backup.');}
+  };
+  r.readAsText(f);
+}
+
+
+/* ---------- Google Tasks import ---------- */
+var gisReady=false,gisLoading=false;
+/* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
+   It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
+var APP_VERSION='n1';
+var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
+function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
+function getCid(){return getCustomCid()||DEFAULT_CID;}
+function saveCid(v){
+  try{if(v)localStorage.setItem('next.gag.clientId',v);else localStorage.removeItem('next.gag.clientId');}catch(e){}
+  G.token=null;G.tokScope=null;G.status='idle';D.status='idle';G.err='';D.err='';D.seen=null;D.user=null;silentFailAt=0;
+  if(getCid())loadGIS();
+  if(checkSignIn())commit(true);
+}
+function impState(){return ui.imp||(ui.imp={stage:'start',token:null,lists:[],listId:null,listName:'',items:[],bulk:'',busy:false,err:'',msg:'',only:(function(){try{return localStorage.getItem('next.gag.impOnly')!=='0';}catch(e){return true;}})()});}
+function loadGIS(){
+  if(gisReady||gisLoading)return;
+  gisLoading=true;
+  var sc=document.createElement('script');
+  sc.src='https://accounts.google.com/gsi/client';sc.async=true;
+  sc.onload=function(){gisReady=true;gisLoading=false;if(ui.view==='import'||ui.view==='sync')softRender();};
+  sc.onerror=function(){gisLoading=false;var I=impState();I.err='Could not load Google sign-in. Check your connection and try again.';if(ui.view==='import')render();};
+  document.head.appendChild(sc);
+}
+function openImport(){ui.view='import';ui.sheet=null;if(getCid())loadGIS();render();}
+function connectGoogle(){
+  var I=impState(),cid=getCustomCid();
+  if(!gisReady||!window.google||!google.accounts){I.err='Google sign-in is still loading. Try again in a moment.';render();return;}
+  I.err='';
+  try{
+    var tc=google.accounts.oauth2.initTokenClient({
+      client_id:cid,scope:SCOPE,
+      callback:function(r){
+        if(r&&r.access_token){I.token=r.access_token;fetchLists();}
+        else{I.err='Google did not give access ('+((r&&r.error)||'unknown reason')+').';render();}
+      },
+      error_callback:function(er){I.err='Sign-in was closed or blocked ('+((er&&er.type)||'unknown reason')+').';render();}
+    });
+    tc.requestAccessToken({prompt:''});
+  }catch(e){I.err='Could not start Google sign-in.';render();}
+}
+function gapi(url){
+  var I=impState();
+  return fetch(url,{headers:{Authorization:'Bearer '+I.token}}).then(function(r){
+    if(r.status===401){I.token=null;I.stage='start';throw new Error('Your Google sign-in expired. Connect again.');}
+    if(!r.ok){throw new Error('Google said '+r.status+(r.status===403?'. Check that the Google Tasks API is switched on in your project.':'.'));}
+    return r.json();
+  });
+}
+function fetchLists(){
+  var I=impState();I.busy=true;I.err='';I.stage='lists';render();
+  gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100').then(function(d){
+    I.lists=d.items||[];I.busy=false;render();
+  }).catch(function(e){I.busy=false;I.err=e.message;render();});
+}
+var DRAFT='next.gag.impdraft';
+function loadDraft(){try{return JSON.parse(localStorage.getItem(DRAFT)||'{}')||{};}catch(e){return {};}}
+function saveDraft(){
+  var I=impState(),d=loadDraft();
+  I.items.forEach(function(it){
+    if(it.dup)return;
+    if(it.act||!it.inc)d[it.gid]={act:it.act,inc:it.inc};else delete d[it.gid];
+  });
+  try{localStorage.setItem(DRAFT,JSON.stringify(d));}catch(e){}
+}
+function willImport(I,x){return x.inc&&!x.dup&&(!I.only||!!x.act);}
+function fetchTasks(list){
+  var I=impState();I.busy=true;I.err='';I.msg='';I.listId=list.id;I.listName=list.title||'Google Tasks';I.bulk='';I.stage='review';I.items=[];render();
+  var all=[];
+  function page(tok){
+    var u='https://tasks.googleapis.com/tasks/v1/lists/'+encodeURIComponent(list.id)+'/tasks?showCompleted=false&showHidden=false&maxResults=100'+(tok?'&pageToken='+encodeURIComponent(tok):'');
+    return gapi(u).then(function(d){all=all.concat(d.items||[]);return d.nextPageToken?page(d.nextPageToken):null;});
+  }
+  var draft=loadDraft();
+  page(null).then(function(){
+    I.items=all.filter(function(t){return t.title&&t.title.trim();}).map(function(t){
+      var gid=list.id+':'+t.id,dup=S.tasks.some(function(x){return x.gid===gid;});
+      var rec=draft[gid],act=rec&&!dup?rec.act||'':'';
+      if(act&&!live().some(function(a){return a.id===act;}))act='';
+      return {gid:gid,title:t.title.trim(),inc:dup?false:(rec?rec.inc!==false:true),dup:dup,act:act,sub:!!t.parent};
+    });
+    I.busy=false;render();
+  }).catch(function(e){I.busy=false;I.err=e.message;render();});
+}
+function doImport(){
+  var I=impState();
+  var chosen=I.items.filter(function(x){return willImport(I,x);});
+  if(!chosen.length)return;
+  var newId=null;
+  var made=chosen.map(function(x){
+    var aid=x.act||null;
+    if(aid==='__new'){
+      if(!newId){
+        var ex=live().filter(function(a){return a.name.toLowerCase()===I.listName.toLowerCase();})[0];
+        newId=ex?ex.id:createActivity(I.listName).id;
+      }
+      aid=newId;
+    }
+    return {id:uid(),text:x.title,activityId:aid,created:iso(),done:null,gid:x.gid,updated:iso()};
+  });
+  S.tasks=made.concat(S.tasks);
+  var dd=loadDraft();chosen.forEach(function(x){delete dd[x.gid];});try{localStorage.setItem(DRAFT,JSON.stringify(dd));}catch(e){}
+  I.msg='Imported '+made.length+' task'+(made.length===1?'':'s')+' from “'+I.listName+'”.';
+  I.stage='lists';I.items=[];I.bulk='';
+  commit();
+}
+function viewImport(){
+  var I=impState(),cid=getCustomCid(),parts=[],bar=null;
+  if(I.err)parts.push(h('div',{class:'err',role:'alert',text:I.err}));
+  if(!cid){
+    var inp=h('input',{type:'text',class:'txt','aria-label':'Google client ID',placeholder:'Paste your client ID',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
+    parts.push(h('p',{class:'note',text:'To read your Google Tasks, this app needs a client ID from your own Google Cloud project. You only set this up once, and it is stored on this phone only.'}));
+    parts.push(h('div',{class:'pad'},[inp,h('div',{style:'height:10px'}),h('button',{class:'btn primary',onclick:function(){
+      var v=inp.value.trim();
+      if(!/\.apps\.googleusercontent\.com$/.test(v)){I.err='That does not look like a client ID. It should end in .apps.googleusercontent.com.';render();return;}
+      try{localStorage.setItem('next.gag.clientId',v);}catch(e){}
+      I.err='';loadGIS();render();}},['Save client ID'])]));
+  }else if(I.stage==='start'||!I.token){
+    parts.push(h('p',{class:'note',text:'Sign in with Google so the app can read your tasks. This import only reads them. Nothing in Google Tasks is changed or deleted by it.'}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectGoogle},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
+    parts.push(h('div',{class:'foot'},[h('button',{onclick:function(){try{localStorage.removeItem('next.gag.clientId');}catch(e){}I.err='';render();}},['Change client ID'])]));
+  }else if(I.stage==='lists'){
+    if(I.msg)parts.push(h('div',{class:'ok',text:I.msg}));
+    if(I.busy)parts.push(h('p',{class:'note',text:'Loading your lists…'}));
+    else{
+      parts.push(h('p',{class:'note',text:I.lists.length?'Choose a Google Tasks list to import from.':'No lists were found in your Google Tasks.'}));
+      parts.push(h('div',{style:'padding:0 16px 12px'},[h('button',{class:'btn ghost',style:'margin-top:10px;width:100%',onclick:function(){ui.afterCreate='stay';ui.sheet={type:'new'};render();}},['New activity'])]));
+      I.lists.forEach(function(l){
+        parts.push(h('button',{class:'navrow',onclick:function(){fetchTasks(l);}},[
+          h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
+      });
+    }
+  }else if(I.stage==='review'){
+    if(I.busy)parts.push(h('p',{class:'note',text:'Loading tasks…'}));
+    else{
+      var n=I.items.filter(function(x){return willImport(I,x);}).length;
+      function opts(){
+        var o=[h('option',{value:'',text:'No activity'})];
+        live().forEach(function(a){o.push(h('option',{value:a.id,text:a.name}));});
+        o.push(h('option',{value:'__create',text:'+ New activity…'}));
+        return o;
+      }
+      parts.push(h('p',{class:'note',text:'“'+I.listName+'” has '+I.items.length+' open task'+(I.items.length===1?'':'s')+'. '+(I.only?'Only tasks you give an activity will be imported.':'Every ticked task will be imported.')}));
+      parts.push(h('label',{style:'display:flex;align-items:center;gap:12px;padding:0 16px 12px;font-size:16px'},[
+        h('input',{type:'checkbox',checked:I.only,onchange:function(e){I.only=e.target.checked;try{localStorage.setItem('next.gag.impOnly',I.only?'1':'0');}catch(x){}render();}}),
+        h('span',{text:'Only import tasks I have given an activity'})]));
+      if(I.items.length){
+        var bulk=h('select',{class:'sel','aria-label':'Put all of these in'},opts());
+        bulk.value=I.bulk;
+        bulk.addEventListener('change',function(e){if(e.target.value==='__create'){ui.afterCreate={assign:'bulk'};ui.sheet={type:'new'};render();return;}I.bulk=e.target.value;I.items.forEach(function(it){if(!it.dup)it.act=I.bulk;});saveDraft();render();});
+        parts.push(h('div',{style:'padding:0 16px 12px'},[h('small',{style:'color:var(--muted);font-size:14px',text:'Put all of these in'}),bulk]));
+      }
+      I.items.forEach(function(it){
+        var cb=h('input',{type:'checkbox','aria-label':'Include: '+it.title,checked:it.inc,disabled:it.dup,onchange:function(e){it.inc=e.target.checked;saveDraft();render();}});
+        var inner=[h('span',{text:it.title})];
+        if(it.sub)inner.push(h('small',{text:'Subtask in Google Tasks'}));
+        if(it.dup)inner.push(h('small',{text:'Already imported'}));
+        else{
+          var sel=h('select',{class:'sel','aria-label':'Activity for: '+it.title,onchange:function(e){if(e.target.value==='__create'){ui.afterCreate={assign:it.gid};ui.sheet={type:'new'};render();return;}it.act=e.target.value;saveDraft();render();}},opts());
+          sel.value=it.act;inner.push(sel);
+          if(I.only&&it.inc&&!it.act)inner.push(h('small',{text:'Not imported (no activity)'}));
+        }
+        parts.push(h('div',{class:'row',style:'align-items:flex-start;padding:8px 16px 8px 12px'},[
+          h('label',{class:'tick',style:'height:48px'},[cb]),
+          h('div',{class:'rowtext',style:'padding:6px 0 4px'},inner)]));
+      });
+      bar=h('div',{class:'bar'},[
+        h('button',{class:'btn',onclick:function(){I.stage='lists';I.err='';render();}},['Back']),
+        h('button',{class:'btn',onclick:function(){ui.afterCreate='stay';ui.sheet={type:'new'};render();}},['New activity']),
+        h('button',{class:'btn primary',disabled:n===0,onclick:doImport},['Import '+n])]);
+    }
+  }
+  var body=h('div',{class:'list'},parts);
+  var out=[pageHeader('Import tasks'),body];
+  if(bar)out.push(bar);
+  out.push(navBar(null));
+  return out;
+}
+
+function viewArchive(){
+  var q=ui.q.trim().toLowerCase();
+  var items=archived().map(function(a){
+    var ts=tasksOf(a.id),hits=[];
+    var meta=(a.name+' '+fmt(a.created)+' '+fmt(a.archived)+' '+a.created.slice(0,10)+' '+a.archived.slice(0,10)).toLowerCase();
+    var nameHit=!q||meta.indexOf(q)>-1;
+    if(q)hits=ts.filter(function(t){return t.text.toLowerCase().indexOf(q)>-1||(t.notes||'').toLowerCase().indexOf(q)>-1;});
+    return {a:a,ts:ts,hits:hits,ok:nameHit||hits.length>0};
+  }).filter(function(x){return x.ok;});
+  var dir=ui.rev?-1:1;
+  items.sort(function(x,y){
+    if(ui.sort==='az')return dir*x.a.name.localeCompare(y.a.name,'en-GB');
+    var k=ui.sort==='created'?'created':'archived';
+    return -dir*(x.a[k]<y.a[k]?-1:x.a[k]>y.a[k]?1:0);
+  });
+  function sortBtn(key,label){
+    var on=ui.sort===key;
+    var arrow=on?(key==='az'?(ui.rev?' (Z–A)':''):(ui.rev?' (oldest first)':'')):'';
+    return h('button',{class:'btn','aria-pressed':on?'true':'false',onclick:function(){
+      if(ui.sort===key)ui.rev=!ui.rev;else{ui.sort=key;ui.rev=false;}render();}},[label+arrow]);
+  }
+  var search=h('div',{class:'addwrap'},[h('div',{class:'addbox',style:'padding-right:16px'},[
+    h('input',{type:'text','aria-label':'Search archive',placeholder:'Search names, tasks or dates',value:ui.q,autocomplete:'off',
+      autocapitalize:'off',enterkeyhint:'search',oninput:function(e){ui.q=e.target.value;var nb=viewArchive()[3],ob=document.getElementById('archbody');if(ob&&nb){ob.replaceChildren.apply(ob,Array.prototype.slice.call(nb.childNodes));}}})])]);
+  var sorts=h('div',{class:'sorts',style:'padding-top:10px'},[sortBtn('archived','Archived date'),sortBtn('created','Created date'),sortBtn('az','A to Z')]);
+  var rows=items.map(function(x){
+    var a=x.a,done=x.ts.filter(function(t){return t.done;}).length;
+    var t=[h('b',{text:a.name}),
+      h('small',{text:'Created '+fmt(a.created)+'. Archived '+fmt(a.archived)+'. '+done+' of '+x.ts.length+' done.'})];
+    x.hits.slice(0,2).forEach(function(tk){t.push(h('div',{class:'hit',text:'Task: '+tk.text}));});
+    return h('div',{class:'navrow static'},[h('span',{class:'t'},t),
+      h('button',{class:'btn ghost',style:'min-width:88px','aria-label':'Restore '+a.name,onclick:function(){unarchive(a.id);}},['Restore'])]);
+  });
+  var empty=archived().length?'Nothing in the archive matches that search.':'Nothing archived yet. Archive an activity from its own screen.';
+  var body=h('div',{id:'archbody',style:'flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:empty})]);
+  var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in Master tasks.'});
+  return [pageHeader('Archive'),search,sorts,body,note,navBar(null)];
+}
+
+/* ---------- Google Tasks sync ---------- */
+var SCOPE='https://www.googleapis.com/auth/tasks';
+var TB='https://tasks.googleapis.com/tasks/v1/';
+var SYNC_DEFAULTS={listId:'',listName:'',enabled:false,confirmed:false,auto:true,interval:5,dir:'both',ticks:true,adds:true,edits:true,deletes:'ask',last:null};
+/* G is runtime only (never saved): token, status and the latest plan. Settings live in S.sync. */
+var G={token:null,exp:0,status:'idle',err:'',lists:[],busy:false,plan:null,pending:null,running:false,again:false};
+var enc=encodeURIComponent;
+function cfg(){
+  if(!S.sync)S.sync={};
+  for(var k in SYNC_DEFAULTS)if(S.sync[k]===undefined)S.sync[k]=SYNC_DEFAULTS[k];
+  if(!Array.isArray(S.deleted))S.deleted=[];
+  if(!Array.isArray(S.gone))S.gone=[];
+  if(!S.ord)S.ord={t:'',a:''};
+  return S.sync;
+}
+function ago(d){
+  if(!d)return 'never';
+  var s=Math.max(0,Math.round((Date.now()-new Date(d).getTime())/1000));
+  if(s<45)return 'just now';
+  var m=Math.round(s/60);if(m<60)return m+(m===1?' minute':' minutes')+' ago';
+  var hr=Math.round(m/60);if(hr<24)return hr+(hr===1?' hour':' hours')+' ago';
+  var dd=Math.round(hr/24);return dd+(dd===1?' day':' days')+' ago';
+}
+/* a redraw that never touches a text box someone may be typing in: the add or search box stays put and
+   everything around it is swapped; with a sheet open, or while dragging, it waits until that is finished */
+function softRender(){
+  var ae=document.activeElement;
+  if(ui.dragging||ui.sheet){ui.dirty=true;return;}
+  if(ae&&app.contains(ae)&&(ae.tagName==='TEXTAREA'||ae.tagName==='INPUT')){
+    var keep=ae.closest('.addwrap');
+    if(keep&&keep.parentNode===app&&patchAround(keep))return;
+    ui.dirty=true;return;
+  }
+  render();
+}
+function patchAround(keep){
+  var kids=viewKids(),idx=-1;
+  kids.forEach(function(k,i){if(k.classList&&k.classList.contains('addwrap'))idx=i;});
+  if(idx<0)return false;
+  var sc=app.querySelector('.list'),st=sc?sc.scrollTop:0;
+  while(keep.previousSibling)app.removeChild(keep.previousSibling);
+  while(keep.nextSibling)app.removeChild(keep.nextSibling);
+  kids.slice(0,idx).forEach(function(k){app.insertBefore(k,keep);});
+  kids.slice(idx+1).forEach(function(k){app.appendChild(k);});
+  var l=app.querySelector('.list');if(l)l.scrollTop=st;
+  ui.dirty=false;
+  return true;
+}
+function commitSync(){commit(true);}
+var changeTimer=0;
+function scheduleSync(){
+  var c=cfg();
+  if(!c.auto||!anySync())return;
+  clearTimeout(changeTimer);
+  changeTimer=setTimeout(function(){syncAll('change');},4000);
+}
+
+/* sign-in: a quiet request first (prompt none); a tap is needed if Google wants to show something */
+function needScopes(extra){
+  var c=cfg(),d=dcfg(),a=[];
+  if(c.enabled&&c.listId)a.push(SCOPE);
+  if(d.enabled)a.push(DRIVE);
+  (extra||[]).forEach(function(x){if(a.indexOf(x)<0)a.push(x);});
+  return a;
+}
+function tokenValid(need){return !!G.token&&Date.now()<G.exp-60000&&(need||[]).every(function(x){return (G.tokScope||[]).indexOf(x)>-1;});}
+var silentFailAt=0,askingUntil=0,pendingTok=null;
+function getToken(interactive,extra,pick){
+  var need=needScopes(extra);
+  if(tokenValid(need))return Promise.resolve(G.token);
+  /* No quiet renewal: on the owner's phone and laptop Google refused it every time (popup_failed_to_open, popup_closed),
+     and an unanswered one froze the sync, so without a valid pass the app simply asks for a tap */
+  if(!interactive)return Promise.reject({type:'quiet'});
+  var pr=new Promise(function(res,rej){
+    var cid=getCid();
+    if(!cid){rej({type:'noclient'});return;}
+    var timer=setTimeout(function(){fail('timeout');},interactive?120000:20000);
+    function fail(t){clearTimeout(timer);if(!interactive)silentFailAt=Date.now();rej({type:t});}
+    function start(){
+      try{
+        var tc=google.accounts.oauth2.initTokenClient({client_id:cid,scope:need.join(' '),
+          callback:function(r){
+            if(r&&r.access_token){silentFailAt=0;clearTimeout(timer);D.user=null;G.token=r.access_token;G.tokScope=need;G.exp=Date.now()+(r.expires_in||3600)*1000;res(G.token);}
+            else fail((r&&r.error)||'denied');
+          },
+          error_callback:function(e){fail((e&&e.type)||'blocked');}});
+        /* Google's window opening and closing makes the page lose and regain focus; ignore that for a few seconds */
+        askingUntil=Date.now()+6000;
+        tc.requestAccessToken({prompt:pick?'select_account':(interactive?'':'none')});
+      }catch(e){fail('start');}
+    }
+    if(gisReady&&window.google&&google.accounts){start();return;}
+    loadGIS();
+    var n=0,iv=setInterval(function(){
+      if(gisReady&&window.google&&google.accounts){clearInterval(iv);start();}
+      else if(++n>40){clearInterval(iv);fail('load');}
+    },250);
+  });
+  var clear=function(){if(pendingTok===pr)pendingTok=null;};
+  pr.then(clear,clear);
+  if(!interactive)pendingTok=pr;
+  return pr;
+}
+function gcall(method,url,body){
+  var o={method:method,headers:{Authorization:'Bearer '+G.token}};
+  if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}
+  return fetch(url,o).then(function(r){
+    if(r.status===401){G.token=null;var e=new Error('Your Google sign-in has expired.');e.auth=true;throw e;}
+    if(r.status===404&&method==='DELETE')return null;
+    if(!r.ok){var e2=new Error('Google said '+r.status+(r.status===403?'. Check that the Google Tasks API is switched on and that you approved the permission to change tasks.':'.'));throw e2;}
+    return r.status===204?null:r.json();
+  });
+}
+function fetchAll(listId){
+  var all=[];
+  function page(tok){
+    var u=TB+'lists/'+enc(listId)+'/tasks?showCompleted=true&showHidden=true&maxResults=100'+(tok?'&pageToken='+enc(tok):'');
+    return gcall('GET',u).then(function(d){all=all.concat(d.items||[]);return d.nextPageToken?page(d.nextPageToken):all;});
+  }
+  return page(null);
+}
+
+/* how a task looks in Google: its text is the title; the notes start with an "Activity:" line, then the details */
+function composeNotes(t){
+  var a=t.activityId?act(t.activityId):null,d=(t.notes||'').trim(),p=[];
+  if(a)p.push('Activity: '+a.name);
+  if(d)p.push(d);
+  return p.join('\n\n');
+}
+function parseNotes(n){
+  n=(n||'').replace(/\r\n/g,'\n');
+  var m=n.match(/^Activity: ([^\n]*)(?:\n\n?|$)/);
+  if(m)return {activity:m[1].trim(),details:n.slice(m[0].length).trim()};
+  return {activity:null,details:n.trim()};
+}
+function appRepr(t){return {title:t.text,notes:composeNotes(t),done:!!t.done};}
+function gRepr(g){return {title:(g.title||'').trim(),notes:(g.notes||'').replace(/\r\n/g,'\n').trim(),done:g.status==='completed'};}
+function findAct(name){
+  var n=name.toLowerCase();
+  function same(a){return a.name.toLowerCase()===n;}
+  return live().filter(same)[0]||archived().filter(same)[0]||null;
+}
+function linkOf(t,pre){
+  if(t.sid&&t.sid.indexOf(pre)===0)return t.sid.slice(pre.length);
+  if(t.gid&&t.gid.indexOf(pre)===0)return t.gid.slice(pre.length);
+  return null;
+}
+function applyPull(t,g,f){
+  if(f==='title'){var v=(g.title||'').trim();if(v)t.text=v;}
+  else if(f==='notes'){
+    var p=parseNotes(g.notes);
+    if(p.details)t.notes=p.details;else delete t.notes;
+    if(p.activity){var a=findAct(p.activity);if(a)t.activityId=a.id;}
+  }else if(f==='done'){t.done=g.status==='completed'?(g.completed||iso()):null;}
+}
+
+/* work out what a sync would do, without doing it */
+function buildPlan(gtasks){
+  var c=cfg(),L=c.listId,pre=L+':',toG=c.dir!=='toApp',toA=c.dir!=='toGoogle';
+  var gmap={},seen={},tomb={},recreate=[];
+  gtasks.forEach(function(g){gmap[g.id]=g;});
+  S.deleted.forEach(function(d){if(d.gid.indexOf(pre)===0)tomb[d.gid.slice(pre.length)]=d;});
+  var P={merge:[],ins:[],news:[],del:{app:[],google:[]},n:{gNew:0,gEdit:0,aNew:0,aEdit:0},linked:0,stopped:false};
+
+  S.tasks.forEach(function(t){
+    var id=linkOf(t,pre);if(!id)return;
+    P.linked++;
+    var g=gmap[id];
+    if(!g){
+      if(t.done)return;
+      if(c.deletes==='never'||!toA)recreate.push(t);
+      else P.del.app.push(t);
+      return;
+    }
+    seen[id]=1;
+    var gr=gRepr(g),ar=appRepr(t),base=t.gs?{title:t.gs.title,notes:t.gs.notes,done:t.gs.done}:{title:gr.title,notes:gr.notes,done:gr.done};
+    var gUpd=Date.parse(g.updated)||0,aUpd=Date.parse(t.updated)||0;
+    var nb={title:base.title,notes:base.notes,done:base.done},patch={},pulls=[],pushed=[];
+    ['title','notes','done'].forEach(function(f){
+      var allowed=f==='done'?c.ticks:c.edits;
+      var aC=ar[f]!==base[f],gC=gr[f]!==base[f],dec=null;
+      if(aC&&gC&&ar[f]!==gr[f])dec=aUpd>gUpd?'app':'google';
+      else if(aC&&!gC)dec='app';
+      else if(gC&&!aC)dec='google';
+      if(allowed&&dec==='app'&&toG){pushed.push(f);}
+      else if(allowed&&dec==='google'&&toA){pulls.push(f);nb[f]=gr[f];}
+      else if(ar[f]===gr[f]){nb[f]=ar[f];}
+    });
+    var tmp={title:t.text,activityId:t.activityId,notes:t.notes,done:t.done};
+    pulls.forEach(function(f){applyPullTo(tmp,g,f);});
+    /* after pulling notes, the app's own wording of them may differ from Google's: send that back too */
+    if(pulls.indexOf('notes')>-1&&toG&&composeNotes(tmp)!==gr.notes&&pushed.indexOf('notes')<0)pushed.push('notes');
+    if(pushed.length)P.n.gEdit++;
+    if(pulls.length)P.n.aEdit++;
+    if(!pushed.length&&!pulls.length&&t.gs&&t.sid===pre+id&&nb.title===t.gs.title&&nb.notes===t.gs.notes&&nb.done===t.gs.done)return;
+    P.merge.push(function(){
+      pulls.forEach(function(f){applyPull(t,g,f);});
+      if(pulls.length)t.updated=g.updated;
+      var fin=appRepr(t);
+      pushed.forEach(function(f){
+        if(f==='title')patch.title=fin.title;
+        else if(f==='notes')patch.notes=fin.notes||null;
+        else{patch.status=fin.done?'completed':'needsAction';if(!fin.done)patch.completed=null;}
+      });
+      function finish(r){
+        var out=r?gRepr(r):null;
+        pushed.forEach(function(f){nb[f]=out?out[f]:fin[f];});
+        t.gs={title:nb.title,notes:nb.notes,done:nb.done};t.sid=pre+id;
+      }
+      if(!pushed.length){finish(null);return Promise.resolve();}
+      return gcall('PATCH',TB+'lists/'+enc(L)+'/tasks/'+enc(id),patch).then(finish);
+    });
+  });
+
+  /* tasks only in the app go up to Google (oldest first, so the newest ends up on top) */
+  var ins=[];
+  if(toG){
+    S.tasks.forEach(function(t){
+      if(t.done)return;
+      var id=linkOf(t,pre);
+      if(id&&gmap[id])return;
+      if(id){if(recreate.indexOf(t)>-1)ins.push(t);return;}
+      if(c.adds&&!t.nm)ins.push(t);
+    });
+  }
+  ins.slice().reverse().forEach(function(t){
+    P.ins.push(function(){
+      var body={title:t.text};
+      var nt=composeNotes(t);if(nt)body.notes=nt;
+      return gcall('POST',TB+'lists/'+enc(L)+'/tasks',body).then(function(r){t.sid=pre+r.id;t.gs=gRepr(r);});
+    });
+  });
+  P.n.gNew=ins.length;
+
+  /* tasks only in Google, or deleted in the app */
+  var news=[];
+  gtasks.forEach(function(g){
+    if(seen[g.id])return;
+    var tb=tomb[g.id];
+    if(tb&&c.deletes!=='never'){if(toG)P.del.google.push(tb);return;}
+    if(!toA||!c.adds)return;
+    if(!(g.title||'').trim()||g.status==='completed')return;
+    news.push(g);
+  });
+  P.news=news;P.n.aNew=news.length;
+  P.stopped=(P.del.app.length+P.del.google.length)>Math.max(3,Math.ceil(P.linked/3))||(P.linked>=2&&P.del.app.length>=P.linked);
+  return P;
+}
+/* same as applyPull but onto a plain copy, used only to preview the wording */
+function applyPullTo(tmp,g,f){
+  if(f==='notes'){
+    var p=parseNotes(g.notes);
+    if(p.details)tmp.notes=p.details;else delete tmp.notes;
+    if(p.activity){var a=findAct(p.activity);if(a)tmp.activityId=a.id;}
+  }
+}
+function runSeq(fns){return fns.reduce(function(p,f){return p.then(f);},Promise.resolve());}
+
+function applyPlan(P,opts){
+  var c=cfg(),L=c.listId,pre=L+':',force=!!(opts&&opts.force);
+  var park=!force&&(c.deletes==='ask'||P.stopped);
+  var hasDel=P.del.app.length+P.del.google.length>0;
+  var fns=P.merge.slice();
+  G.pending=null;
+  if(hasDel&&park)G.pending={app:P.del.app.length,google:P.del.google.length,stopped:P.stopped};
+  if(hasDel&&!park){
+    P.del.google.forEach(function(d){fns.push(function(){return gcall('DELETE',TB+'lists/'+enc(L)+'/tasks/'+enc(d.gid.slice(pre.length)));});});
+  }
+  fns=fns.concat(P.ins);
+  if(!c.confirmed){try{localStorage.setItem('next.tasks.v1.presync',JSON.stringify(S));}catch(e){}c.confirmed=true;}
+  return runSeq(fns).then(function(){
+    if(P.news.length){
+      var made=P.news.map(function(g){
+        var gr=gRepr(g),p=parseNotes(gr.notes),a=p.activity?findAct(p.activity):null;
+        var t={id:uid(),text:gr.title,activityId:a?a.id:null,created:g.updated||iso(),done:null,sid:pre+g.id,gs:gr,updated:g.updated};
+        if(p.details)t.notes=p.details;
+        return t;
+      });
+      S.tasks=made.concat(S.tasks);
+    }
+    if(hasDel&&!park){
+      var gone={};P.del.app.forEach(function(t){gone[t.id]=1;S.gone.push({id:t.id,at:iso()});});
+      S.tasks=S.tasks.filter(function(t){if(gone[t.id]){delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;return false;}return true;});
+    }
+    var keep={};
+    if(park)P.del.google.forEach(function(d){keep[d.gid]=1;});
+    var cutoff=Date.now()-90*86400000;
+    S.deleted=S.deleted.filter(function(d){return keep[d.gid]||(d.gid.indexOf(pre)!==0&&Date.parse(d.at)>cutoff);});
+    c.last=iso();
+  });
+}
+
+function syncNow(reason,opts){
+  opts=opts||{};
+  var c=cfg();
+  if(!c.listId)return Promise.resolve();
+  if(G.running){G.again=true;return Promise.resolve();}
+  if(!opts.interactive&&(reason==='change'||reason==='timer')&&G.status==='needs'&&!tokenValid(needScopes([SCOPE])))return Promise.resolve();
+  G.running=true;G.err='';
+  if(G.status!=='confirm')G.status='syncing';
+  if(ui.view==='sync')softRender();
+  return getToken(!!opts.interactive,[SCOPE]).then(function(){
+    return fetchAll(c.listId);
+  }).then(function(gt){
+    var P=buildPlan(gt);G.plan=P;
+    if(!c.confirmed&&!opts.confirm){G.status='confirm';return null;}
+    return applyPlan(P,opts).then(function(){G.status='idle';});
+  }).catch(function(e){
+    if(e&&e.type==='noclient'){G.status='error';G.err='Add your Google client ID on the Import page first.';}
+    else if(e&&(e.auth||(e.type&&!opts.interactive))){G.status='needs';G.err='';}
+    else if(e&&e.type){G.status='error';G.err='Google did not give access ('+e.type+').';}
+    else if(e instanceof TypeError){G.status='error';G.err='Could not reach Google. It will try again.';}
+    else{G.status='error';G.err=(e&&e.message)||'Sync failed.';}
+  }).then(function(){
+    G.running=false;
+    commitSync();
+    if(G.again){G.again=false;setTimeout(function(){syncNow('again');},500);}
+  });
+}
+function startFirstSync(){G.status='syncing';syncNow('manual',{confirm:true,interactive:true});}
+function applyPending(){syncNow('manual',{force:true,interactive:true});}
+function keepPending(){
+  var P=G.plan,c=cfg(),pre=c.listId+':';
+  if(!P)return;
+  P.del.app.forEach(function(t){delete t.sid;delete t.gs;if(t.gid&&t.gid.indexOf(pre)===0)delete t.gid;});
+  var gone={};P.del.google.forEach(function(d){gone[d.gid]=1;});
+  S.deleted=S.deleted.filter(function(d){return !gone[d.gid];});
+  G.pending=null;
+  commitSync();
+  syncNow('manual',{interactive:true});
+}
+function disconnectSync(){
+  var c=cfg();c.enabled=false;c.listId='';c.listName='';c.confirmed=false;c.last=null;
+  G.status='idle';G.err='';G.plan=null;G.pending=null;G.lists=[];
+  commit(true);
+}
+function openSync(){if(getCid())loadGIS();goSub('sync');}
+function chooseList(l){
+  var c=cfg();c.listId=l.id;c.listName=l.title||'Google Tasks';c.enabled=true;c.confirmed=false;
+  G.status='idle';G.plan=null;G.pending=null;G.err='';
+  commitSync();
+  syncNow('manual',{interactive:true});
+}
+function connectForLists(){
+  G.busy=true;G.err='';render();
+  getToken(true,[SCOPE]).then(function(){return gcall('GET',TB+'users/@me/lists?maxResults=100');}).then(function(d){
+    G.lists=d.items||[];G.busy=false;render();
+  }).catch(function(e){
+    G.busy=false;
+    G.err=e&&e.type?(e.type==='noclient'?'Add your Google client ID on the Import page first.':'Google did not give access ('+e.type+').'):((e&&e.message)||'Could not connect.');
+    render();
+  });
+}
+function syncSummary(){
+  var c=cfg(),d=dcfg(),bits=[];
+  if(d.enabled)bits.push('Devices: '+(D.status==='needs'?'sign in needed':'synced '+ago(d.last)));
+  if(c.enabled&&c.listId)bits.push('Google Tasks: '+(G.status==='needs'?'sign in needed':'synced '+ago(c.last)));
+  return bits.length?bits.join('. '):'Keep your devices, and a Google Tasks list, in step';
+}
+function syncBanner(){
+  var c=cfg(),d=dcfg();
+  var tOn=!!(c.enabled&&c.listId),dOn=!!d.enabled;
+  var needs=(tOn&&G.status==='needs')||(dOn&&D.status==='needs');
+  var err=(dOn&&D.status==='error'&&D.err)||(tOn&&G.status==='error'&&G.err)||'';
+  if(!needs&&!err&&!D.tapped)return null;
+  var label=D.tapped?'Signing in…':(err?'Sync problem':'Tap to keep syncing');
+  var detail=D.tapped?'A Google window may open. Approve it.':(err||'');
+  /* the whole strip is the button: a tap anywhere on it signs in */
+  function tap(){
+    if(D.tapped)return;
+    D.tapped=true;softRender();
+    var done=function(){D.tapped=false;softRender();};
+    syncAll('manual',{interactive:true}).then(done,done);
+  }
+  return h('div',{class:'strip',role:'status',style:'cursor:pointer',onclick:tap},[
+    h('div',null,[h('small',{text:'Sync'}),h('span',{text:label}),detail?h('small',{text:detail}):null]),
+    h('button',{type:'button',class:'btn ghost',style:'min-width:88px',disabled:D.tapped},[err&&!needs?'Try again':'Sign in'])]);
+}
+
+function viewSync(){
+  var c=cfg(),d=dcfg(),parts=[];
+  [D.err,G.err].forEach(function(m){if(m)parts.push(h('div',{class:'err',role:'alert',text:m}));});
+  function check(label,on,fn){
+    return h('label',{style:'display:flex;align-items:center;gap:12px;padding:6px 16px;min-height:48px;font-size:16px'},[
+      h('input',{type:'checkbox',checked:on,onchange:function(e){fn(e.target.checked);}}),h('span',{text:label})]);
+  }
+  function pick(label,val,choices,fn){
+    var sel=h('select',{class:'sel','aria-label':label},choices.map(function(x){return h('option',{value:String(x[0]),text:x[1]});}));
+    sel.value=String(val);
+    sel.addEventListener('change',function(e){fn(e.target.value);});
+    return h('div',{style:'padding:6px 16px 10px'},[h('small',{style:'color:var(--muted);font-size:14px',text:label}),sel]);
+  }
+  /* 1. between devices */
+  parts.push(h('h3',{class:'sect',text:'Between my devices'}));
+  parts.push(h('p',{class:'note',text:'Keeps the same activities, tasks, archive and order on your phone and your computer. It uses one hidden file in your own Google Drive, which only this app can open. Nothing is sent to anyone else.'}));
+  if(!getCid()){
+    parts.push(h('p',{class:'note',text:'Syncing needs a Google sign-in to be set up first. Open “Advanced” below.'}));
+  }else if(!d.enabled){
+    if(d.notice)parts.push(h('p',{class:'note',role:'status',style:'color:var(--text);font-weight:700',text:d.notice}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady||D.status==='syncing',onclick:enableDrive},[gisReady?'Turn on':'Loading Google sign-in…'])]));
+  }else{
+    parts.push(h('p',{class:'note',style:'padding-top:0',text:D.status==='syncing'?'Syncing…':D.status==='needs'?'Google needs you to sign in again.':D.status==='error'?'The last sync did not finish.':'Last synced '+ago(d.last)+'.'}));
+    parts.push(h('p',{class:'note',style:'padding-top:0;font-size:14px',text:'This device: '+S.activities.length+' activities, '+S.tasks.length+' tasks. Signed in through '+(getCustomCid()?'your own Google project':'the built-in sign-in')+'.'+(D.user?' Google account: '+D.user+'.':'')+' Codes to compare with your other devices: data '+dataCode()+', order '+orderCode()+'.'+(D.seen?' Google Drive held '+D.seen.a+' activities and '+D.seen.t+' tasks when this device last looked (file ending …'+String(D.seen.fileId).slice(-6)+').':'')}));
+    parts.push(h('div',{class:'pad two'},[
+      h('button',{class:'btn primary',disabled:D.status==='syncing',onclick:function(){driveNow('manual',{interactive:true});}},[D.status==='needs'?'Sign in and sync':'Sync now']),
+      h('button',{class:'btn',onclick:disableDrive},['Turn off'])]));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:switchAccount},['Use a different Google account'])]));
+    parts.push(h('p',{class:'note',style:'padding-bottom:6px',text:'If your devices show the same tasks in a different order, press this on the device whose order you want, then sync the others.'}));
+    parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:useMyOrder},['Use this device’s order everywhere'])]));
+  }
+
+  /* 3. when to sync, for both */
+  if(d.enabled||c.enabled){
+    parts.push(h('h3',{class:'sect',text:'When to sync'}));
+    parts.push(check('Sync automatically',c.auto,function(v){c.auto=v;commit();}));
+    parts.push(pick('How often while the app is open',c.interval,[[0,'Only when I open the app or change something'],[2,'Every 2 minutes'],[5,'Every 5 minutes'],[15,'Every 15 minutes']],function(v){c.interval=+v;commit();}));
+  }
+  /* Advanced: the user's own Google project, and the Google Tasks list that needs it */
+  var custom=getCustomCid(),tparts=[];
+  var cidIn=h('input',{type:'text',class:'txt','aria-label':'Google client ID',placeholder:'Paste a client ID',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
+  var advKids=[h('h3',{class:'sect',style:'padding-top:12px',text:'Your own Google project'}),
+    h('p',{class:'note',text:custom?'You are using your own Google project.':(DEFAULT_CID?'You are using the app’s built-in Google sign-in. Use your own project only if you want the Google Tasks list features, or prefer to run everything yourself. The README explains how.':'No Google sign-in is built in to this copy of the app, so add a client ID from your own Google project. The README explains how.')}),
+    h('div',{class:'pad'},[cidIn,h('div',{style:'height:10px'}),h('button',{class:'btn primary',onclick:function(){
+      var v=cidIn.value.trim();
+      if(!/\.apps\.googleusercontent\.com$/.test(v)){D.err='That does not look like a client ID. It should end in .apps.googleusercontent.com.';render();return;}
+      if(DEFAULT_CID&&v===DEFAULT_CID){D.err='That is the app’s own built-in client ID, not one from your own project. Paste the client ID from your own Google project instead. To use the built-in one, leave this box empty.';render();return;}
+      D.err='';saveCid(v);render();}},['Save client ID'])])];
+  if(custom)advKids.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:function(){D.err='';saveCid('');render();}},[DEFAULT_CID?'Use the built-in sign-in':'Remove client ID'])]));
+  /* 2. a Google Tasks list */
+  tparts.push(h('h3',{class:'sect',text:'Google Tasks list'}));
+  if(!c.listId){
+    tparts.push(h('p',{class:'note',text:'Keep Master tasks in step with one Google Tasks list, so ticking in Gmail’s side panel ticks here. Turn this on for one device only, usually your phone. Start with a spare test list rather than your real one.'}));
+    if(G.busy)tparts.push(h('p',{class:'note',text:'Connecting to Google…'}));
+    else if(!G.lists.length){
+      tparts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',disabled:!gisReady,onclick:connectForLists},[gisReady?'Connect to Google':'Loading Google sign-in…'])]));
+    }else{
+      tparts.push(h('p',{class:'note',text:'Choose the list to keep in step.'}));
+      G.lists.forEach(function(l){
+        tparts.push(h('button',{class:'navrow',onclick:function(){chooseList(l);}},[h('span',{class:'t'},[h('b',{text:l.title||'Untitled list'})]),svg(ICON.right,20)]));
+      });
+    }
+  }else{
+    var st=G.status==='syncing'?'Syncing…':G.status==='needs'?'Google needs you to sign in again.':G.status==='confirm'?'Ready for the first sync.':G.status==='error'?'The last sync did not finish.':'Last synced '+ago(c.last)+'.';
+    tparts.push(h('p',{class:'note',style:'padding-bottom:4px'},[h('b',{text:'“'+c.listName+'”'}),h('br'),st]));
+    var P=G.plan;
+    if(G.status==='confirm'&&P){
+      var n=P.n;
+      tparts.push(h('p',{class:'note',text:'If you go ahead, the app will add '+n.gNew+' task'+(n.gNew===1?'':'s')+' to Google and bring in '+n.aNew+' from Google'+((n.gEdit+n.aEdit)?', and update '+(n.gEdit+n.aEdit)+' that already match':'')+'. Nothing is deleted. A safety copy of your tasks is saved on this phone first.'}));
+      tparts.push(h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:startFirstSync},['Start syncing']),h('div',{style:'height:8px'}),h('button',{class:'btn',onclick:disconnectSync},['Cancel'])]));
+    }else{
+      if(G.pending){
+        var pd=G.pending,total=pd.app+pd.google;
+        tparts.push(h('p',{class:'note',text:(pd.stopped?'That would remove '+total+' tasks, which is a lot, so I paused. ':'')+total+' deletion'+(total===1?' is':'s are')+' waiting for you: '+pd.google+' to remove from Google (you deleted them here) and '+pd.app+' to remove here (deleted in Google).'}));
+        tparts.push(h('div',{class:'pad two'},[
+          h('button',{class:'btn ghost',onclick:applyPending},['Delete them']),
+          h('button',{class:'btn',onclick:keepPending},['Keep them'])]));
+      }
+      tparts.push(h('div',{class:'pad two'},[
+        h('button',{class:'btn primary',disabled:G.status==='syncing',onclick:function(){syncNow('manual',{interactive:true});}},[G.status==='needs'?'Sign in and sync':'Sync now']),
+        h('button',{class:'btn',onclick:disconnectSync},['Disconnect'])]));
+      tparts.push(pick('Direction',c.dir,[['both','Both ways'],['toApp','Google into the app only'],['toGoogle','App into Google only']],function(v){c.dir=v;commit();}));
+      tparts.push(check('Pass ticks across',c.ticks,function(v){c.ticks=v;commit();}));
+      tparts.push(check('Pass new tasks across',c.adds,function(v){c.adds=v;commit();}));
+      tparts.push(check('Pass edits across (name, details, activity)',c.edits,function(v){c.edits=v;commit();}));
+      tparts.push(pick('When a task is deleted',c.deletes,[['ask','Ask me first'],['carry','Carry the deletion across'],['never','Never (put the task back)']],function(v){c.deletes=v;commit();}));
+      tparts.push(h('p',{class:'note',text:'As a safety stop, if one sync would delete more than about a third of your tasks, I pause and ask first, whatever you choose above.'}));
+    }
+  }
+
+  var det=h('details',{class:'adv'},[h('summary',{text:'Advanced'})].concat(advKids));
+  det.open=ui.adv!==undefined?ui.adv:(!!custom||!getCid());
+  det.addEventListener('toggle',function(){ui.adv=det.open;});
+  parts.push(det);
+  parts.push(h('div',{class:'pad'},[h('button',{class:'btn',onclick:showDiag},['Show a diagnostic report'])]));
+  if(ui.diag){
+    parts.push(h('p',{class:'note',text:ui.diagCopied?'Copied to the clipboard. Paste it into the chat. The same text is below if you need to copy it by hand. It includes your Google email address but no passwords or tokens.':'Select all of the text below, copy it and paste it into the chat. It includes your Google email address but no passwords or tokens.'}));
+    var dta=h('textarea',{readonly:'',rows:'14','aria-label':'Diagnostic report',style:'width:calc(100% - 32px);margin:0 16px 12px;font-size:13px;font-family:monospace;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:10px'});
+    dta.value=ui.diag;parts.push(dta);
+  }
+  return [pageHeader('Sync'),h('div',{class:'list'},parts),navBar(null)];
+}
+
+/* ---------- Sync between devices (a hidden file in the user's own Google Drive) ---------- */
+var DRIVE='https://www.googleapis.com/auth/drive.appdata';
+var DB='https://www.googleapis.com/drive/v3/';
+var DU='https://www.googleapis.com/upload/drive/v3/';
+var DFILE='get-a-grip-next-data.json';
+/* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
+var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,files:[],skew:null,log:[],startedAt:0,tapped:false};
+function dlog(m){D.log.push(new Date().toISOString().slice(11,19)+' '+m);if(D.log.length>16)D.log.shift();}
+function dcfg(){
+  cfg();
+  if(!S.drive)S.drive={};
+  if(S.drive.enabled===undefined)S.drive.enabled=false;
+  if(S.drive.confirmed===undefined)S.drive.confirmed=false;
+  if(S.drive.last===undefined)S.drive.last=null;
+  return S.drive;
+}
+function stable(o){
+  return JSON.stringify(o,function(k,v){
+    if(v&&typeof v==='object'&&!Array.isArray(v)){var s={};Object.keys(v).sort().forEach(function(x){s[x]=v[x];});return s;}
+    return v;
+  });
+}
+/* what is shared: activities, tasks, a note of deletions and when each list was last reordered.
+   Settings, tokens and the Google Tasks links of the other sync stay on the device. */
+function stripGs(t){if(!t||t.gs===undefined)return t;var c=Object.assign({},t);delete c.gs;return c;}
+function toDoc(st){
+  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks.map(stripGs),gone:st.gone||[],ord:st.ord||{t:'',a:''}}));
+}
+function stampOf(x){return x.updated||x.created||'';}
+var lastAlias={};
+function mergeDocs(L,R){
+  R=Object.assign({},R,{tasks:(R.tasks||[]).map(stripGs)});
+  var cutoff=new Date(Date.now()-90*86400000).toISOString();
+  var gone={};
+  (L.gone||[]).concat(R.gone||[]).forEach(function(g){if(!gone[g.id]||gone[g.id]<g.at)gone[g.id]=g.at;});
+
+  /* activities: the later change wins. Two with the same name (and the same archived state) are one activity;
+     both devices keep the older of the two, so they settle on the same one. */
+  var lA={},byKey={},acts={},alias={};
+  function key(a){return a.name.toLowerCase()+'|'+(a.archived?1:0);}
+  (L.activities||[]).forEach(function(a){lA[a.id]=a;acts[a.id]=a;byKey[key(a)]=a;});
+  (R.activities||[]).forEach(function(r){
+    var l=lA[r.id];
+    if(l){if(stampOf(r)>stampOf(l))acts[l.id]=Object.assign({},r);return;}
+    var same=byKey[key(r)];
+    if(!same||!acts[same.id]){acts[r.id]=r;byKey[key(r)]=r;return;}
+    var cur=acts[same.id];
+    var older=((cur.created||'')<(r.created||'')||((cur.created||'')===(r.created||'')&&cur.id<r.id))?cur:r,other=older===cur?r:cur;
+    var latest=stampOf(r)>stampOf(cur)?r:cur;
+    var merged=Object.assign({},latest,{id:older.id,created:older.created||latest.created});
+    delete acts[cur.id];acts[older.id]=merged;alias[other.id]=older.id;byKey[key(merged)]=merged;
+  });
+  lastAlias=alias;
+  function realias(t){return alias[t.activityId]?Object.assign({},t,{activityId:alias[t.activityId]}):t;}
+
+  /* tasks: the later change wins; the Google Tasks link stays as this device has it */
+  var lT={},tasks={};
+  (L.tasks||[]).forEach(function(t0){var t=realias(t0);lT[t.id]=t;tasks[t.id]=t;});
+  (R.tasks||[]).forEach(function(r0){
+    var r=realias(r0);
+    var l=lT[r.id];
+    if(!l){tasks[r.id]=r;return;}
+    if(stampOf(r)>stampOf(l)){
+      var w=Object.assign({},r);
+      if(l.sid){w.sid=l.sid;w.gs=l.gs;}
+      tasks[r.id]=w;
+    }else if(!l.sid&&r.sid){tasks[r.id]=Object.assign({},l,{sid:r.sid});}
+  });
+  /* a deletion stands unless the task was changed after it was deleted */
+  Object.keys(tasks).forEach(function(id){if(gone[id]&&gone[id]>=stampOf(tasks[id]))delete tasks[id];});
+  var goneList=Object.keys(gone).filter(function(id){return !tasks[id]&&gone[id]>cutoff;}).map(function(id){return {id:id,at:gone[id]};});
+  /* two tasks pointing at the same Google task are one task */
+  var bySid={};
+  Object.keys(tasks).forEach(function(id){
+    var t=tasks[id];if(!t||!t.sid)return;
+    var o=bySid[t.sid];
+    if(!o){bySid[t.sid]=t;return;}
+    var keep=stampOf(t)>stampOf(o)?t:o,drop=keep===t?o:t;
+    delete tasks[drop.id];goneList.push({id:drop.id,at:new Date().toISOString()});bySid[t.sid]=keep;
+  });
+  goneList.sort(function(a,b){return a.id<b.id?-1:a.id>b.id?1:0;});
+
+  /* order: whichever device reordered last decides; tasks the other side has that this one lacks go on top, new activities at the end */
+  var lOrd=L.ord||{},rOrd=R.ord||{};
+  function idsOf(list){return (list||[]).map(function(x){return x.id;}).join(',');}
+  var tWin=(lOrd.t||'')>(rOrd.t||'')||((lOrd.t||'')===(rOrd.t||'')&&idsOf(L.tasks)>=idsOf(R.tasks));
+  var aWin=(lOrd.a||'')>(rOrd.a||'')||((lOrd.a||'')===(rOrd.a||'')&&idsOf(L.activities)>=idsOf(R.activities));
+  function order(win,lose,items,top){
+    var seen={},base=[],extra=[];
+    (win||[]).forEach(function(x){var id=alias[x.id]||x.id;if(items[id]&&!seen[id]){seen[id]=1;base.push(id);}});
+    (lose||[]).forEach(function(x){var id=alias[x.id]||x.id;if(items[id]&&!seen[id]){seen[id]=1;extra.push(id);}});
+    Object.keys(items).forEach(function(id){if(!seen[id]){seen[id]=1;extra.push(id);}});
+    return (top?extra.concat(base):base.concat(extra)).map(function(id){return items[id];});
+  }
+  return {v:2,
+    activities:order(aWin?L.activities:R.activities,aWin?R.activities:L.activities,acts,false),
+    tasks:order(tWin?L.tasks:R.tasks,tWin?R.tasks:L.tasks,tasks,true),
+    gone:goneList,
+    ord:{t:(lOrd.t||'')>(rOrd.t||'')?(lOrd.t||''):(rOrd.t||''),a:(lOrd.a||'')>(rOrd.a||'')?(lOrd.a||''):(rOrd.a||'')}};
+}
+function applyMerged(doc){
+  cfg();
+  if(stable(toDoc(S))===stable(doc))return false;
+  var have={};doc.tasks.forEach(function(t){have[t.id]=1;});
+  Object.keys(ui.open).forEach(function(id){if(!have[id])delete ui.open[id];});
+  if(ui.lastTicked&&!have[ui.lastTicked])ui.lastTicked=null;
+  ['pick','activityId','lastActivityId'].forEach(function(k){if(ui[k]&&lastAlias[ui[k]])ui[k]=lastAlias[ui[k]];});
+  var gsKeep={};S.tasks.forEach(function(t){if(t.gs)gsKeep[t.id]=t.gs;});
+  doc.tasks.forEach(function(t){if(!t.gs&&gsKeep[t.id])t.gs=gsKeep[t.id];});
+  S.activities=doc.activities;S.tasks=doc.tasks;S.gone=doc.gone;S.ord=doc.ord;
+  return true;
+}
+
+/* Drive transport */
+function dfetch(method,url,headers,body){
+  var o={method:method,headers:Object.assign({Authorization:'Bearer '+G.token},headers||{})};
+  if(body!==undefined)o.body=body;
+  return fetch(url,o).then(function(r){
+    if(r.status===401){G.token=null;var e=new Error('Your Google sign-in has expired.');e.auth=true;throw e;}
+    if(!r.ok)throw new Error('Google Drive said '+r.status+(r.status===403?'. Check that the Google Drive API is switched on and that you approved the Drive permission.':'.'));
+    return r;
+  });
+}
+function dfind(){
+  return dfetch('GET',DB+'files?spaces=appDataFolder&orderBy=createdTime&pageSize=20&q='+enc("name='"+DFILE+"' and trashed=false")+'&fields='+enc('files(id,version,createdTime,modifiedTime)'))
+    .then(function(r){return r.json();}).then(function(d){D.files=d.files||[];return D.files[0]||null;});
+}
+function dread(id){
+  return dfetch('GET',DB+'files/'+enc(id)+'?alt=media').then(function(r){return r.text();}).then(function(t){
+    var d;try{d=JSON.parse(t);}catch(e){throw new Error('The data saved in Google Drive could not be read.');}
+    if(!d||!Array.isArray(d.activities)||!Array.isArray(d.tasks))throw new Error('The data saved in Google Drive is not in the expected format.');
+    if(d.v>2)throw new Error('The data in Google Drive was written by a newer version of the app. Reload the app to update it.');
+    return d;
+  });
+}
+function dversion(id){return dfetch('GET',DB+'files/'+enc(id)+'?fields=version').then(function(r){return r.json();}).then(function(d){return d.version;});}
+function dcreate(doc){
+  var bd='gag'+Date.now();
+  var body='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:DFILE,parents:['appDataFolder']})+
+    '\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(doc)+'\r\n--'+bd+'--';
+  return dfetch('POST',DU+'files?uploadType=multipart&fields=id,version,modifiedTime',{'Content-Type':'multipart/related; boundary='+bd},body);
+}
+function dupdate(id,doc){
+  return dfetch('PATCH',DU+'files/'+enc(id)+'?uploadType=media&fields=id,version,modifiedTime',{'Content-Type':'application/json'},JSON.stringify(doc));
+}
+/* read, merge, save. If someone else saved in between, start again (up to three times). */
+function ensureUser(){
+  if(D.user!==null)return Promise.resolve();
+  return dfetch('GET',DB+'about?fields='+enc('user(emailAddress)')).then(function(r){return r.json();}).then(function(d){
+    D.user=(d.user&&d.user.emailAddress)||'';
+  }).catch(function(e){if(e&&e.auth)throw e;D.user='';});
+}
+function noteWrite(r){
+  return r.json().then(function(j){
+    if(j&&j.id&&!D.files.some(function(f){return f.id===j.id;}))D.files=D.files.concat([{id:j.id,version:j.version,createdTime:j.modifiedTime,modifiedTime:j.modifiedTime}]);
+    if(j&&j.modifiedTime){D.skew=Date.parse(j.modifiedTime)-Date.now();dlog('wrote file …'+String(j.id).slice(-6)+' (version '+j.version+')');}
+    else dlog('wrote file');
+  }).catch(function(){dlog('wrote file');});
+}
+function driveCycle(n){
+  return ensureUser().then(dfind).then(function(f){
+    cfg();
+    if(!f){D.seen={fileId:'new',a:S.activities.length,t:S.tasks.length};dlog('no file found, creating one');return dcreate(toDoc(S)).then(noteWrite);}
+    return dread(f.id).then(function(remote){
+      var merged=mergeDocs(toDoc(S),remote);
+      D.seen={fileId:f.id,a:remote.activities.length,t:remote.tasks.length};
+      dlog('read …'+String(f.id).slice(-6)+': '+remote.activities.length+' activities, '+remote.tasks.length+' tasks ('+D.files.length+' file(s) with this name)');
+      var changedHere=applyMerged(merged);
+      dlog('merged: '+merged.activities.length+' activities, '+merged.tasks.length+' tasks; this device '+(changedHere?'changed':'unchanged'));
+      if(stable(merged)===stable(toDoc({activities:remote.activities,tasks:remote.tasks,gone:remote.gone,ord:remote.ord}))){dlog('Drive already matches, nothing to write');return null;}
+      return dversion(f.id).then(function(v){
+        if(v!==f.version&&n<3)return driveCycle(n+1);
+        return dupdate(f.id,merged).then(noteWrite);
+      });
+    });
+  });
+}
+function driveNow(reason,opts){
+  opts=opts||{};
+  var d=dcfg();
+  if(checkSignIn()){commitSync();return Promise.resolve();}
+  if(!d.enabled||!d.confirmed)return Promise.resolve();
+  if(D.running){
+    var age=Date.now()-D.startedAt;
+    if(opts.interactive&&age>15000){dlog('previous sync looked stuck ('+Math.round(age/1000)+' s); starting again');D.running=false;pendingTok=null;}
+    else{dlog('skipped ('+reason+'): another sync is still running ('+Math.round(age/1000)+' s)');D.again=true;return Promise.resolve();}
+  }
+  if(!opts.interactive&&(reason==='change'||reason==='timer')&&D.status==='needs'&&!tokenValid(needScopes([DRIVE])))return Promise.resolve();
+  D.running=true;D.startedAt=Date.now();D.err='';D.status='syncing';
+  dlog('sync started ('+reason+(opts.interactive?', interactive':'')+')');
+  if(ui.view==='sync')softRender();
+  return getToken(!!opts.interactive,[DRIVE]).then(function(){return driveCycle(0);}).then(function(){
+    D.status='idle';d.last=new Date().toISOString();dlog('sync finished');
+  }).catch(function(e){
+    dlog('stopped: '+((e&&(e.message||e.type))||'unknown'));
+    if(e&&e.type==='noclient'){D.status='error';D.err='Add your Google client ID on the Import page first.';}
+    else if(e&&(e.auth||(e.type&&!opts.interactive))){D.status='needs';D.err='';}
+    else if(e&&e.type){D.status='error';D.err='Google did not give access ('+e.type+').';}
+    else if(e instanceof TypeError){D.status='error';D.err='Could not reach Google. It will try again.';}
+    else{D.status='error';D.err=(e&&e.message)||'Sync failed.';}
+  }).then(function(){
+    D.running=false;
+    commitSync();
+    if(D.again){D.again=false;setTimeout(function(){driveNow('again');},500);}
+  });
+}
+/* If this device's Google sign-in is no longer the one it joined with, switch syncing off and ask, instead of quietly using another file */
+function checkSignIn(){
+  var d=dcfg();
+  if(!d.enabled)return false;
+  var now=getCid();
+  if(!d.cid){d.cid=now;return false;}
+  if(d.cid===now)return false;
+  d.enabled=false;d.confirmed=false;d.last=null;D.seen=null;D.user=null;D.status='idle';
+  d.notice='Your Google sign-in changed, so syncing between your devices was switched off to protect your tasks. Turn it on again and I will show what each side holds before joining.';
+  return true;
+}
+function enableDrive(){
+  var d=dcfg();
+  D.err='';d.notice='';D.status='syncing';render();
+  function back(){D.status='idle';render();}
+  getToken(true,[DRIVE]).then(dfind).then(function(f){
+    return f?dread(f.id).then(function(r){return {f:f,r:r};}):{f:null};
+  }).then(function(x){
+    var msg;
+    if(!x.f)msg='Nothing is saved in your Google Drive for this app yet. Save this device’s '+S.tasks.length+' tasks and '+S.activities.length+' activities there, so your other devices can pick them up?';
+    else{
+      var m=mergeDocs(toDoc(S),x.r);
+      msg='This device has '+S.tasks.length+' tasks and '+S.activities.length+' activities. Google Drive holds '+x.r.tasks.length+' tasks and '+x.r.activities.length+' activities. After joining them, every device will have '+m.tasks.length+' tasks and '+m.activities.length+' activities. A safety copy of this device’s data is saved first. Go ahead?';
+    }
+    if(!confirm(msg)){back();return null;}
+    try{localStorage.setItem('next.tasks.v1.predrive',JSON.stringify(S));}catch(e){}
+    d.enabled=true;d.confirmed=true;d.cid=getCid();d.notice='';
+    return driveNow('manual',{interactive:true});
+  }).catch(function(e){
+    D.status='error';
+    D.err=e&&e.type?(e.type==='noclient'?'Add your Google client ID on the Import page first.':'Google did not give access ('+e.type+').'):((e&&e.message)||'Could not connect to Google Drive.');
+    render();
+  });
+}
+/* short codes for comparing devices at a glance: same code = same data, same order */
+function codeOf(str){var h=5381;for(var i=0;i<str.length;i++){h=((h<<5)+h+str.charCodeAt(i))|0;}return (h>>>0).toString(16).toUpperCase().padStart(8,'0');}
+function dataCode(){cfg();return codeOf(stable(toDoc(S)));}
+function orderCode(){return codeOf(S.tasks.map(function(t){return t.id;}).join(',')+'|'+S.activities.map(function(a){return a.id;}).join(','));}
+function diagText(){
+  var d=dcfg(),c=cfg(),cid=getCid(),open=0,hid=0,done=0;
+  S.tasks.forEach(function(t){if(t.done)done++;else if(t.nm)hid++;else open++;});
+  var L=['Get a grip diagnostic report (no passwords or tokens in it)',
+    'Version: '+APP_VERSION,
+    'Time on this device: '+new Date().toISOString(),
+    'Clock compared with Google: '+(D.skew===null?'not measured yet (sync once first)':Math.round(D.skew/1000)+' seconds (positive = this device is behind Google)'),
+    'Sign-in: '+(getCustomCid()?'own project':'built-in')+', client ID starts '+cid.slice(0,22),
+    'Sign-in status: '+D.status+(G.token?', has a pass':', no pass right now'),
+    'Google account: '+(D.user||'unknown'),
+    'Devices sync: '+(d.enabled?'on':'off')+', confirmed '+d.confirmed+', joined with ID starting '+String(d.cid||'none').slice(0,22)+', last '+(d.last||'never'),
+    'Automatic: '+c.auto+', every '+c.interval+' min',
+    'Files named '+DFILE+' in Drive: '+D.files.length+(D.files.length?' -> '+D.files.map(function(f){return '…'+String(f.id).slice(-6)+' v'+f.version+' made '+String(f.createdTime||'').slice(0,19)+' changed '+String(f.modifiedTime||'').slice(0,19);}).join('; '):''),
+    'Drive held at last look: '+(D.seen?D.seen.a+' activities, '+D.seen.t+' tasks (file …'+String(D.seen.fileId).slice(-6)+')':'no look yet'),
+    'This device: '+S.activities.length+' activities ('+S.activities.filter(function(a){return a.archived;}).length+' archived), '+S.tasks.length+' tasks ('+open+' in Master, '+hid+' hidden from Master, '+done+' ticked)',
+    'Codes to compare between devices: data '+dataCode()+', order '+orderCode(),
+    'Google Tasks list: '+(c.enabled&&c.listId?'on':'off'),
+    'Recent events:'].concat(D.log.length?D.log:['(none yet)']);
+  return L.join('\n');
+}
+function showDiag(){
+  var t=diagText();ui.diag=t;ui.diagCopied=false;
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){ui.diagCopied=true;render();},function(){});}}catch(e){}
+  render();
+}
+/* make this device's order of tasks and activities the one every device follows */
+function useMyOrder(){
+  if(!confirm('Make your other devices follow the order of tasks and activities on this device? Nothing is added or removed, only the order changes.'))return;
+  cfg();var now=iso();S.ord.t=now;S.ord.a=now;
+  commit(true);
+  driveNow('manual',{interactive:true});
+}
+function switchAccount(){
+  var d=dcfg();
+  D.err='';D.user=null;G.token=null;G.tokScope=null;D.status='syncing';render();
+  getToken(true,[DRIVE],true).then(function(){D.status='idle';return driveNow('manual',{interactive:true});}).catch(function(e){
+    D.status='error';D.err=e&&e.type?'Google did not give access ('+e.type+').':((e&&e.message)||'Could not change account.');render();
+  });
+}
+function disableDrive(){
+  var d=dcfg();d.enabled=false;d.confirmed=false;d.last=null;D.status='idle';D.err='';d.notice='';
+  commit(true);
+}
+function anySync(){var c=cfg(),d=dcfg();return !!((c.enabled&&c.listId&&c.confirmed)||(d.enabled&&d.confirmed));}
+/* one run of everything that is switched on: devices first, then the Google Tasks list, then devices again if the list changed anything */
+var runLog=[],pausedUntil=0,lastAuto=0;
+function syncAll(reason,opts){
+  opts=opts||{};
+  if(!opts.interactive){
+    var t=Date.now();
+    if(t<pausedUntil)return Promise.resolve();
+    /* coming back to the app or the timer: no more than one run every 30 seconds, and none while a sign-in is waiting for a tap */
+    if(reason==='return'||reason==='timer'){
+      if(t-lastAuto<30000)return Promise.resolve();
+      if(G.status==='needs'||D.status==='needs')return Promise.resolve();
+    }
+    lastAuto=t;
+    /* safety net: if something ever makes this run away, stop automatic syncing for five minutes */
+    runLog=runLog.filter(function(x){return t-x<60000;});runLog.push(t);
+    if(runLog.length>8){pausedUntil=t+300000;return Promise.resolve();}
+  }
+  var c=cfg(),d=dcfg();
+  checkSignIn();
+  var tasksOn=!!(c.enabled&&c.listId&&c.confirmed),driveOn=!!(d.enabled&&d.confirmed);
+  var before=null;
+  return (driveOn?driveNow(reason,opts):Promise.resolve()).then(function(){
+    if(!tasksOn)return null;
+    before=stable(toDoc(S));
+    return syncNow(reason,opts);
+  }).then(function(){
+    if(driveOn&&tasksOn&&before!==null&&stable(toDoc(S))!==before)return driveNow('after',opts);
+  });
+}
+
+
+/* ---------- Today (built in a later stage) ---------- */
+function viewToday(){return [titleBar('Today'),h('div',{class:'list'},[h('div',{class:'empty',text:'Today is coming.'})]),navBar('today')];}
+
+/* ---------- Settings ---------- */
+function getTheme(){try{return localStorage.getItem('next.gag.theme')||'auto';}catch(e){return 'auto';}}
+function applyTheme(){
+  var t=getTheme(),r=document.documentElement;
+  if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');
+}
+function setTheme(t){try{localStorage.setItem('next.gag.theme',t);}catch(e){}applyTheme();render();}
+applyTheme();
+
+/* the preview can take a copy of the live app's tasks (read only: the live app is never changed) */
+function liveCopy(){
+  try{var r=localStorage.getItem(LIVEKEY);if(!r)return null;var d=JSON.parse(r);if(d&&Array.isArray(d.activities)&&Array.isArray(d.tasks))return d;}catch(e){}
+  return null;
+}
+function copyFromLive(){
+  var d=liveCopy();
+  if(!d){alert('Nothing was found from the live app on this device. Open the live app on this same phone or computer first.');return;}
+  if(!confirm('Replace everything in this preview with a copy of your live app’s tasks ('+d.activities.length+' activities, '+d.tasks.length+' tasks)? Your live app is not changed.'))return;
+  var tasks=d.tasks.map(function(t){var c=Object.assign({},t);delete c.sid;delete c.gs;delete c.gid;return c;});
+  S={v:1,updatedAt:0,activities:d.activities,tasks:tasks,gone:[],ord:d.ord||{t:'',a:''}};
+  ui.lastTicked=null;ui.lastActivityId=null;ui.activityId=null;ui.back=[];ui.view='today';
+  commit();
+}
+
+function viewSettings(){
+  var parts=[];
+  var arch=archived().length;
+  function row(title,sub,fn){
+    return h('button',{class:'navrow',onclick:fn},[h('span',{class:'t'},[h('b',{text:title}),sub?h('small',{text:sub}):null]),svg(ICON.right,20)]);
+  }
+  parts.push(h('p',{class:'note',text:'This is the preview of the new layout. It keeps its own tasks, separate from your live app, and syncs to its own hidden Drive file.'}));
+  parts.push(h('h3',{class:'sect',text:'Appearance'}));
+  var th=getTheme();
+  parts.push(h('div',{class:'sorts',style:'padding-top:10px'},[['auto','Follow my phone'],['light','Always light'],['dark','Always dark']].map(function(x){
+    return h('button',{class:'btn','aria-pressed':th===x[0]?'true':'false',onclick:function(){setTheme(x[0]);}},[x[1]]);
+  })));
+  parts.push(h('h3',{class:'sect',text:'Your tasks'}));
+  parts.push(row('Archive',arch===1?'1 archived activity':arch+' archived activities',function(){goSub('archive');}));
+  parts.push(row('Sync',syncSummary(),openSync));
+  var d=liveCopy();
+  parts.push(h('h3',{class:'sect',text:'Backup'}));
+  parts.push(h('p',{class:'note',text:ui.status==='failed'?'Could not save. Your device storage may be full or blocked.':'Saved on this device only unless you turn on Sync.'}));
+  var file=h('input',{type:'file',accept:'application/json,.json',id:'restorefile',style:'display:none',onchange:function(e){restoreFile(e.target.files&&e.target.files[0]);e.target.value='';}});
+  parts.push(h('div',{class:'pad two'},[
+    h('button',{class:'btn',onclick:backup},['Download a backup']),
+    h('button',{class:'btn',onclick:function(){document.getElementById('restorefile').click();}},['Restore from backup']),file]));
+  parts.push(h('h3',{class:'sect',text:'Preview only'}));
+  parts.push(h('p',{class:'note',text:d?'Your live app holds '+d.activities.length+' activities and '+d.tasks.length+' tasks on this device. Copy them here to try the preview with your real tasks. The live app is not changed.':'No live app data was found on this device. Open the live app here first if you want to copy its tasks.'}));
+  parts.push(h('div',{class:'pad'},[h('button',{class:'btn',disabled:!d,onclick:copyFromLive},['Copy my live tasks into the preview'])]));
+  parts.push(h('div',{class:'foot'},[h('a',{href:'../privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'}),' · Preview version '+APP_VERSION]));
+  return [pageHeader('Settings'),h('div',{class:'list'},parts),navBar(null)];
+}
+
+/* ---------- sheets ---------- */
+function sheetEl(){
+  var s=ui.sheet;if(!s)return null;
+  var inner=[h('div',{class:'grab'})];
+  if(s.type==='pick'){
+    inner.push(h('h2',{text:'Add this task to'}));
+    function opt(label,id,sub){
+      var sel=(ui.pick||null)===id;
+      return h('button',{class:'opt'+(sel?' sel':''),onclick:function(){ui.pick=id;ui.sheet=null;render();}},[
+        sel?svg(ICON.check,22):null,h('span',{class:'l',text:label}),sub?h('small',{text:sub}):null]);
+    }
+    inner.push(opt('No activity',null,''));
+    live().forEach(function(a){inner.push(opt(a.name,a.id,openCount(a.id)+' open'));});
+    inner.push(h('div',{class:'sep'}));
+    inner.push(h('button',{class:'opt link',onclick:function(){ui.afterCreate='pick';ui.sheet={type:'new'};render();}},[svg(ICON.plus),h('span',{class:'l',text:'New activity'})]));
+  }else if(s.type==='bulk'){
+    var ba=s.actId?act(s.actId):null;
+    inner.push(h('h2',{text:'Add several tasks'}));
+    if(s.msg){
+      inner.push(h('p',{class:'note',text:s.msg}));
+      inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Done'])])]));
+    }else{
+      var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
+      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
+      var qcb=null;
+      if(ba){
+        var qv=false;try{qv=localStorage.getItem('next.gag.bulkQuiet')==='1';}catch(e){}
+        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of Master tasks'});
+      }
+      inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),
+        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of Master tasks'})]):null,
+        h('div',{class:'btns'},[
+        h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+        h('button',{class:'btn primary',onclick:function(){
+          if(!bta.value.trim())return;
+          var quiet=!!(qcb&&qcb.checked);
+          if(qcb){try{localStorage.setItem('next.gag.bulkQuiet',quiet?'1':'0');}catch(e){}}
+          var r=addMany(bta.value,s.actId,quiet);
+          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of Master tasks':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
+          ui.sheet={type:'bulk',actId:s.actId,msg:m};render();}},['Add'])])]));
+    }
+  }else if(s.type==='menu'){
+    inner.push(h('h2',{text:'More'}));
+    inner.push(h('button',{class:'opt link',onclick:function(){goSub('archive');}},[svg(ICON.box),h('span',{class:'l',text:'Archive'}),h('small',{text:archived().length+' archived'})]));
+    inner.push(h('button',{class:'opt link',onclick:function(){goSub('settings');}},[svg('<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/>'),h('span',{class:'l',text:'Settings'})]));
+  }else if(s.type==='switch'){
+    inner.push(h('h2',{text:'Go to activity'}));
+    live().forEach(function(a){
+      var sel=a.id===ui.activityId;
+      inner.push(h('button',{class:'opt'+(sel?' sel':''),onclick:function(){openActivity(a.id);}},[
+        sel?svg(ICON.check,22):null,h('span',{class:'l',text:a.name}),h('small',{text:openCount(a.id)?openCount(a.id)+' open':'All done'})]));
+    });
+    inner.push(h('div',{class:'sep'}));
+    inner.push(h('button',{class:'opt link',onclick:function(){go('activities');}},[svg(ICON.list),h('span',{class:'l',text:'All activities'})]));
+    inner.push(h('button',{class:'opt link',onclick:function(){ui.afterCreate='open';ui.sheet={type:'new'};render();}},[svg(ICON.plus),h('span',{class:'l',text:'New activity'})]));
+  }else if(s.type==='new'||s.type==='rename'){
+    var renaming=s.type==='rename',a=renaming?act(ui.activityId):null;
+    var inp=h('input',{type:'text',id:'sheetin','aria-label':renaming?'Activity name':'New activity name',placeholder:'Activity name',value:renaming&&a?a.name:'',autocomplete:'off',
+      onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();save();}}});
+    function save(){
+      var v=inp.value.trim();if(!v)return;
+      if(renaming){if(a){a.name=v;a.updated=iso();}ui.sheet=null;commit();return;}
+      var n=createActivity(v);if(!n)return;
+      var mode=ui.afterCreate;ui.afterCreate=null;ui.sheet=null;
+      if(mode&&mode.assign){var I=impState();if(mode.assign==='bulk'){I.bulk=n.id;I.items.forEach(function(it){if(!it.dup)it.act=n.id;});}else{I.items.forEach(function(it){if(it.gid===mode.assign)it.act=n.id;});}saveDraft();commit();}
+      else if(mode==='pick'){ui.pick=n.id;commit();}
+      else if(mode==='stay'){commit();}
+      else{ui.view='activity';ui.activityId=n.id;ui.lastActivityId=n.id;commit();}
+    }
+    inner.push(h('h2',{text:renaming?'Rename activity':'New activity'}));
+    inner.push(h('div',{class:'field'},[inp,h('div',{class:'btns'},[
+      h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+      h('button',{class:'btn primary',onclick:save},[renaming?'Save':'Create'])])]));
+  }else if(s.type==='edit'){
+    var t=task(ui.editId);if(!t)return null;
+    var ti=h('input',{type:'text',id:'sheetin','aria-label':'Task text',value:t.text,autocomplete:'off',
+      onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();saveEdit();}}});
+    var sel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(
+      S.activities.filter(function(a){return !a.archived||a.id===t.activityId;}).map(function(a){return h('option',{value:a.id,text:a.name+(a.archived?' (archived)':'')});})));
+    sel.value=t.activityId||'';
+    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in Master tasks'});
+    shownCb.disabled=!sel.value;
+    sel.addEventListener('change',function(){shownCb.disabled=!sel.value;if(!sel.value)shownCb.checked=true;});
+    var hasN=!!(t.notes&&t.notes.trim());
+    var nt=h('textarea',{id:'sheetnotes','aria-label':'Details',placeholder:'A web address, a phone number, anything useful',autocapitalize:'sentences'});
+    nt.value=t.notes||'';
+    var notesBox=h('label',null,['Details',nt]);
+    var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
+    function saveEdit(){
+      var v=ti.value.trim();if(!v)return;
+      t.text=v;t.activityId=sel.value||null;t.updated=iso();
+      if(t.activityId&&!shownCb.checked)t.nm=true;else delete t.nm;
+      var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
+      if(nv)t.notes=nv;else delete t.notes;
+      if(!nv)delete ui.open[t.id];
+      ui.sheet=null;commit();
+    }
+    inner.push(h('h2',{text:'Edit task'}));
+    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,
+      h('div',{class:'btns'},[
+        h('button',{class:'btn danger',onclick:function(){
+          [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
+          S.gone.push({id:t.id,at:iso()});
+          S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
+        h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+        h('button',{class:'btn primary',onclick:saveEdit},['Save'])])]));
+  }
+  return h('div',null,[h('div',{class:'scrim',onclick:closeSheet}),h('div',{class:'sheet',role:'dialog','aria-modal':'true'},inner)]);
+}
+
+/* ---------- render ---------- */
+function viewKids(){
+  return [appHeader()].concat(viewBody());
+}
+function viewBody(){
+  var v=ui.view;
+  return v==='activity'?viewActivity():v==='activities'?viewActivities():v==='archive'?viewArchive():v==='import'?viewImport():v==='sync'?viewSync():v==='settings'?viewSettings():v==='master'?viewMaster():viewToday();
+}
+function render(){
+  ui.dirty=false;
+  var kids=viewKids();
+  var scroller=app.querySelector('.list');var st=scroller?scroller.scrollTop:0;
+  var ae=document.activeElement,keep=null;
+  if(ae&&app.contains(ae)&&ae.tagName==='INPUT'&&ae.type==='text'){keep={id:ae.id,label:ae.getAttribute('aria-label'),s:ae.selectionStart,e:ae.selectionEnd};}
+  app.replaceChildren.apply(app,kids.concat([sheetEl()].filter(Boolean)));
+  var l=app.querySelector('.list');if(l&&ui.view===lastView)l.scrollTop=st;
+  lastView=ui.view;
+  if(keep&&!ui.sheet){
+    var q=keep.id?document.getElementById(keep.id):null;
+    if(!q&&keep.label){var all=app.querySelectorAll('input[type=text]');for(var i=0;i<all.length;i++){if(all[i].getAttribute('aria-label')===keep.label){q=all[i];break;}}}
+    if(q&&q!==document.activeElement){try{q.focus({preventScroll:true});q.setSelectionRange(keep.s,keep.e);}catch(x){}}
+  }
+  if(ui.focusHandle){var fh=app.querySelector('[data-handle="'+ui.focusHandle+'"]');if(fh)fh.focus();ui.focusHandle=null;}
+  if(ui.sheet&&ui.sheet.type==='bulk'&&!ui.sheet.msg){var bi=document.getElementById('bulkin');if(bi)bi.focus();}
+  if(ui.sheet&&(ui.sheet.type==='new'||ui.sheet.type==='rename'||ui.sheet.type==='edit')){
+    var si=document.getElementById('sheetin');if(si){si.focus();si.select();}
+  }
+}
+var lastView='';
+
+/* drag to reorder */
+function applyOrder(ids){
+  var set={},byId={},slots=[];
+  ids.forEach(function(i){set[i]=1;});
+  S.tasks.forEach(function(t,i){byId[t.id]=t;if(set[t.id])slots.push(i);});
+  slots.forEach(function(si,k){S.tasks[si]=byId[ids[k]];});
+  cfg();S.ord.t=iso();
+}
+function applyActOrder(ids){
+  var set={},byId={},slots=[];
+  ids.forEach(function(i){set[i]=1;});
+  S.activities.forEach(function(a,i){byId[a.id]=a;if(set[a.id])slots.push(i);});
+  slots.forEach(function(si,k){S.activities[si]=byId[ids[k]];});
+  cfg();S.ord.a=iso();
+}
+function rowIds(list,sel){return Array.prototype.slice.call(list.querySelectorAll(sel||'.row')).map(function(r){return r.getAttribute('data-id');});}
+function scrollerOf(el){var n=el.parentNode;while(n&&n!==document.body){var o=getComputedStyle(n).overflowY;if(o==='auto'||o==='scroll')return n;n=n.parentNode;}return el.parentNode;}
+function startDrag(e,id,sel,apply){
+  sel=sel||'.row';apply=apply||applyOrder;
+  if(e.button!==undefined&&e.button!==0)return;
+  e.preventDefault();
+  var handle=e.currentTarget,row=handle.closest(sel),list=row.parentNode,scroller=scrollerOf(row);
+  var before=rowIds(list,sel).join(','),grab=e.clientY-row.getBoundingClientRect().top;
+  var lastY=e.clientY,raf=0,active=true;
+  row.classList.add('dragging');ui.dragging=true;
+  try{handle.setPointerCapture(e.pointerId);}catch(x){}
+  function place(){
+    row.style.transform='none';
+    var rows=Array.prototype.slice.call(list.querySelectorAll(sel)).filter(function(r){return r!==row;});
+    var target=null;
+    for(var i=0;i<rows.length;i++){var r=rows[i].getBoundingClientRect();if(lastY<r.top+r.height/2){target=rows[i];break;}}
+    if(target)list.insertBefore(row,target);else list.appendChild(row);
+    var nat=row.getBoundingClientRect().top;
+    row.style.transform='translateY('+(lastY-grab-nat)+'px)';
+  }
+  function loop(){
+    if(!active)return;
+    var lr=scroller.getBoundingClientRect();
+    if(lastY<lr.top+48)scroller.scrollTop-=10;else if(lastY>lr.bottom-48)scroller.scrollTop+=10;
+    place();raf=requestAnimationFrame(loop);
+  }
+  function move(ev){lastY=ev.clientY;}
+  function end(){
+    active=false;ui.dragging=false;cancelAnimationFrame(raf);
+    handle.removeEventListener('pointermove',move);
+    handle.removeEventListener('pointerup',end);
+    handle.removeEventListener('pointercancel',end);
+    var ids=rowIds(list,sel);
+    if(ids.join(',')===before){render();return;}
+    apply(ids);commit();
+  }
+  handle.addEventListener('pointermove',move);
+  handle.addEventListener('pointerup',end);
+  handle.addEventListener('pointercancel',end);
+  loop();
+}
+function nudge(e,id,sel,apply){
+  sel=sel||'.row';apply=apply||applyOrder;
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
+  e.preventDefault();
+  var list=e.currentTarget.closest(sel).parentNode,ids=rowIds(list,sel),i=ids.indexOf(id),j=i+(e.key==='ArrowUp'?-1:1);
+  if(i<0||j<0||j>=ids.length)return;
+  ids.splice(i,1);ids.splice(j,0,id);
+  apply(ids);ui.focusHandle=id;commit();
+}
+
+/* swipe between pages: Today | Master tasks | Activities (an activity page swipes back to Activities) */
+var tx=0,ty=0,tracking=false;
+document.addEventListener('touchstart',function(e){
+  if(ui.sheet||e.touches.length!==1){tracking=false;return;}
+  var tg=e.target;if(tg.closest&&tg.closest('input,select,textarea,.handle,.navscroll'))return;
+  tracking=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener('touchend',function(e){
+  if(!tracking)return;tracking=false;
+  var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;
+  var left=dx<0,order=['today','master','activities'];
+  if(ui.view==='activity'){if(!left)go('activities');return;}
+  var i=order.indexOf(ui.view);
+  if(i<0)return;
+  var j=i+(left?1:-1);
+  if(j>=0&&j<order.length)go(order[j]);
+},{passive:true});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
+
+render();
+(function(){
+  var c=cfg(),d=dcfg(),hadCid=d.cid;
+  if(checkSignIn()||d.cid!==hadCid)commit(true);
+  if((c.enabled&&c.listId)||d.enabled){
+    if(getCid())loadGIS();
+    if(c.auto&&anySync())setTimeout(function(){syncAll('open');},800);
+  }
+  function lastAny(){var k=cfg(),dd=dcfg();return Math.max(k.last?Date.parse(k.last):0,dd.last?Date.parse(dd.last):0);}
+  setInterval(function(){
+    var k=cfg();
+    if(!k.auto||!anySync()||!k.interval||document.visibilityState!=='visible')return;
+    if(Date.now()-lastAny()>=k.interval*60000-5000)syncAll('timer');
+  },30000);
+  document.addEventListener('visibilitychange',function(){
+    var k=cfg();
+    if(document.visibilityState!=='visible'||!k.auto||!anySync())return;
+    if(Date.now()<askingUntil||G.running||D.running)return;
+    if(Date.now()-lastAny()>30000)syncAll('return');
+  });
+  document.addEventListener('focusout',function(){
+    if(ui.dirty)setTimeout(function(){if(ui.dirty)softRender();},250);
+  });
+})();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
