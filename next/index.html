@@ -87,6 +87,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .details a{color:var(--accent);text-decoration:underline}
 .field textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px 14px;resize:vertical}
 .field textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.ptag{display:inline-block;align-self:flex-start;margin-top:3px;padding:1px 8px;border:1.5px solid var(--accent);border-radius:9px;color:var(--accent);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .rtl{display:flex;align-items:flex-start;gap:8px}
 .rtl svg{margin-top:3px}
 .row.big .rtl>span{font-weight:700}
@@ -343,49 +344,28 @@ function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&
 /* the SMALL list (internally still called master): small tasks only, never big tasks or the subtasks of big tasks (those live on the Big page).
    A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, and once all are done the parent itself. */
 function smallRows(){
+  /* the SMALL list: your small tasks, in your order. A small task with subtasks is one row that opens to show them all (like a card on the Big page) */
   var out=[];
   S.tasks.forEach(function(t){
     if(t.done||isChild(t)||isBig(t)||t.nm)return;
-    var kids=childrenOf(t);
-    if(kids.length){
-      var n=kids.find(function(c){return !c.done;});
-      /* while its subtasks are opened for adding, the parent stays on show so you can keep adding; close them to go back to one at a time */
-      out.push({t:(ui.partsOpen[t.id]?t:(n||t)),owner:t});
-      return;
-    }
     out.push({t:t,owner:t});
   });
   return out;
 }
-/* MASTER tasks: everything you could do next, in one list: small tasks as in the Small list, plus the next unfinished subtask of each big task
-   (a big task is never listed itself, so one with no subtasks is absent). Order follows the order of the tasks themselves. */
+/* MASTER: the one list of things to DO. Small tasks that have no subtasks, plus the next unfinished subtask of every parent, big or small.
+   A parent is never listed itself (you tick it off yourself in its own list). Order follows the order of the parents. */
 function masterRows(){
   var out=[];
   S.tasks.forEach(function(t){
     if(t.done||isChild(t)||t.nm)return;
     var kids=childrenOf(t);
-    if(isBig(t)){
-      /* a big task is never listed itself: only its next unfinished subtask is. With no subtasks (or none left) it is absent; it lives on the Big page */
-      var nb=kids.find(function(c){return !c.done;});
-      if(nb)out.push({t:nb,owner:t});
-      return;
-    }
     if(kids.length){
       var n=kids.find(function(c){return !c.done;});
-      out.push({t:(ui.partsOpen[t.id]?t:(n||t)),owner:t});
+      if(n)out.push({t:n,owner:t});
       return;
     }
+    if(isBig(t))return;
     out.push({t:t,owner:t});
-  });
-  return out;
-}
-/* the next unfinished subtask of each big task: these live on the Big page, but a spare slot may well fit one */
-function bigNextRows(){
-  var out=[];
-  S.tasks.forEach(function(t){
-    if(t.done||isChild(t)||!isBig(t))return;
-    var n=childrenOf(t).find(function(c){return !c.done;});
-    if(n)out.push({t:n,owner:t});
   });
   return out;
 }
@@ -500,19 +480,17 @@ function lastTouched(t){
 }
 function bigCandidates(){
   return S.tasks.filter(function(t){
-    if(t.done||!isBig(t)||isChild(t))return false;
-    var ks=childrenOf(t);
-    return !ks.length||ks.some(function(p){return !p.done;});
+    return !t.done&&isBig(t)&&!isChild(t)&&childrenOf(t).some(function(p){return !p.done;});
   });
 }
-/* Automatic takes the FIRST big task in the owner's own order (set by dragging on the Big page) */
+/* Automatic takes the FIRST big task in the owner's own order that has something left to do, and its first unfinished subtask */
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
     var p=partsOf(best).find(function(x){return !x.done;});
-    out.push(p?mkItem('big',best.id,p.id):mkItem('big',best.id));
+    out.push(mkItem('big',best.id,p.id));
   }
-  smallRows().filter(function(r){return !isBig(r.t)&&!(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
+  masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
   return out.filter(Boolean);
 }
 function littleChoices(pl,cust){
@@ -708,7 +686,7 @@ function taskRow(t,showAct,opts){
   var owner=opts.owner&&opts.owner!==t?opts.owner:null;
   var slot=owner?owner.id:t.id;
   var a=t.activityId?act(t.activityId):null;
-  var sub=owner?h('small',{text:'subtask of '+owner.text}):(showAct&&a?h('small',{text:a.name}):null);
+  var sub=owner?h('small',{class:'ptag',text:'Part of: '+owner.text}):(showAct&&a?h('small',{text:a.name}):null);
   var hasNotes=!!(t.notes&&t.notes.trim()),isOpen=hasNotes&&!!ui.open[t.id];
   var big=isBig(t),ps=childrenOf(t),pOpen=!!ui.partsOpen[t.id],child=isChild(t);
   var kids=[
@@ -862,7 +840,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n15';
+var APP_VERSION='n16';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1950,7 +1928,7 @@ function customView(key){
       var bt=c.bigId?task(c.bigId):null;
       if(bt){
         var undone=partsOf(bt).filter(function(p){return !p.done;});
-        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
+        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__new',text:'A new subtask…'})]));
         ps.value=c.partId;
         ps.addEventListener('change',function(e){c.partId=e.target.value;render();});
         box.appendChild(ps);
@@ -1986,7 +1964,7 @@ function customView(key){
       box.appendChild(sel);
       box.appendChild(h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',onclick:function(){
         var need=maxLittles()-c.littles.length;
-        smallRows().filter(function(r){return !isBig(r.t)&&!(r.owner!==r.t&&isBig(r.owner))&&c.littles.indexOf(valueOf(r.t))<0;}).slice(0,need).forEach(function(r){c.littles.push(valueOf(r.t));});
+        masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner))&&c.littles.indexOf(valueOf(r.t))<0;}).slice(0,need).forEach(function(r){c.littles.push(valueOf(r.t));});
         render();}},['Fill the rest for me'])]));
     }
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
@@ -1994,7 +1972,7 @@ function customView(key){
       h('button',{class:'btn primary',onclick:function(){next(4);}},['Next'])]));
   }else{
     var items=[];
-    if(c.bigId&&c.partId&&c.partId!=='__new'){var bi=mkItem('big',c.bigId,c.partId==='__self'?null:c.partId);if(bi)items.push(bi);}
+    if(c.bigId&&c.partId&&c.partId!=='__new'){var bi=mkItem('big',c.bigId,c.partId);if(bi)items.push(bi);}
     c.littles.forEach(function(v){var li=itemFromValue(v,'little');if(li)items.push(li);});
     box.appendChild(h('h3',{text:'Your day'}));
     if(!items.length)box.appendChild(h('p',{text:'Nothing chosen. A day with nothing planned is fine too.'}));
@@ -2159,7 +2137,7 @@ function addBigTask(txt,actId){
 function bigCard(t){
   var ps=childrenOf(t),dn=partsDone(t),open=!!ui.bigCards[t.id],nx=ps.find(function(c){return !c.done;});
   var a=t.activityId?act(t.activityId):null;
-  var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet';
+  var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet. Add some, so there is something to do.';
   var head=h('button',{class:'bhead','aria-expanded':open?'true':'false','aria-label':(open?'Close ':'Open ')+'big task: '+t.text,onclick:function(){if(ui.bigCards[t.id])delete ui.bigCards[t.id];else ui.bigCards[t.id]=true;render();}},[
     h('span',{class:'tt'},[house(true),h('span',{text:t.text})]),
     a?h('small',{text:a.name}):null,
@@ -2324,8 +2302,7 @@ function sheetEl(){
         holder.replaceChildren();sel3=null;selA=null;
         var bt=task(sel2.value);if(!bt)return;
         var un=partsOf(bt).filter(function(p){return !p.done;});
-        sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'Choose…'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'})]));
-        if(!un.length)sel3.value='__self';
+        sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'No subtasks yet: attach or write one below'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})));
         holder.appendChild(sel3);
         var ac=attachChoices(bt);
         if(ac.length){
@@ -2340,7 +2317,6 @@ function sheetEl(){
         var bt=task(sel2.value);if(!bt)return;
         if(selA&&selA.value){var ax=task(selA.value);if(ax){attachTo(ax,bt);replaceWith(mkItem('big',bt.id,ax.id));return;}}
         var pid=sel3?sel3.value:'';
-        if(pid==='__self'){replaceWith(mkItem('big',bt.id));return;}
         if(!pid&&npi.value.trim()){
           var np=addSub(bt.id,npi.value);if(np)pid=np.id;
         }
