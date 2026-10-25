@@ -165,6 +165,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .tile .tk{flex:none;width:30px;height:30px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
 .tile .tk svg{width:19px;height:19px}
 .tile .top svg.hs{margin:0 0 0 1px;width:14px;height:14px}
+.tile .tpar{flex:none;padding:2px 2px 0 4px;font-size:11.5px;line-height:1.2;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.open .tpar{white-space:normal;font-size:13px}
+.tile.haspar .tx{-webkit-line-clamp:2}
+.tile.haspar.open .tx{-webkit-line-clamp:unset}
 .tile .tx{padding:0 2px 0 4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .tile .sb{color:var(--muted);font-size:11.5px;padding:2px 2px 0 4px;overflow-wrap:anywhere}
 .tile.done .tx{color:var(--muted);text-decoration:line-through}
@@ -490,6 +494,21 @@ function bigCandidates(){
   });
 }
 /* Automatic takes the FIRST big task in the owner's own order that still has something to do: its remaining unfinished subtasks (up to three), or the task itself if it has none */
+/* up to n small tasks for a day, from Master. When the next step is a subtask of a SMALL parent, all of that parent's
+   unfinished subtasks come together, in order (each is its own tile, labelled with the parent). Big tasks' subtasks are left to the big block. */
+function smallPicks(n,skip){
+  var out=[],seen={};
+  masterRows().forEach(function(r){
+    if(out.length>=n)return;
+    if(r.owner!==r.t&&isBig(r.owner))return;
+    var group=(r.owner!==r.t)?childrenOf(r.owner).filter(function(c){return !c.done;}):[r.t];
+    group.forEach(function(c){
+      if(out.length>=n||seen[c.id]||(skip&&skip(c)))return;
+      seen[c.id]=1;out.push(c);
+    });
+  });
+  return out;
+}
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
@@ -497,7 +516,7 @@ function autoItems(){
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
   }
-  masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
+  smallPicks(5).forEach(function(c){out.push(mkItem('little',c.id));});
   return out.filter(Boolean);
 }
 function littleChoices(pl,cust){
@@ -848,7 +867,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n25';
+var APP_VERSION='n26';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1967,7 +1986,7 @@ function customView(key){
       box.appendChild(sel);
       box.appendChild(h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',onclick:function(){
         var need=maxLittles()-c.littles.length;
-        masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner))&&c.littles.indexOf(valueOf(r.t))<0;}).slice(0,need).forEach(function(r){c.littles.push(valueOf(r.t));});
+        smallPicks(need,function(x){return c.littles.indexOf(valueOf(x))>-1;}).forEach(function(x){c.littles.push(valueOf(x));});
         render();}},['Fill the rest for me'])]));
     }
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
@@ -2042,7 +2061,8 @@ function planBlocks(pl){
     top.appendChild(chev);
     var tile=h('div',{class:'tile'+(r.done?' done':'')+(open?' open':''),role:'button',tabindex:'0','aria-label':'Open task: '+r.text,
       onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}},
-      onkeydown:function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}}},[top,h('div',{class:'tx',text:r.text})]);
+      onkeydown:function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}}},[r.parent?h('div',{class:'tpar',text:r.parent}):null,top,h('div',{class:'tx',text:r.text})].filter(Boolean));
+    if(r.parent)tile.classList.add('haspar');
     var sb=r.parent?'subtask of '+r.parent:r.sub;
     if(sb&&open)tile.appendChild(h('div',{class:'sb',text:sb}));
     if(r.gone)tile.appendChild(h('div',{class:'sb',text:'No longer in your list'}));
