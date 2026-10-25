@@ -373,7 +373,7 @@ function masterRows(){
 }
 function valueOf(t){return isChild(t)?'P:'+t.parent+':'+t.id:'T:'+t.id;}
 /* ---------- "I've got a slot": time and equipment tags, and a filter ---------- */
-var DURS=[['quick','15 minutes or less'],['30','About 30 minutes'],['60','About an hour'],['long','Two hours or more']];
+var DURS=[['quick','15 minutes'],['30','30 minutes'],['60','1 hour'],['long','Over 1 hour']];
 var DEVS=[['phone','Phone'],['tablet','Tablet'],['laptop','Laptop or PC']];
 function durRank(v){return DURS.findIndex(function(x){return x[0]===v;});}
 function devRank(v){return DEVS.findIndex(function(x){return x[0]===v;});}
@@ -846,7 +846,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n19';
+var APP_VERSION='n20';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2381,7 +2381,7 @@ function sheetEl(){
         h('div',{class:'tags'},opts.map(function(o){
           return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];render();}},[o[1]]);}))]);
     }
-    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','An hour'],['long','2 hours or more']],'mins'));
+    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','An hour'],['long','More than an hour']],'mins'));
     inner.push(choiceRow('What have you got with you?',[['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
     if(sl.mins&&sl.dev){
       var cand=slotCandidates(),fit=[],untagged=[];
@@ -2498,22 +2498,27 @@ function sheetEl(){
       var cur2=cur||'',rows=[['','Not set']].concat(opts),box=h('div',{role:'radiogroup','aria-label':label,style:'display:flex;flex-direction:column'});
       rows.forEach(function(o){
         var r=h('input',{type:'radio',name:name,value:o[0],checked:o[0]===cur2});
-        box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;min-height:44px;font-size:16px;color:var(--text)'},[r,h('span',{text:o[1]})]));
+        box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:10px;min-height:44px;font-size:16px;color:var(--text)'},[r,h('span',{text:o[1]})]));
       });
-      return {el:h('div',null,[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
+      return {el:h('div',{style:'flex:1;min-width:0'},[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
     }
     var durRadio=radioGroup('dur','How long it takes',DURS,t.dur),devRadio=radioGroup('dev','Needs at least',DEVS,t.dev);
     var tagNow=tagText(t);
     var fold=h('details',{style:'border:1.5px solid var(--border);border-radius:12px;padding:0 14px'},[
       h('summary',{style:'min-height:48px;display:flex;align-items:center;font-size:16px;cursor:pointer',text:'Time and equipment'+(tagNow?': '+tagNow:'')}),
-      h('div',{style:'padding-bottom:10px'},[durRadio.el,devRadio.el])]);
+      h('div',{style:'display:flex;gap:14px;padding-bottom:10px'},[durRadio.el,devRadio.el])]);
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
       if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
     var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),notesBox,
-      (linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null,
+    var firstLine=(t.notes||'').split(/\r?\n/).filter(Boolean)[0]||'';
+    var dfold=h('details',{style:'border:1.5px solid var(--border);border-radius:12px;padding:0 14px'},[
+      h('summary',{style:'min-height:48px;display:flex;align-items:center;font-size:16px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis',text:(isBig(t)?'Thinking':'Details')+(firstLine?': '+firstLine:'')}),
+      h('div',{style:'padding-bottom:12px;display:flex;flex-direction:column;gap:10px'},[notesBox,(linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null])]);
+    dfold.open=!!(t.notes&&t.notes.trim());
+    dfold.addEventListener('toggle',function(){grow(nt);});
+    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),dfold,
       h('label',null,['Activity',sel]),fold,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,
       h('div',{class:'btns'},[
