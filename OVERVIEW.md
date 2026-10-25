@@ -36,6 +36,8 @@ It is a web app that installs on a phone like any other app. There is no server 
 
 **Subtasks** are ordinary tasks that sit under another task, one level deep. Any task can have them, but big tasks nearly always do. You add a subtask exactly as you add any task, you can attach an existing task to a big task from a dropdown, and you can drag subtasks into the order you want to do them. Newly added subtasks go at the bottom.
 
+**Turn lines into subtasks** works on any task: write a list in a task's details, then tap "Turn lines of the details into subtasks" in its edit screen (or from a big task's card).
+
 **Thinking** is a roomy writing box on every big task, for working out what its parts might be. You can write loosely, and later tap "Turn lines into subtasks" to turn the lines you choose into real subtasks.
 
 ## The pages

@@ -862,7 +862,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n14';
+var APP_VERSION='n15';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2498,7 +2498,7 @@ function sheetEl(){
     var notesBox=h('label',null,[isBig(t)?'Thinking':'Details',nt]);
     var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
     function saveEdit(openParts){
-      var v=ti.value.trim();if(!v)return;
+      var v=ti.value.trim();if(!v)return false;
       if(nowBig!==wasBig)setSize(t,nowBig);
       if(openParts===true)ui.partsOpen[t.id]=true;
       t.text=v;t.activityId=sel.value||null;t.updated=iso();
@@ -2510,7 +2510,7 @@ function sheetEl(){
       var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
-      ui.sheet=null;commit();
+      ui.sheet=null;commit();return true;
     }
     var wasBig=isBig(t),nowBig=wasBig;
     var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
@@ -2520,6 +2520,8 @@ function sheetEl(){
     var devSel=h('select',{'aria-label':'Needs at least'},[h('option',{value:'',text:'Not set'})].concat(DEVS.map(function(o){return h('option',{value:o[0],text:o[1]});})));
     devSel.value=t.dev||'';
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
+    var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
+      if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines of the details into subtasks']);
     var hasKids=childrenOf(t).length>0;
     var psel=null,asel2=null;
     if(!hasKids){
@@ -2535,7 +2537,7 @@ function sheetEl(){
     }
     inner.push(h('h2',{text:'Edit task'}));
     inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),h('label',null,['How long it takes',durSel]),h('label',null,['Needs at least',devSel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
-      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),hasN?notesBox:addN,addP,
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),hasN?notesBox:addN,linesBtn,addP,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
