@@ -374,7 +374,7 @@ function masterRows(){
 }
 function valueOf(t){return isChild(t)?'P:'+t.parent+':'+t.id:'T:'+t.id;}
 /* ---------- "I've got a slot": time and equipment tags, and a filter ---------- */
-var DURS=[['quick','15 minutes'],['30','30 minutes'],['60','1 hour'],['long','Over 1 hour']];
+var DURS=[['quick','15 minutes'],['30','30 minutes'],['60','1 hour']];
 var DEVS=[['phone','Phone'],['tablet','Tablet'],['laptop','Laptop or PC']];
 function durRank(v){return DURS.findIndex(function(x){return x[0]===v;});}
 function devRank(v){return DEVS.findIndex(function(x){return x[0]===v;});}
@@ -418,6 +418,7 @@ function addSub(parentId,text){
 /* older preview data kept parts inside the task; turn them into ordinary subtasks (same ids, so every device agrees) */
 function migrateParts(){
   var changed=false,add=[];
+  S.tasks.forEach(function(t){if(t.dur==='long'){t.dur='60';changed=true;}});
   S.tasks.forEach(function(t){
     if(!Array.isArray(t.parts))return;
     t.parts.forEach(function(p){
@@ -847,7 +848,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n23';
+var APP_VERSION='n24';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2383,7 +2384,7 @@ function sheetEl(){
         h('div',{class:'tags'},opts.map(function(o){
           return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];render();}},[o[1]]);}))]);
     }
-    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','An hour'],['long','More than an hour']],'mins'));
+    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','1 hour']],'mins'));
     inner.push(choiceRow('What have you got with you?',[['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
     if(sl.mins&&sl.dev){
       var cand=slotCandidates(),fit=[],untagged=[];
