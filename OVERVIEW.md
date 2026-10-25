@@ -44,7 +44,7 @@ It is a web app that installs on a phone like any other app. There is no server 
 
 **Small.** Your list of small tasks only, in the order you choose by dragging. It never contains big tasks or their subtasks, which live on the Big page. A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, so it feeds the list one step at a time. Tasks can be kept out of the Small list when you do not want them in the way. Automatic on Today takes its small ones from the top of this list.
 
-**Master tasks.** Everything you could do next, in one list: your small tasks plus the next unfinished subtask of each big task, labelled with its parent, so big work feeds in one step at a time. A big task with no subtasks yet is just itself. It sits to the right of Small in the bottom bar, and is the list the "I've got a slot" finder draws from.
+**Master tasks.** Everything you could do next, in one list: your small tasks plus the next unfinished subtask of each big task, labelled with its parent, so big work feeds in one step at a time. A big task is never listed itself, so one with no subtasks yet stays on the Big page. It sits to the right of Small in the bottom bar, and is the list the "I've got a slot" finder draws from.
 
 **Big.** Where you structure and sort your big tasks and their subtasks, in one list in the order you choose (drag the grip; the top one is what Automatic starts from). Each is a card showing its activity, progress ("3 of 7 subtasks done"), its next subtask and the first lines of your thinking. Open a card to write in the Thinking box, add or attach subtasks, reorder them, or turn lines of your thinking into subtasks.
 
