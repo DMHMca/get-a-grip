@@ -46,7 +46,7 @@ It is a web app that installs on a phone like any other app. There is no server 
 
 **Small.** Your small tasks, in the order you choose by dragging. Most are single items. A bigger small task can have subtasks: it is one row that opens to show them all, and you tick the parent off yourself. Big tasks and their subtasks never appear here, they live on the Big page. Tasks can be kept out of the Small and Master lists when you do not want them in the way.
 
-**Master.** A reference list of everything you could do next (the day is built from Big and Small, not from here): the small tasks that have no subtasks, plus the next unfinished subtask of every parent task, big or small, each with a clear "Part of:" tag naming its parent. A parent task is never listed itself. It sits to the right of Small in the bottom bar, and is the list Automatic takes its small tasks from and the "I've got a slot" finder draws from.
+**Master.** A reference list of everything you could do next (the day is built from Big and Small, not from here): the small tasks that have no subtasks, plus the next unfinished subtask of every parent task, big or small, each with a clear "Part of:" tag naming its parent. A parent task is never listed itself. It sits to the right of Small in the bottom bar, and is only a reference. Automatic and the "I've got a slot" finder both work from your sorted Big and Small lists.
 
 **Activities.** Your list of broad areas, in the order you choose. Open an activity to see all its tasks, big and small, with subtasks tucked under their parents.
 

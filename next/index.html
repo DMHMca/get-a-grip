@@ -388,12 +388,23 @@ function tagText(t){
 }
 function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
 /* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
+/* the Slot finder walks the BIG list and then the SMALL list in the owner's own order, looking at every unfinished subtask
+   (or the task itself when it has none), so suggestions come in a meaningful order; Master is not used */
 function slotCandidates(){
-  var pl=planFor(todayKey());
-  return masterRows().filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
+  var pl=planFor(todayKey()),out=[];
+  function walk(list){
+    list.forEach(function(t){
+      var kids=childrenOf(t).filter(function(c){return !c.done;});
+      if(kids.length)kids.forEach(function(c){out.push({t:c,owner:t});});
+      else if(!childrenOf(t).length)out.push({t:t,owner:t});
+    });
+  }
+  walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
+  walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t)&&!t.nm;}));
+  return out.filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
 }
 function addToDay(r){
-  var t=r.t,kind=(r.owner!==t&&isBig(r.owner))?'big':'little';
+  var t=r.t,kind=(isBig(r.owner)||isBig(t))?'big':'little';
   var it=mkItem(kind,t.id);if(!it)return;
   var key=todayKey(),pl=planFor(key);
   if(!pl){pl=newPlan(key,'custom',[it]);}
@@ -867,7 +878,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n28';
+var APP_VERSION='n29';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
