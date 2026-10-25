@@ -487,12 +487,13 @@ function bigCandidates(){
     return !ks.length||ks.some(function(p){return !p.done;});
   });
 }
-/* Automatic takes the FIRST big task in the owner's own order that still has something to do: its first unfinished subtask, or the task itself if it has no subtasks */
+/* Automatic takes the FIRST big task in the owner's own order that still has something to do: its remaining unfinished subtasks (up to three), or the task itself if it has none */
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
-    var p=partsOf(best).find(function(x){return !x.done;});
-    out.push(p?mkItem('big',best.id,p.id):mkItem('big',best.id));
+    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,3);
+    if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
+    else out.push(mkItem('big',best.id));
   }
   masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
   return out.filter(Boolean);
@@ -845,7 +846,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n17';
+var APP_VERSION='n18';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1870,16 +1871,11 @@ function syncAll(reason,opts){
 
 
 /* ---------- Today ---------- */
+function openSlot(){ui.slot=ui.slot||{mins:'',dev:''};ui.sheet={type:'slot'};render();}
 function viewToday(){
-  var tk=todayKey(),tm=tomorrowKey();
-  var forTom=ui.planDay==='tomorrow';
-  var key=forTom?tm:tk;
-  var pl=planFor(key),other=planFor(forTom?tk:tm);
-  var tog=(pl||other)?h('div',{class:'sorts'},[
-      h('button',{class:'btn','aria-pressed':!forTom?'true':'false',onclick:function(){ui.planDay='today';ui.cust=null;render();}},['Today']),
-      h('button',{class:'btn','aria-pressed':forTom?'true':'false',onclick:function(){ui.planDay='tomorrow';ui.cust=null;render();}},['Tomorrow'])]):null;
-  var kids=[titleBar(forTom?'Tomorrow':'Today',[h('button',{class:'btn','aria-label':'I’ve got a slot',onclick:function(){ui.slot=ui.slot||{mins:'',dev:''};ui.sheet={type:'slot'};render();}},['Slot']),h('button',{class:'btn icon','aria-label':'Add a task',onclick:function(){ui.sheet={type:'quick'};render();}},[svg(ICON.plus)])]),
-    h('div',{class:'dayrow'},[h('span',{text:niceDate(key)}),tog])];
+  var key=todayKey();
+  var pl=planFor(key);
+  var kids=[];
   var body=[];
   if(pl)body.push(planView(pl));
   else if(ui.cust)body.push(customView(key));
@@ -1894,16 +1890,16 @@ function viewToday(){
 function startView(key){
   var forTom=key===tomorrowKey();
   return h('div',{class:'card'},[
-    h('h3',{text:forTom?'Plan tomorrow':'Start today'}),
+    h('h3',{text:'Start today'}),
     h('p',{text:'A short menu for the day, not a timetable. It starts blank and nothing is carried over.'}),
-    !forTom&&!planFor(tomorrowKey())?h('p',{},[h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:15px',onclick:function(){ui.planDay='tomorrow';render();}},['Plan tomorrow instead'])]):null,
     h('div',{class:'two',style:'margin-top:10px'},[
       h('button',{class:'btn primary',onclick:function(){
         var items=autoItems();
         if(!items.length){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
         newPlan(key,'auto',items);commit();}},['Automatic']),
       h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',littles:[]};render();}},['Custom'])]),
-    h('p',{text:'Automatic builds a standard day: the next subtask of the big task you touched most recently, and up to five small ones from the top of your list. Custom lets you choose.'})]);
+    h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
+    h('p',{text:'Automatic builds a standard day: the remaining subtasks (up to three) of your first big task, and up to five small ones from the top of your Small and Master lists. Custom lets you choose. Slot suggests something for a spare gap.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
@@ -2073,13 +2069,13 @@ function planView(pl){
     main=h('div',{class:'daygrid'},[L,R]);
   }
   return h('div',null,[
-    h('div',{class:'prog',role:'status',text:pl.items.length?doneN+' of '+pl.items.length+' done':'Nothing planned'}),
     main,
-    h('div',{class:'two',style:'padding:14px 16px 0'},[
-      h('button',{class:'btn primary',onclick:function(){ui.sheet={type:'finish',pid:pl.id};render();}},['Finish the day']),
-      h('button',{class:'btn',onclick:function(){
+    h('div',{class:'two',style:'padding:12px 12px 0;gap:6px'},[
+      h('button',{class:'btn primary',style:'height:42px;font-size:15px',onclick:function(){ui.sheet={type:'finish',pid:pl.id};render();}},['Finish']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px',onclick:function(){
         if(!confirm('Clear this plan and start again? Nothing in your tasks changes.'))return;
-        S.gone.push({id:pl.id,at:iso()});S.plans=S.plans.filter(function(x){return x.id!==pl.id;});commit();}},['Start again'])])]);
+        S.gone.push({id:pl.id,at:iso()});S.plans=S.plans.filter(function(x){return x.id!==pl.id;});commit();}},['Redo']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])])]);
 }
 
 /* what was done on a day is worked out from the ticks' own time stamps */
