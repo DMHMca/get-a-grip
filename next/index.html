@@ -229,7 +229,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sheet h2{margin:0;padding:8px 20px;font-size:17px;font-weight:700}
 .opt{display:flex;width:100%;align-items:center;gap:12px;min-height:56px;padding:0 20px 0 54px;border:0;background:transparent;text-align:left;font-size:17px}
 .opt span.l{flex:1;min-width:0;overflow-wrap:anywhere}
-.opt small{font-size:14px;color:var(--muted)}
+.opt small{font-size:14px;color:var(--muted);max-width:55%;text-align:right;overflow-wrap:anywhere}
+.opt span.l{min-width:6em}
 .opt.sel{background:var(--tint);font-weight:700;padding-left:20px}
 .opt.link{padding-left:20px;font-weight:700;color:var(--accent)}
 .sep{margin:6px 20px 0;border-top:1px solid var(--line)}
@@ -890,7 +891,7 @@ function restoreFile(f){
       var d=JSON.parse(r.result);
       if(!d||!Array.isArray(d.activities)||!Array.isArray(d.tasks))throw new Error('bad');
       if(!confirm('Replace everything in the app with this backup ('+d.activities.length+' activities, '+d.tasks.length+' tasks)?'))return;
-      S=d;ensureShape();ui.view='today';ui.back=[];ui.lastTicked=null;ui.lastActivityId=null;commit();
+      S=d;ensureShape();ui.sheet=null;ui.view='today';ui.back=[];ui.lastTicked=null;ui.lastActivityId=null;commit();
     }catch(e){alert('That file is not a Get a grip backup.');}
   };
   r.readAsText(f);
@@ -901,7 +902,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n32';
+var APP_VERSION='n33';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2520,11 +2521,31 @@ function sheetEl(){
         h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Done for now'])])]));
     }
   }else if(s.type==='menu'){
+    /* the three-dot menu holds everything that is not about tasks, one item per line; there is no separate Settings page */
+    var nTag=untaggedLeaves().length,lay=getLayout(),th=getTheme(),lv=liveCopy();
+    function line(icon,title,sub,fn,dis){
+      return h('button',{class:'opt link',disabled:!!dis,style:dis?'opacity:.5':'',onclick:fn},[icon,h('span',{class:'l',text:title}),sub?h('small',{text:sub}):null]);
+    }
+    function choices(label,opts,cur,fn){
+      return h('div',{style:'padding:6px 20px 2px'},[h('div',{style:'font-size:14px;color:var(--muted);padding-bottom:4px',text:label}),
+        h('div',{class:'sorts',style:'padding:0'},opts.map(function(x){return h('button',{class:'btn','aria-pressed':cur===x[0]?'true':'false',onclick:function(){fn(x[0]);}},[x[1]]);}))]);
+    }
+    var restoreIn=h('input',{type:'file',accept:'application/json,.json',id:'restorefile',style:'display:none',onchange:function(e){var f=e.target.files&&e.target.files[0];ui.sheet=null;restoreFile(f);e.target.value='';}});
     inner.push(h('h2',{text:'More'}));
-    inner.push(h('button',{class:'opt link',onclick:function(){goSub('archive');}},[svg(ICON.box),h('span',{class:'l',text:'Archive'}),h('small',{text:archived().length+' archived'})]));
-    var nTag=untaggedLeaves().length;
-    inner.push(h('button',{class:'opt link',onclick:function(){ui.tag={ids:untaggedLeaves().map(function(x){return x.id;}),i:0};ui.sheet={type:'tagall'};render();}},[svg(ICON.check),h('span',{class:'l',text:'Tag tasks'}),h('small',{text:nTag?nTag+' waiting':'none waiting'})]));
-    inner.push(h('button',{class:'opt link',onclick:function(){goSub('settings');}},[svg('<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/>'),h('span',{class:'l',text:'Settings'})]));
+    inner.push(line(svg(ICON.check),'Tag tasks',nTag?nTag+' waiting':'none waiting',function(){ui.tag={ids:untaggedLeaves().map(function(x){return x.id;}),i:0};ui.sheet={type:'tagall'};render();}));
+    inner.push(line(svg(ICON.box),'Archive',archived().length+' archived',function(){goSub('archive');}));
+    inner.push(line(svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),'Sync',(function(){var x=syncSummary();return x.indexOf('Keep your devices')===0?'not on':x;})(),openSync));
+    inner.push(line(svg('<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'),'Download a backup','',function(){ui.sheet=null;render();backup();}));
+    inner.push(line(svg('<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>'),'Restore from backup','',function(){document.getElementById('restorefile').click();}));
+    inner.push(h('div',{class:'sep'}));
+    inner.push(choices('Appearance',[['auto','Follow my phone'],['light','Always light'],['dark','Always dark']],th,function(v){setTheme(v);}));
+    inner.push(choices('Today layout',[['blocks','Blocks'],['list','List']],lay,function(v){setLayout(v);}));
+    inner.push(h('div',{class:'sep'}));
+    inner.push(line(svg('<path d="M9 7H6a3 3 0 0 0 0 6h3M15 7h3a3 3 0 0 1 0 6h-3M8 10h8"/>'),'Copy my live tasks into the preview',lv?lv.activities.length+' activities, '+lv.tasks.length+' tasks':'none found',function(){ui.sheet=null;render();copyFromLive();},!lv));
+    inner.push(h('a',{class:'opt link',href:'../privacy.html',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'Privacy'})]));
+    inner.push(h('a',{class:'opt link',href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'About this app'})]));
+    inner.push(h('p',{class:'note',style:'padding:8px 20px 0',text:'Preview version '+APP_VERSION}));
+    inner.push(restoreIn);
   }else if(s.type==='switch'){
     inner.push(h('h2',{text:'Go to activity'}));
     live().forEach(function(a){

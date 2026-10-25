@@ -52,7 +52,7 @@ It is a web app that installs on a phone like any other app. There is no server 
 
 **Archive** (from the three-dot menu). Activities you have put away, searchable by name, date and the text of the tasks inside them. Restore brings one back.
 
-**Settings** (from the three-dot menu). Appearance (follow the phone, always light, always dark), the Today layout (blocks or list), Sync, backup and restore, privacy and version.
+**The three-dot menu** (top right of every page) is the one home for housekeeping, one line per item: Tag tasks (with a count of what is waiting), Archive, Sync, Download a backup, Restore from backup, Appearance (follow the phone, always light, always dark), Today layout (blocks or list), Copy my live tasks (preview only), Privacy and About this app. The preview's version number is a plain line at the bottom. There is no separate Settings page.
 
 **Sync.** Optional. Keeps the same data on several devices through a hidden file in your own Google Drive. An advanced option keeps one Google Tasks list in step with Master tasks, for people who also use Google Tasks elsewhere.
 
@@ -69,7 +69,7 @@ Sometimes the day plan is not the question. You simply have half an hour and a p
 | Sync between devices through Google Drive | Yes | Yes (its own separate file) |
 | Two-way Google Tasks list sync | Yes | No |
 | Backup and restore | Yes | Yes |
-| Three-dot menu, Settings page, appearance choice | No | Yes |
+| Three-dot menu (all housekeeping), appearance choice | No | Yes |
 | Big and small tasks, subtasks, attach existing task | No | Yes |
 | Big page, Thinking box, lines into subtasks | No | Yes |
 | Master tasks fed one subtask at a time | No | Yes |
@@ -87,7 +87,7 @@ What is unusual here is the combination and the stance. The app deliberately has
 
 ## For someone picking this up
 
-You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync in Settings and sign in with Google.
+You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync in the three-dot menu and sign in with Google.
 
 To run your own copy, fork the repository on GitHub, switch on GitHub Pages for it, and follow `README.md` if you want Google sync under your own Google project. The whole app is a few static files (`index.html`, `sw.js`, a manifest and icons) with no build step.
 
