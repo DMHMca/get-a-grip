@@ -645,7 +645,7 @@ function topbar(){
 
 /* the bottom bar: three buttons now. Labels wrap, and if more buttons are ever added it scrolls sideways
    with a small arrow at each end that shows only when there is more that way */
-var NAVS=[['today','Today'],['big','Big'],['small','Small'],['master','Master tasks'],['activities','Activities']];
+var NAVS=[['today','Today'],['big','Big'],['small','Small'],['master','Master'],['activities','Activities']];
 function navBar(cur){
   var sc=h('div',{class:'navscroll'},NAVS.map(function(n){
     return h('button',{'aria-current':n[0]===cur?'page':null,onclick:function(){go(n[0]);}},[h('span',{text:n[1]})]);
@@ -770,7 +770,7 @@ function listPage(kind){
   if(rows.length)lk.push(h('div',{class:'smalllist'},rows.map(function(r){return taskRow(r.t,true,{owner:r.owner,master:true});})));
   else lk.push(h('div',{class:'empty',text:'Nothing left to do. Add a task above.'}));
   var list=h('div',{class:'list'},lk);
-  var kids=[titleBar(kind==='small'?'Small':'Master tasks'),addBox('Add a small task','New small task',function(txt){return addTask(txt,ui.pick);},true),
+  var kids=[titleBar(kind==='small'?'Small':'Master'),addBox('Add a small task','New small task',function(txt){return addTask(txt,ui.pick);},true),
     h('div',{style:'height:8px'}),list];
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&!lt.nm){
@@ -862,7 +862,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n12';
+var APP_VERSION='n13';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
