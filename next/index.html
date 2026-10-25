@@ -87,6 +87,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .details a{color:var(--accent);text-decoration:underline}
 .field textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px 14px;resize:vertical}
 .field textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.rowbar{flex:0 0 100%;height:5px;margin:0 52px 6px 48px;background:var(--line);border-radius:3px;overflow:hidden}
+.rowbar i{display:block;height:5px;background:var(--big);border-radius:3px}
 .ptag{display:inline-block;align-self:flex-start;margin-top:3px;padding:1px 8px;border:1.5px solid var(--accent);border-radius:9px;color:var(--accent);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .rtl{display:flex;align-items:flex-start;gap:8px}
 .rtl svg{margin-top:3px}
@@ -480,15 +482,17 @@ function lastTouched(t){
 }
 function bigCandidates(){
   return S.tasks.filter(function(t){
-    return !t.done&&isBig(t)&&!isChild(t)&&childrenOf(t).some(function(p){return !p.done;});
+    if(t.done||!isBig(t)||isChild(t))return false;
+    var ks=childrenOf(t);
+    return !ks.length||ks.some(function(p){return !p.done;});
   });
 }
-/* Automatic takes the FIRST big task in the owner's own order that has something left to do, and its first unfinished subtask */
+/* Automatic takes the FIRST big task in the owner's own order that still has something to do: its first unfinished subtask, or the task itself if it has no subtasks */
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
     var p=partsOf(best).find(function(x){return !x.done;});
-    out.push(mkItem('big',best.id,p.id));
+    out.push(p?mkItem('big',best.id,p.id):mkItem('big',best.id));
   }
   masterRows().filter(function(r){return !(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
   return out.filter(Boolean);
@@ -708,6 +712,7 @@ function taskRow(t,showAct,opts){
         if(opts.master&&big&&!ps.length){ui.bigCards[t.id]=true;go('big');return;}
         if(ui.partsOpen[t.id])delete ui.partsOpen[t.id];else ui.partsOpen[t.id]=true;render();}},
       [h('span',null,label),svg(pOpen?ICON.chevup:ICON.down,18)]));
+    if(ps.length>1)kids.push(h('div',{class:'rowbar'},[h('i',{style:'width:'+Math.round(100*partsDone(t)/ps.length)+'%'})]));
     if(pOpen&&!(opts.master&&big&&!ps.length))kids.push(subArea(t));
   }
   return h('div',{class:'row'+(t.done?' done':'')+(big?' big':''),'data-id':slot},kids);
@@ -840,7 +845,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n16';
+var APP_VERSION='n17';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1928,7 +1933,7 @@ function customView(key){
       var bt=c.bigId?task(c.bigId):null;
       if(bt){
         var undone=partsOf(bt).filter(function(p){return !p.done;});
-        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__new',text:'A new subtask…'})]));
+        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
         ps.value=c.partId;
         ps.addEventListener('change',function(e){c.partId=e.target.value;render();});
         box.appendChild(ps);
@@ -1972,7 +1977,7 @@ function customView(key){
       h('button',{class:'btn primary',onclick:function(){next(4);}},['Next'])]));
   }else{
     var items=[];
-    if(c.bigId&&c.partId&&c.partId!=='__new'){var bi=mkItem('big',c.bigId,c.partId);if(bi)items.push(bi);}
+    if(c.bigId&&c.partId&&c.partId!=='__new'){var bi=mkItem('big',c.bigId,c.partId==='__self'?null:c.partId);if(bi)items.push(bi);}
     c.littles.forEach(function(v){var li=itemFromValue(v,'little');if(li)items.push(li);});
     box.appendChild(h('h3',{text:'Your day'}));
     if(!items.length)box.appendChild(h('p',{text:'Nothing chosen. A day with nothing planned is fine too.'}));
@@ -2014,7 +2019,8 @@ function planBlocks(pl){
     var openId=g.par?g.par.id:g.items[0].tid;
     var blk=h('div',{class:'bblock'},[h('button',{class:'tt','aria-label':'Open task: '+g.title,style:'border:0;background:none;padding:0;text-align:left;width:100%;color:inherit;font:inherit;font-weight:700;cursor:pointer',onclick:function(){if(task(openId)){ui.editId=openId;ui.sheet={type:'edit'};render();}}},[house(true),h('span',{text:g.title})])]);
     if(a)blk.appendChild(h('div',{class:'sm',text:a.name}));
-    if(ps.length){blk.appendChild(h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]));blk.appendChild(h('div',{class:'sm',text:dn+' of '+ps.length+' subtasks done'}));}
+    if(ps.length>1)blk.appendChild(h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]));
+    if(ps.length)blk.appendChild(h('div',{class:'sm',text:dn+' of '+ps.length+' subtasks done'}));
     g.items.forEach(function(it){
       var r=resolveItem(it);
       blk.appendChild(h('div',{class:'bi'+(r.done?' done':'')},[
@@ -2137,11 +2143,11 @@ function addBigTask(txt,actId){
 function bigCard(t){
   var ps=childrenOf(t),dn=partsDone(t),open=!!ui.bigCards[t.id],nx=ps.find(function(c){return !c.done;});
   var a=t.activityId?act(t.activityId):null;
-  var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet. Add some, so there is something to do.';
+  var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet';
   var head=h('button',{class:'bhead','aria-expanded':open?'true':'false','aria-label':(open?'Close ':'Open ')+'big task: '+t.text,onclick:function(){if(ui.bigCards[t.id])delete ui.bigCards[t.id];else ui.bigCards[t.id]=true;render();}},[
     h('span',{class:'tt'},[house(true),h('span',{text:t.text})]),
     a?h('small',{text:a.name}):null,
-    h('div',{class:'pb'},[h('i',{style:'width:'+(ps.length?Math.round(100*dn/ps.length):0)+'%'})]),
+    ps.length>1?h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]):null,
     h('small',{text:info}),
     (!open&&t.notes&&t.notes.trim())?h('div',{class:'prv',text:t.notes}):null]);
   var grip=h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder big task: '+t.text+'. Drag, or use the up and down arrow keys. Automatic starts from the top one.',style:'align-self:flex-start;margin-top:6px',
@@ -2302,7 +2308,8 @@ function sheetEl(){
         holder.replaceChildren();sel3=null;selA=null;
         var bt=task(sel2.value);if(!bt)return;
         var un=partsOf(bt).filter(function(p){return !p.done;});
-        sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'No subtasks yet: attach or write one below'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})));
+        sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'Choose…'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'})]));
+        if(!un.length)sel3.value='__self';
         holder.appendChild(sel3);
         var ac=attachChoices(bt);
         if(ac.length){
@@ -2317,6 +2324,7 @@ function sheetEl(){
         var bt=task(sel2.value);if(!bt)return;
         if(selA&&selA.value){var ax=task(selA.value);if(ax){attachTo(ax,bt);replaceWith(mkItem('big',bt.id,ax.id));return;}}
         var pid=sel3?sel3.value:'';
+        if(pid==='__self'){replaceWith(mkItem('big',bt.id));return;}
         if(!pid&&npi.value.trim()){
           var np=addSub(bt.id,npi.value);if(np)pid=np.id;
         }
