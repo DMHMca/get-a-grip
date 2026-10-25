@@ -132,7 +132,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   .daygrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start}
 }
 .bcard{margin:10px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.bhead{display:block;width:100%;text-align:left;border:0;background:none;padding:12px 14px 10px}
+.bhead{display:block;flex:1;min-width:0;text-align:left;border:0;background:none;padding:12px 14px 10px}
 .bhead .tt{display:flex;gap:8px;align-items:flex-start;font-weight:700;font-size:17px;line-height:1.3}
 .bhead small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .bhead .pb{height:6px;background:var(--line);border-radius:3px;margin-top:8px}
@@ -467,11 +467,20 @@ function lastTouched(t){
   partsOf(t).forEach(function(p){if((p.updated||'')>m)m=p.updated;});
   return m;
 }
-function bigCandidates(){return S.tasks.filter(function(t){return !t.done&&isBig(t)&&partsOf(t).some(function(p){return !p.done;});});}
+function bigCandidates(){
+  return S.tasks.filter(function(t){
+    if(t.done||!isBig(t)||isChild(t))return false;
+    var ks=childrenOf(t);
+    return !ks.length||ks.some(function(p){return !p.done;});
+  });
+}
+/* Automatic takes the FIRST big task in the owner's own order (set by dragging on the Big page) */
 function autoItems(){
-  var out=[],bigs=bigCandidates(),best=null;
-  bigs.forEach(function(t){if(!best||lastTouched(t)>lastTouched(best))best=t;});
-  if(best){var p=partsOf(best).find(function(x){return !x.done;});out.push(mkItem('big',best.id,p.id));}
+  var out=[],best=bigCandidates()[0];
+  if(best){
+    var p=partsOf(best).find(function(x){return !x.done;});
+    out.push(p?mkItem('big',best.id,p.id):mkItem('big',best.id));
+  }
   masterRows().filter(function(r){return !isBig(r.t)&&!(r.owner!==r.t&&isBig(r.owner));}).slice(0,5).forEach(function(r){out.push(mkItem('little',r.t.id));});
   return out.filter(Boolean);
 }
@@ -820,7 +829,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n8';
+var APP_VERSION='n9';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2124,7 +2133,10 @@ function bigCard(t){
     h('div',{class:'pb'},[h('i',{style:'width:'+(ps.length?Math.round(100*dn/ps.length):0)+'%'})]),
     h('small',{text:info}),
     (!open&&t.notes&&t.notes.trim())?h('div',{class:'prv',text:t.notes}):null]);
-  var kids=[head];
+  var grip=h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder big task: '+t.text+'. Drag, or use the up and down arrow keys. Automatic starts from the top one.',style:'align-self:flex-start;margin-top:6px',
+    onpointerdown:function(e){startDrag(e,t.id,'.bcard');},onkeydown:function(e){nudge(e,t.id,'.bcard');}},
+    [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]);
+  var kids=[h('div',{style:'display:flex;align-items:flex-start'},[head,grip])];
   if(open){
     var ta=h('textarea',{class:'thinking',id:'think-'+t.id,'aria-label':'Thinking about: '+t.text,placeholder:'Think it through here: what are the parts of this?',autocapitalize:'sentences',
       oninput:function(e){var v=e.target.value;if(v.trim())t.notes=v;else delete t.notes;t.updated=iso();grow(e.target);quietSave();}});
@@ -2138,19 +2150,15 @@ function bigCard(t){
       h('button',{class:'btn',style:'height:44px;font-size:15px',onclick:function(){toggle(t.id);}},[t.done?'Untick the whole task':'Tick the whole task'])]));
     kids.push(body);
   }
-  return h('div',{class:'bcard'},kids);
+  return h('div',{class:'bcard','data-id':t.id},kids);
 }
 function viewBig(){
   var bigs=S.tasks.filter(function(t){return isBig(t)&&!t.done&&!isChild(t);});
   var lk=[];
-  var groups=live().map(function(a){return {name:a.name,id:a.id};}).concat([{name:'No activity',id:null}]);
-  groups.forEach(function(g){
-    var ts=bigs.filter(function(t){return (t.activityId||null)===g.id;});
-    if(!ts.length)return;
-    lk.push(h('h3',{class:'bgroup',text:g.name}));
-    ts.forEach(function(t){lk.push(bigCard(t));});
-  });
-  bigs.filter(function(t){return t.activityId&&!act(t.activityId);}).forEach(function(t){lk.push(bigCard(t));});
+  if(bigs.length){
+    lk.push(h('p',{class:'note',text:'In your order. Drag the grip to sort them: Automatic on Today starts from the top one.'}));
+    lk.push(h('div',{class:'bigcards'},bigs.map(function(t){return bigCard(t);})));
+  }
   if(!lk.length)lk.push(h('div',{class:'empty',text:'No big tasks yet. Add one above, or open any task and choose Big. A big task is a piece of work you can finish, made of subtasks.'}));
   lk.push(h('div',{style:'height:16px'}));
   var list=h('div',{class:'list'},lk);
