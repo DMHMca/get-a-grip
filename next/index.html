@@ -340,21 +340,30 @@ function partsDone(t){return childrenOf(t).filter(function(p){return p.done;}).l
 function isChild(t){return !!(t&&t.parent&&task(t.parent));}
 function topLevel(t){return !isChild(t);}
 function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&!x.done&&!isChild(x)&&!childrenOf(x).length;});}
-/* what Master tasks shows: a task with subtasks never shows itself, only its next unfinished subtask (labelled with its parent)
-   and, once all are done, the parent once so it can be ticked off. A big task with no subtasks yet is just itself. */
+/* the SMALL list (internally still called master): small tasks only, never big tasks or the subtasks of big tasks (those live on the Big page).
+   A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, and once all are done the parent itself. */
 function masterRows(){
   var out=[];
   S.tasks.forEach(function(t){
-    if(t.done||isChild(t))return;
+    if(t.done||isChild(t)||isBig(t)||t.nm)return;
     var kids=childrenOf(t);
     if(kids.length){
       var n=kids.find(function(c){return !c.done;});
-      if(n&&!t.nm)out.push({t:n,owner:t});
-      else if(!n&&!t.nm)out.push({t:t,owner:t});
+      /* while its subtasks are opened for adding, the parent stays on show so you can keep adding; close them to go back to one at a time */
+      out.push({t:(ui.partsOpen[t.id]?t:(n||t)),owner:t});
       return;
     }
-    if(t.nm)return;
     out.push({t:t,owner:t});
+  });
+  return out;
+}
+/* the next unfinished subtask of each big task: these live on the Big page, but a spare slot may well fit one */
+function bigNextRows(){
+  var out=[];
+  S.tasks.forEach(function(t){
+    if(t.done||isChild(t)||!isBig(t))return;
+    var n=childrenOf(t).find(function(c){return !c.done;});
+    if(n)out.push({t:n,owner:t});
   });
   return out;
 }
@@ -372,7 +381,7 @@ function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
 /* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
 function slotCandidates(){
   var pl=planFor(todayKey());
-  return masterRows().filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
+  return masterRows().concat(bigNextRows()).filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
 }
 function addToDay(r){
   var t=r.t,kind=(r.owner!==t&&isBig(r.owner))?'big':'little';
@@ -614,7 +623,7 @@ function topbar(){
 
 /* the bottom bar: three buttons now. Labels wrap, and if more buttons are ever added it scrolls sideways
    with a small arrow at each end that shows only when there is more that way */
-var NAVS=[['today','Today'],['master','Master tasks'],['big','Big'],['activities','Activities']];
+var NAVS=[['today','Today'],['big','Big'],['master','Small'],['activities','Activities']];
 function navBar(cur){
   var sc=h('div',{class:'navscroll'},NAVS.map(function(n){
     return h('button',{'aria-current':n[0]===cur?'page':null,onclick:function(){go(n[0]);}},[h('span',{text:n[1]})]);
@@ -737,7 +746,7 @@ function viewMaster(){
   if(rows.length)lk.push(h('div',{class:'smalllist'},rows.map(function(r){return taskRow(r.t,true,{owner:r.owner,master:true});})));
   else lk.push(h('div',{class:'empty',text:'Nothing left to do. Add a task above.'}));
   var list=h('div',{class:'list'},lk);
-  var kids=[titleBar('Master tasks'),addBox('Add a task','New task',function(txt){return addTask(txt,ui.pick);},true),
+  var kids=[titleBar('Small'),addBox('Add a small task','New small task',function(txt){return addTask(txt,ui.pick);},true),
     h('div',{style:'height:8px'}),list];
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&!lt.nm){
@@ -763,8 +772,8 @@ function viewActivity(){
       h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
   var openTs=ts.filter(function(t){return !t.done;}),hid=openTs.filter(function(t){return t.nm;}).length;
   var mrow=openTs.length?h('div',{class:'meta',style:'padding-top:0'},[
-    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from Master tasks':'All open tasks show in Master tasks'}),
-    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in Master':'Hide from Master'])]):null;
+    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from the Small list':'All open tasks show in the Small list'}),
+    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in Small':'Hide from Small'])]):null;
   var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,mrow,list].filter(Boolean).concat(syncBanner()||[],[navBar('activities')]);
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
@@ -829,7 +838,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n9';
+var APP_VERSION='n10';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1039,7 +1048,7 @@ function viewArchive(){
   });
   var empty=archived().length?'Nothing in the archive matches that search.':'Nothing archived yet. Archive an activity from its own screen.';
   var body=h('div',{id:'archbody',style:'flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:empty})]);
-  var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in Master tasks.'});
+  var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in your lists.'});
   return [pageHeader('Archive'),search,sorts,body,note,navBar(null)];
 }
 
@@ -2249,14 +2258,14 @@ function sheetEl(){
       inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Done'])])]));
     }else{
       var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
-      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
+      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'the Small list, with no activity')+', in the order you type them. Nothing already there is changed.'}));
       var qcb=null,bigcb=h('input',{type:'checkbox','aria-label':'Make these big'});
       if(ba){
         var qv=false;try{qv=localStorage.getItem('next.gag.bulkQuiet')==='1';}catch(e){}
-        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of Master tasks'});
+        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of the Small list'});
       }
       inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),
-        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of Master tasks'})]):null,
+        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of the Small list'})]):null,
         h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[bigcb,h('span',{text:'Make these big'})]),
         h('div',{class:'btns'},[
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
@@ -2265,7 +2274,7 @@ function sheetEl(){
           var quiet=!!(qcb&&qcb.checked);
           if(qcb){try{localStorage.setItem('next.gag.bulkQuiet',quiet?'1':'0');}catch(e){}}
           var r=addMany(bta.value,s.actId,quiet,bigcb.checked);
-          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of Master tasks':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
+          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of the Small list':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
           ui.sheet={type:'bulk',actId:s.actId,msg:m};render();}},['Add'])])]));
     }
   }else if(s.type==='swap'){
@@ -2407,7 +2416,7 @@ function sheetEl(){
     }
     inner.push(h('div',{class:'field',style:'padding-top:12px'},[h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Close'])])]));
   }else if(s.type==='quick'){
-    var qi=h('textarea',{rows:'1',id:'quickin','aria-label':'New task',class:'tt',placeholder:'Add a task to Master tasks',autocapitalize:'sentences',style:'width:100%;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:14px;resize:none;overflow:hidden;line-height:1.3',
+    var qi=h('textarea',{rows:'1',id:'quickin','aria-label':'New task',class:'tt',placeholder:'Add a small task',autocapitalize:'sentences',style:'width:100%;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:14px;resize:none;overflow:hidden;line-height:1.3',
       oninput:function(e){e.target.value=e.target.value.replace(/\n/g,' ');grow(e.target);},
       onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();go2();}}});
     function go2(){var v=qi.value.trim();if(!v)return;ui.sheet=null;addTask(v,null);}
@@ -2456,7 +2465,7 @@ function sheetEl(){
     var sel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(
       S.activities.filter(function(a){return !a.archived||a.id===t.activityId;}).map(function(a){return h('option',{value:a.id,text:a.name+(a.archived?' (archived)':'')});})));
     sel.value=t.activityId||'';
-    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in Master tasks'});
+    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in the Small list'});
     shownCb.disabled=!sel.value;
     sel.addEventListener('change',function(){shownCb.disabled=!sel.value;if(!sel.value)shownCb.checked=true;});
     var hasN=!!(t.notes&&t.notes.trim());
@@ -2502,7 +2511,7 @@ function sheetEl(){
     }
     inner.push(h('h2',{text:'Edit task'}));
     inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),h('label',null,['How long it takes',durSel]),h('label',null,['Needs at least',devSel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
-      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,addP,
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small list'})]),hasN?notesBox:addN,addP,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
@@ -2613,7 +2622,7 @@ function nudge(e,id,sel,apply){
   apply(ids);ui.focusHandle=id;commit();
 }
 
-/* swipe between pages: Today | Master tasks | Big | Activities (an activity page swipes back to Activities) */
+/* swipe between pages: Today | Big | Small | Activities (an activity page swipes back to Activities) */
 var tx=0,ty=0,tracking=false;
 document.addEventListener('touchstart',function(e){
   if(ui.sheet||e.touches.length!==1){tracking=false;return;}
@@ -2624,7 +2633,7 @@ document.addEventListener('touchend',function(e){
   if(!tracking)return;tracking=false;
   var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
   if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;
-  var left=dx<0,order=['today','master','big','activities'];
+  var left=dx<0,order=['today','big','master','activities'];
   if(ui.view==='activity'){if(!left)go('activities');return;}
   var i=order.indexOf(ui.view);
   if(i<0)return;
