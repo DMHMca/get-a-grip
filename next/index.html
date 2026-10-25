@@ -388,9 +388,10 @@ function tagText(t){
 }
 function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
 /* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
-/* the Slot finder walks the BIG list and then the SMALL list in the owner's own order, looking at every unfinished subtask
-   (or the task itself when it has none), so suggestions come in a meaningful order; Master is not used */
-function slotCandidates(){
+/* the Slot finder walks the SMALL list in the owner's own order, looking at every unfinished subtask (or the task itself when it has none).
+   A spare slot is a scrap of time, and big work needs context, so big tasks are included only when the owner ticks "Include big tasks" (then they follow the small ones).
+   Master is not used. */
+function slotCandidates(includeBig){
   var pl=planFor(todayKey()),out=[];
   function walk(list){
     list.forEach(function(t){
@@ -399,8 +400,8 @@ function slotCandidates(){
       else if(!childrenOf(t).length)out.push({t:t,owner:t});
     });
   }
-  walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
   walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t)&&!t.nm;}));
+  if(includeBig)walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
   return out.filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
 }
 function addToDay(r){
@@ -878,7 +879,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n30';
+var APP_VERSION='n31';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2417,8 +2418,10 @@ function sheetEl(){
     }
     inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','1 hour']],'mins'));
     inner.push(choiceRow('What have you got with you?',[['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
+    inner.push(h('label',{style:'flex-direction:row;display:flex;align-items:center;gap:12px;font-size:16px;padding:8px 20px 0'},[
+      h('input',{type:'checkbox',checked:!!sl.big,'aria-label':'Include big tasks',onchange:function(e){sl.big=e.target.checked;sl.more=false;render();}}),h('span',{text:'Include big tasks'})]));
     if(sl.mins&&sl.dev){
-      var cand=slotCandidates(),fit=[],untagged=[];
+      var cand=slotCandidates(!!sl.big),fit=[],untagged=[];
       cand.forEach(function(r){
         var t=r.t;
         if(!t.dur||!t.dev){untagged.push(r);return;}
