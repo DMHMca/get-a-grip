@@ -846,7 +846,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n18';
+var APP_VERSION='n19';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2473,21 +2473,20 @@ function sheetEl(){
     shownCb.disabled=!sel.value;
     sel.addEventListener('change',function(){shownCb.disabled=!sel.value;if(!sel.value)shownCb.checked=true;});
     var hasN=!!(t.notes&&t.notes.trim());
-    var nt=h('textarea',{id:'sheetnotes','aria-label':'Details',placeholder:'A web address, a phone number, anything useful',autocapitalize:'sentences'});
-    nt.value=t.notes||'';
+    var nt=h('textarea',{id:'sheetnotes','aria-label':isBig(t)?'Thinking':'Details',placeholder:isBig(t)?'Think it through here: what are the parts of this?':'A list of steps, a web address, a phone number, anything useful',autocapitalize:'sentences',style:'min-height:120px;resize:none;overflow:hidden',
+      oninput:function(e){grow(e.target);}});
+    nt.value=t.notes||'';setTimeout(function(){grow(nt);},0);
     var notesBox=h('label',null,[isBig(t)?'Thinking':'Details',nt]);
-    var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
     function saveEdit(openParts){
       var v=ti.value.trim();if(!v)return false;
       if(nowBig!==wasBig)setSize(t,nowBig);
       if(openParts===true)ui.partsOpen[t.id]=true;
       t.text=v;t.activityId=sel.value||null;t.updated=iso();
-      if(durSel.value)t.dur=durSel.value;else delete t.dur;
-      if(devSel.value)t.dev=devSel.value;else delete t.dev;
-      if(psel){var pv=psel.value,po=task(pv);if(pv&&po&&!isChild(po)){t.parent=pv;t.activityId=po.activityId||null;}else if(!pv)delete t.parent;}
-      if(asel2&&asel2.value){var ax=task(asel2.value);if(ax){attachTo(ax,t);ui.partsOpen[t.id]=true;}}
+      if(durRadio.value())t.dur=durRadio.value();else delete t.dur;
+      if(devRadio.value())t.dev=devRadio.value();else delete t.dev;
+      if(isChild(t)&&t.activityId!==task(t.parent).activityId)t.activityId=task(t.parent).activityId||null;
       if(t.activityId&&!shownCb.checked)t.nm=true;else delete t.nm;
-      var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
+      var nv=nt.value.trim();
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
       ui.sheet=null;commit();return true;
@@ -2495,29 +2494,28 @@ function sheetEl(){
     var wasBig=isBig(t),nowBig=wasBig;
     var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
     var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big']);
-    var durSel=h('select',{'aria-label':'How long it takes'},[h('option',{value:'',text:'Not set'})].concat(DURS.map(function(o){return h('option',{value:o[0],text:o[1]});})));
-    durSel.value=t.dur||'';
-    var devSel=h('select',{'aria-label':'Needs at least'},[h('option',{value:'',text:'Not set'})].concat(DEVS.map(function(o){return h('option',{value:o[0],text:o[1]});})));
-    devSel.value=t.dev||'';
+    function radioGroup(name,label,opts,cur){
+      var cur2=cur||'',rows=[['','Not set']].concat(opts),box=h('div',{role:'radiogroup','aria-label':label,style:'display:flex;flex-direction:column'});
+      rows.forEach(function(o){
+        var r=h('input',{type:'radio',name:name,value:o[0],checked:o[0]===cur2});
+        box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;min-height:44px;font-size:16px;color:var(--text)'},[r,h('span',{text:o[1]})]));
+      });
+      return {el:h('div',null,[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
+    }
+    var durRadio=radioGroup('dur','How long it takes',DURS,t.dur),devRadio=radioGroup('dev','Needs at least',DEVS,t.dev);
+    var tagNow=tagText(t);
+    var fold=h('details',{style:'border:1.5px solid var(--border);border-radius:12px;padding:0 14px'},[
+      h('summary',{style:'min-height:48px;display:flex;align-items:center;font-size:16px;cursor:pointer',text:'Time and equipment'+(tagNow?': '+tagNow:'')}),
+      h('div',{style:'padding-bottom:10px'},[durRadio.el,devRadio.el])]);
     var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
-      if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines of the details into subtasks']);
-    var hasKids=childrenOf(t).length>0;
-    var psel=null,asel2=null;
-    if(!hasKids){
-      var pc=S.tasks.filter(function(x){return x.id!==t.id&&!isChild(x)&&(!x.done||x.id===t.parent);});
-      psel=h('select',{'aria-label':'Subtask of'},[h('option',{value:'',text:'Not a subtask'})].concat(pc.map(function(x){return h('option',{value:x.id,text:x.text});})));
-      psel.value=isChild(t)?t.parent:'';
-    }
-    if(!isChild(t)){
-      var ac=attachChoices(t);
-      if(ac.length){
-        asel2=h('select',{'aria-label':'Attach an existing task'},[h('option',{value:'',text:'Choose a task to attach…'})].concat(ac.map(function(x){return h('option',{value:x.id,text:x.text});})));
-      }
-    }
+      if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
+    var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),h('label',null,['Activity',sel]),h('label',null,['How long it takes',durSel]),h('label',null,['Needs at least',devSel]),psel?h('label',null,['Subtask of',psel]):null,asel2?h('label',null,['Attach an existing task',asel2]):null,
-      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),hasN?notesBox:addN,linesBtn,addP,
+    inner.push(h('div',{class:'field'},[ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),notesBox,
+      (linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null,
+      h('label',null,['Activity',sel]),fold,
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
