@@ -512,7 +512,7 @@ function smallPicks(n,skip){
 function autoItems(){
   var out=[],best=bigCandidates()[0];
   if(best){
-    var ps=partsOf(best).filter(function(x){return !x.done;});
+    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,3);
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
   }
@@ -867,7 +867,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n27';
+var APP_VERSION='n28';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1920,7 +1920,7 @@ function startView(key){
         newPlan(key,'auto',items);commit();}},['Automatic']),
       h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',littles:[]};render();}},['Custom'])]),
     h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
-    h('p',{text:'Automatic builds a standard day: all the remaining subtasks of your first big task, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
+    h('p',{text:'Automatic builds a standard day: up to three of the remaining subtasks of your first big task, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
