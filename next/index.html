@@ -386,6 +386,28 @@ function tagText(t){
   var d=DURS.find(function(x){return x[0]===t.dur;}),v=DEVS.find(function(x){return x[0]===t.dev;});
   return [d?d[1]:'',v?v[1]:''].filter(Boolean).join(' · ');
 }
+/* things you could actually do that still lack a time or equipment tag: leaf tasks (no subtasks of their own), small list first, then big */
+function untaggedLeaves(){
+  var out=[];
+  function walk(list){
+    list.forEach(function(t){
+      var all=childrenOf(t),kids=all.filter(function(c){return !c.done;});
+      if(all.length){kids.forEach(function(c){if(!c.dur||!c.dev)out.push(c);});}
+      else if(!t.dur||!t.dev)out.push(t);
+    });
+  }
+  walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t);}));
+  walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
+  return out;
+}
+function radios(name,label,opts,cur){
+  var rows=[['','Not set']].concat(opts),box=h('div',{role:'radiogroup','aria-label':label,style:'display:flex;flex-direction:column'});
+  rows.forEach(function(o){
+    var r=h('input',{type:'radio',name:name,value:o[0],checked:o[0]===(cur||'')});
+    box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:10px;min-height:44px;font-size:16px;color:var(--text);display:flex'},[r,h('span',{text:o[1]})]));
+  });
+  return {el:h('div',{style:'flex:1;min-width:0'},[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
+}
 function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
 /* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
 /* the Slot finder walks the SMALL list in the owner's own order, looking at every unfinished subtask (or the task itself when it has none).
@@ -879,7 +901,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n31';
+var APP_VERSION='n32';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2468,9 +2490,40 @@ function sheetEl(){
     inner.push(h('div',{class:'field'},[qi,h('div',{class:'btns'},[
       h('button',{class:'btn',onclick:function(){ui.sheet={type:'bulk',actId:null};render();}},['Add several']),
       h('button',{class:'btn primary',onclick:go2},['Add'])])]));
+  }else if(s.type==='tagall'){
+    var tq=ui.tag||{ids:[],i:0},tt=null;
+    while(tq.i<tq.ids.length&&!(tt=task(tq.ids[tq.i]))){tq.i++;}
+    inner.push(h('h2',{text:'Tag tasks'}));
+    if(!tt){
+      inner.push(h('p',{class:'note',text:tq.ids.length?'All done. Every task you went through has been looked at.':'Nothing is waiting: every task you could do already has a time and equipment.'}));
+      inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Close'])])]));
+    }else{
+      var tpar=isChild(tt)?task(tt.parent):null;
+      var dR=radios('tdur','How long it takes',DURS,tt.dur),vR=radios('tdev','Needs at least',DEVS,tt.dev);
+      function moveOn(save){
+        if(save){
+          var d=dR.value(),v=vR.value();
+          if(d)tt.dur=d;else delete tt.dur;
+          if(v)tt.dev=v;else delete tt.dev;
+          tt.updated=iso();
+        }
+        tq.i++;
+        if(save)commit();else render();
+      }
+      inner.push(h('p',{class:'note',style:'padding-bottom:0',text:(tq.i+1)+' of '+tq.ids.length}));
+      inner.push(h('div',{style:'padding:2px 20px 0;font-size:18px;font-weight:700;overflow-wrap:anywhere',text:tt.text}));
+      if(tpar)inner.push(h('div',{style:'padding:2px 20px 0'},[h('small',{class:'ptag',text:'Part of: '+tpar.text})]));
+      inner.push(h('div',{style:'display:flex;gap:14px;padding:8px 20px 0'},[dR.el,vR.el]));
+      inner.push(h('div',{class:'field',style:'padding-top:10px'},[h('div',{class:'btns'},[
+        h('button',{class:'btn',onclick:function(){moveOn(false);}},['Skip']),
+        h('button',{class:'btn primary',onclick:function(){moveOn(true);}},['Save and next'])]),
+        h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Done for now'])])]));
+    }
   }else if(s.type==='menu'){
     inner.push(h('h2',{text:'More'}));
     inner.push(h('button',{class:'opt link',onclick:function(){goSub('archive');}},[svg(ICON.box),h('span',{class:'l',text:'Archive'}),h('small',{text:archived().length+' archived'})]));
+    var nTag=untaggedLeaves().length;
+    inner.push(h('button',{class:'opt link',onclick:function(){ui.tag={ids:untaggedLeaves().map(function(x){return x.id;}),i:0};ui.sheet={type:'tagall'};render();}},[svg(ICON.check),h('span',{class:'l',text:'Tag tasks'}),h('small',{text:nTag?nTag+' waiting':'none waiting'})]));
     inner.push(h('button',{class:'opt link',onclick:function(){goSub('settings');}},[svg('<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/>'),h('span',{class:'l',text:'Settings'})]));
   }else if(s.type==='switch'){
     inner.push(h('h2',{text:'Go to activity'}));
