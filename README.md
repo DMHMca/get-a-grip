@@ -6,6 +6,8 @@ It is a Progressive Web App: a few static files, no server and no build step. Yo
 
 Live copy: https://dmhmca.github.io/get-a-grip/
 
+Preview of the next version (a Today page, big and small jobs with parts, a Settings page): https://dmhmca.github.io/get-a-grip/next/. It keeps its own separate data, so it never touches the live copy above.
+
 ## Quick start for family and friends
 
 1. Open the link above in Chrome on your phone or computer. On a phone, use the menu, then **Install app**, so it sits on your home screen like any other app.
