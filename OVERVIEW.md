@@ -54,7 +54,7 @@ Where a task sits in your own list is the only statement of importance, so there
 
 **Today.** Where the idea lives. Each day starts blank, with two buttons: Automatic and Custom.
 
-Automatic builds the standard day for you. It takes the first big task in your own order and puts up to three of its remaining subtasks in a big block. It then takes the first six small tiles from the top of your Small list. A small task with subtasks is represented by its subtasks, each tile headed by the parent's name.
+When you start the day you choose how many big tasks (one to three) and how many subtasks of each, because sometimes you want to nudge several big tasks forward a little each rather than wait for the first to finish. With two or more big tasks it starts at one subtask each. Automatic builds the standard day for you. It takes the first big tasks in your own order (as many as you chose), each with its next subtasks, each big task in its own block. It then takes the first six small tiles from the top of your Small list. A small task with subtasks is represented by its subtasks, each tile headed by the parent's name.
 
 Custom asks a few questions (what sort of day it is, which big piece, which small ones) and builds the day from your answers.
 

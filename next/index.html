@@ -544,13 +544,14 @@ function smallPicks(n,skip){
   });
   return out;
 }
-function autoItems(){
-  var out=[],best=bigCandidates()[0];
-  if(best){
-    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,3);
+/* nBig big tasks from the top of the Big list, each with up to nSub of its next unfinished subtasks (or itself if it has none) */
+function autoItems(nBig,nSub){
+  var out=[];
+  bigCandidates().slice(0,nBig||1).forEach(function(best){
+    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,nSub||3);
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
-  }
+  });
   smallPicks(6).forEach(function(c){out.push(mkItem('little',c.id));});
   return out.filter(Boolean);
 }
@@ -902,7 +903,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n34';
+var APP_VERSION='n35';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1945,17 +1946,25 @@ function viewToday(){
 }
 function startView(key){
   var forTom=key===tomorrowKey();
+  var o=ui.dayOpts=ui.dayOpts||{bigs:1,subs:3};
+  function pickRow(label,vals,cur,fn){
+    return h('div',{style:'margin-top:8px'},[h('p',{class:'note',style:'padding:0 0 2px',text:label}),
+      h('div',{class:'tags',style:'padding-left:0',role:'group','aria-label':label},vals.map(function(v){
+        return h('button',{class:'btn',type:'button','aria-pressed':cur===v?'true':'false',onclick:function(){fn(v);render();}},[String(v)]);}))]);
+  }
   return h('div',{class:'card'},[
     h('h3',{text:'Start today'}),
     h('p',{text:'A short menu for the day, not a timetable. It starts blank and nothing is carried over.'}),
+    pickRow('How many big tasks?',[1,2,3],o.bigs,function(v){o.bigs=v;o.subs=v===1?3:1;}),
+    pickRow('Subtasks of each?',[1,2,3],o.subs,function(v){o.subs=v;}),
     h('div',{class:'two',style:'margin-top:10px'},[
       h('button',{class:'btn primary',onclick:function(){
-        var items=autoItems();
+        var items=autoItems(o.bigs,o.subs);
         if(!items.length){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
         newPlan(key,'auto',items);commit();}},['Automatic']),
-      h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',littles:[]};render();}},['Custom'])]),
+      h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',extra:[],littles:[]};render();}},['Custom'])]),
     h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
-    h('p',{text:'Automatic builds a standard day: up to three of the remaining subtasks of your first big task, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
+    h('p',{text:'Automatic builds the day from the first big tasks in your Big list, with the number of subtasks you chose, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
@@ -1966,7 +1975,7 @@ function customView(key){
   function maxLittles(){return c.kind==='light'?2:6;}
   if(c.step===1){
     box.appendChild(h('h3',{text:'What sort of day is it?'}));
-    [['both','A big piece and some small ones','One subtask of a big task, plus up to six small ones'],
+    [['both','A big piece and some small ones','One or more big tasks, a subtask of each, plus up to six small ones'],
      ['little','Small ones only','Up to six small ones'],
      ['light','A light day','Up to two small ones']].forEach(function(o){
       box.appendChild(h('button',{class:'choice',onclick:function(){c.kind=o[0];c.littles=c.littles.slice(0,o[0]==='light'?2:6);next(o[0]==='both'?2:3);}},[h('span',null,[o[1],h('small',{text:o[2]})])]));
@@ -1974,37 +1983,47 @@ function customView(key){
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[cancelBtn()]));
   }else if(c.step===2){
     var bigs=S.tasks.filter(function(t){return !t.done&&isBig(t);});
-    box.appendChild(h('h3',{text:'Which big task, and which subtask?'}));
+    c.extra=c.extra||[];
+    var entries=[c].concat(c.extra);
+    box.appendChild(h('h3',{text:entries.length>1?'Which big tasks, and which subtasks?':'Which big task, and which subtask?'}));
     if(!bigs.length){
       box.appendChild(h('p',{text:'You have no big tasks yet. Open any task and choose “Big” to make one. You can carry on without a big piece.'}));
-    }else{
-      var bs=h('select',{class:'sel','aria-label':'Big task'},[h('option',{value:'',text:'Choose a big task…'})].concat(bigs.map(function(t){return h('option',{value:t.id,text:t.text});})));
-      bs.value=c.bigId;
-      bs.addEventListener('change',function(e){c.bigId=e.target.value;c.partId='';c.newPart='';render();});
-      box.appendChild(bs);
-      var bt=c.bigId?task(c.bigId):null;
+    }else entries.forEach(function(e,idx){
+      var wrap=h('div',{style:idx?'margin-top:14px;padding-top:10px;border-top:1px solid var(--line)':''});
+      var bs=h('select',{class:'sel','aria-label':'Big task'+(idx?' '+(idx+1):'')},[h('option',{value:'',text:'Choose a big task…'})].concat(bigs.map(function(t){return h('option',{value:t.id,text:t.text});})));
+      bs.value=e.bigId;
+      bs.addEventListener('change',function(ev){e.bigId=ev.target.value;e.partId='';e.newPart='';render();});
+      wrap.appendChild(bs);
+      var bt=e.bigId?task(e.bigId):null;
       if(bt){
-        var undone=partsOf(bt).filter(function(p){return !p.done;});
-        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
-        ps.value=c.partId;
-        ps.addEventListener('change',function(e){c.partId=e.target.value;render();});
-        box.appendChild(ps);
-        box.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){ui.editId=bt.id;ui.sheet={type:'edit'};render();}},['Open this task'])]));
-        if(c.partId==='__new'){
-          var ni=h('input',{type:'text',class:'txt',id:'newpart','aria-label':'Today’s piece',placeholder:'What’s today’s piece?',value:c.newPart,autocomplete:'off',autocapitalize:'sentences',style:'margin-top:8px',
-            oninput:function(e){c.newPart=e.target.value;}});
-          box.appendChild(ni);
+        var taken={};entries.forEach(function(x){if(x!==e&&x.partId)taken[x.partId]=1;});
+        var undone=partsOf(bt).filter(function(p){return !p.done&&!taken[p.id];});
+        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'+(idx?' '+(idx+1):'')},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
+        ps.value=e.partId;
+        ps.addEventListener('change',function(ev){e.partId=ev.target.value;render();});
+        wrap.appendChild(ps);
+        wrap.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){ui.editId=bt.id;ui.sheet={type:'edit'};render();}},['Open this task'])]));
+        if(e.partId==='__new'){
+          wrap.appendChild(h('input',{type:'text',class:'txt',id:'newpart'+idx,'aria-label':'Today’s piece',placeholder:'What’s today’s piece?',value:e.newPart,autocomplete:'off',autocapitalize:'sentences',style:'margin-top:8px',
+            oninput:function(ev){e.newPart=ev.target.value;}}));
         }
       }
-    }
-    var ready=!bigs.length||(c.bigId&&(c.partId&&c.partId!=='__new'||(c.partId==='__new'&&c.newPart.trim())));
+      if(idx)wrap.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){c.extra.splice(idx-1,1);render();}},['Take this one out'])]));
+      box.appendChild(wrap);
+    });
+    function entryReady(e){return e.bigId&&(e.partId&&e.partId!=='__new'||(e.partId==='__new'&&e.newPart.trim()));}
+    var ready=!bigs.length||(entryReady(c)&&c.extra.every(function(e){return !e.bigId||entryReady(e);}));
+    if(bigs.length&&entryReady(c)&&c.extra.length<2)box.appendChild(h('div',{style:'margin-top:12px'},[h('button',{class:'btn',type:'button',onclick:function(){c.extra.push({bigId:'',partId:'',newPart:''});render();}},['Add another big task or subtask'])]));
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
-      h('button',{class:'btn',onclick:function(){c.bigId='';c.partId='';next(3);}},['No big piece today']),
+      h('button',{class:'btn',onclick:function(){c.bigId='';c.partId='';c.extra=[];next(3);}},['No big piece today']),
       h('button',{class:'btn primary',disabled:!ready,onclick:function(){
-        if(c.partId==='__new'){
-          var np=addSub(c.bigId,c.newPart);
-          if(np){c.partId=np.id;c.newPart='';commit(true);}
-        }
+        [c].concat(c.extra).forEach(function(e){
+          if(e.partId==='__new'){
+            var np=addSub(e.bigId,e.newPart);
+            if(np){e.partId=np.id;e.newPart='';commit(true);}
+          }
+        });
+        c.extra=c.extra.filter(function(e){return e.bigId&&e.partId;});
         next(3);}},['Next'])]));
   }else if(c.step===3){
     box.appendChild(h('h3',{text:'Small ones'}));
@@ -2029,7 +2048,9 @@ function customView(key){
       h('button',{class:'btn primary',onclick:function(){next(4);}},['Next'])]));
   }else{
     var items=[];
-    if(c.bigId&&c.partId&&c.partId!=='__new'){var bi=mkItem('big',c.bigId,c.partId==='__self'?null:c.partId);if(bi)items.push(bi);}
+    [c].concat(c.extra||[]).forEach(function(e){
+      if(e.bigId&&e.partId&&e.partId!=='__new'){var bi=mkItem('big',e.bigId,e.partId==='__self'?null:e.partId);if(bi&&!items.some(function(x){return x.tid===bi.tid;}))items.push(bi);}
+    });
     c.littles.forEach(function(v){var li=itemFromValue(v,'little');if(li)items.push(li);});
     box.appendChild(h('h3',{text:'Your day'}));
     if(!items.length)box.appendChild(h('p',{text:'Nothing chosen. A day with nothing planned is fine too.'}));
@@ -2083,7 +2104,7 @@ function planBlocks(pl){
   });
   if(!big.length)wrap.appendChild(h('div',{class:'bblock',style:'border-style:dashed;border-color:var(--border)'},[
     h('div',{class:'tt',style:'font-weight:400;color:var(--muted)'},[house(true),h('span',null,['No big piece today. ',h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])])])]));
-  else wrap.appendChild(h('div',{style:'padding:6px 0 0'},[h('button',{style:'background:none;border:0;padding:6px 0;color:var(--accent);text-decoration:underline;font-size:13px',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add another subtask to the big piece'])]));
+  else wrap.appendChild(h('div',{style:'padding:6px 0 0'},[h('button',{style:'background:none;border:0;padding:6px 0;color:var(--accent);text-decoration:underline;font-size:13px',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add another big task or subtask'])]));
   var grid=h('div',{class:'tgrid'});
   lit.forEach(function(it){
     var r=resolveItem(it),open=!!ui.tileOpen[it.tid];
