@@ -348,6 +348,31 @@ function partsOf(t){return childrenOf(t);}
 function partsDone(t){return childrenOf(t).filter(function(p){return p.done;}).length;}
 function isChild(t){return !!(t&&t.parent&&task(t.parent));}
 function topLevel(t){return !isChild(t);}
+/* WAITING: a task can be put off for a week, a month or two months. It stays in every list but is left out of the day (Automatic, Custom, Slot) until the
+   stored date (task.wait, a plain date key) arrives. A subtask also waits when its parent does. */
+function waitUntil(t){return t&&t.wait&&t.wait>todayKey()?t.wait:'';}
+function isWaiting(t){if(!t)return false;if(waitUntil(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&waitUntil(p));}
+function waitKey(kind){var d=new Date();if(kind==='week')d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+(kind==='month'?1:2));return dkey(d);}
+function waitTask(t,kind){
+  t.wait=waitKey(kind);t.updated=iso();
+  var pl=planFor(todayKey()),it=pl&&pl.items.find(function(x){return x.tid===t.id;});
+  if(it){
+    pl.items=pl.items.filter(function(x){return x!==it;});
+    var rep=null;
+    if(it.k==='big'){
+      var par=isChild(t)?task(t.parent):null;
+      var nx=par&&childrenOf(par).find(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);});
+      if(nx)rep=mkItem('big',par.id,nx.id);
+    }else{
+      var n2=smallPicks(1,function(c){return inPlan(pl,c.id);})[0];
+      if(n2)rep=mkItem('little',n2.id);
+    }
+    if(rep)pl.items.push(rep);
+    pl.updated=iso();
+  }
+  commit();
+}
+function stopWaiting(t){delete t.wait;t.updated=iso();commit();}
 function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&!x.done&&!isChild(x)&&!childrenOf(x).length;});}
 /* the SMALL list (internally still called master): small tasks only, never big tasks or the subtasks of big tasks (those live on the Big page).
    A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, and once all are done the parent itself. */
@@ -418,9 +443,9 @@ function slotCandidates(includeBig){
   var pl=planFor(todayKey()),out=[];
   function walk(list){
     list.forEach(function(t){
-      var kids=childrenOf(t).filter(function(c){return !c.done;});
+      var kids=childrenOf(t).filter(function(c){return !c.done&&!isWaiting(c);});
       if(kids.length)kids.forEach(function(c){out.push({t:c,owner:t});});
-      else if(!childrenOf(t).length)out.push({t:t,owner:t});
+      else if(!childrenOf(t).length&&!isWaiting(t))out.push({t:t,owner:t});
     });
   }
   walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t)&&!t.nm;}));
@@ -523,9 +548,9 @@ function lastTouched(t){
 }
 function bigCandidates(){
   return S.tasks.filter(function(t){
-    if(t.done||!isBig(t)||isChild(t))return false;
+    if(t.done||!isBig(t)||isChild(t)||isWaiting(t))return false;
     var ks=childrenOf(t);
-    return !ks.length||ks.some(function(p){return !p.done;});
+    return !ks.length||ks.some(function(p){return !p.done&&!isWaiting(p);});
   });
 }
 /* Automatic takes the FIRST big task in the owner's own order that still has something to do: its remaining unfinished subtasks (up to three), or the task itself if it has none */
@@ -535,7 +560,10 @@ function smallPicks(n,skip){
   var out=[],seen={};
   smallRows().forEach(function(r){
     if(out.length>=n)return;
-    var kids=childrenOf(r.t).filter(function(c){return !c.done;});
+    if(isWaiting(r.t))return;
+    var open=childrenOf(r.t).filter(function(c){return !c.done;});
+    var kids=open.filter(function(c){return !isWaiting(c);});
+    if(open.length&&!kids.length)return;
     var group=kids.length?kids:[r.t];
     group.forEach(function(c){
       if(out.length>=n||seen[c.id]||(skip&&skip(c)))return;
@@ -548,7 +576,7 @@ function smallPicks(n,skip){
 function autoItems(nBig,nSub){
   var out=[];
   bigCandidates().slice(0,nBig||1).forEach(function(best){
-    var ps=partsOf(best).filter(function(x){return !x.done;}).slice(0,nSub||3);
+    var ps=partsOf(best).filter(function(x){return !x.done&&!isWaiting(x);}).slice(0,nSub||3);
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
   });
@@ -558,7 +586,7 @@ function autoItems(nBig,nSub){
 function littleChoices(pl,cust){
   var jobs=[],parts=[];
   S.tasks.forEach(function(t){
-    if(t.done||isBig(t))return;
+    if(t.done||isBig(t)||isWaiting(t))return;
     var par=isChild(t)?task(t.parent):null;
     if(par&&isBig(par))return;
     var v=par?'P:'+par.id+':'+t.id:'T:'+t.id;
@@ -754,7 +782,8 @@ function taskRow(t,showAct,opts){
   var kids=[
     h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
     h('button',{class:'rowtext','aria-label':(big?'Big. ':'')+'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
-      h('span',{class:'rtl'},[house(big),h('span',{text:t.text})]),sub]),
+      h('span',{class:'rtl'},[house(big),h('span',{text:t.text})]),sub,
+      waitUntil(t)?h('small',{text:'Waiting until '+niceDate(waitUntil(t))}):null]),
     hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
       onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
     h('button',{class:'handle','data-handle':slot,'aria-label':'Reorder: '+(owner?owner.text:t.text)+'. Drag, or use the up and down arrow keys.',
@@ -903,7 +932,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n35';
+var APP_VERSION='n36';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1982,7 +2011,7 @@ function customView(key){
     });
     box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[cancelBtn()]));
   }else if(c.step===2){
-    var bigs=S.tasks.filter(function(t){return !t.done&&isBig(t);});
+    var bigs=S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isWaiting(t);});
     c.extra=c.extra||[];
     var entries=[c].concat(c.extra);
     box.appendChild(h('h3',{text:entries.length>1?'Which big tasks, and which subtasks?':'Which big task, and which subtask?'}));
@@ -1997,7 +2026,7 @@ function customView(key){
       var bt=e.bigId?task(e.bigId):null;
       if(bt){
         var taken={};entries.forEach(function(x){if(x!==e&&x.partId)taken[x.partId]=1;});
-        var undone=partsOf(bt).filter(function(p){return !p.done&&!taken[p.id];});
+        var undone=partsOf(bt).filter(function(p){return !p.done&&!isWaiting(p)&&!taken[p.id];});
         var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'+(idx?' '+(idx+1):'')},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
         ps.value=e.partId;
         ps.addEventListener('change',function(ev){e.partId=ev.target.value;render();});
@@ -2068,10 +2097,14 @@ function itemRow(pl,it,editable){
   return h('div',{class:'item'+(done?' done':'')},[
     h('button',{class:'tick','aria-label':(done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(){tickItem(it);}},[tickIcon(done)]),
     h('button',{class:'itext','aria-label':'Open task: '+r.text,onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}}},[h('span',{text:r.text}),r.parent?h('small',{text:'subtask of '+r.parent}):(r.sub?h('small',{text:r.sub}):null),r.gone?h('small',{text:'No longer in your list'}):null]),
-    editable?h('button',{class:'chg','aria-label':'Change: '+r.text,onclick:function(){ui.swap={pid:pl.id,item:it};ui.sheet={type:'swap'};render();}},['Change']):null]);
+    editable?h('button',{class:'chg','aria-label':'Change: '+r.text,onclick:function(){ui.swap={pid:pl.id,item:it};ui.sheet={type:'swap'};render();}},['Change']):null,
+    editable&&!done&&!r.gone?waitBtn(it,r,'chg'):null]);
 }
 function getLayout(){try{return localStorage.getItem('next.gag.todayLayout')||'blocks';}catch(e){return 'blocks';}}
 function setLayout(v){try{localStorage.setItem('next.gag.todayLayout',v);}catch(e){}render();}
+function waitBtn(it,r,cls){
+  return h('button',{class:cls||'chg','aria-label':'Wait: '+r.text,onclick:function(ev){ev.stopPropagation();ui.waitFor=it.tid;ui.sheet={type:'wait'};render();}},['Wait']);
+}
 function changeBtn(pl,it,r,cls){
   return h('button',{class:cls||'chg','aria-label':'Change: '+r.text,onclick:function(ev){ev.stopPropagation();ui.swap={pid:pl.id,item:it};ui.sheet={type:'swap'};render();}},['Change']);
 }
@@ -2098,7 +2131,7 @@ function planBlocks(pl){
       var r=resolveItem(it);
       blk.appendChild(h('div',{class:'bi'+(r.done?' done':'')},[
         h('button',{class:'tk','aria-label':(r.done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(){tickItem(it);}},[tickIcon(r.done)]),
-        h('button',{class:'bt','aria-label':'Open task: '+r.text,style:'border:0;background:none;text-align:left;padding:6px 0;color:inherit;font:inherit;cursor:pointer',onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}}},[r.text]),changeBtn(pl,it,r)]));
+        h('button',{class:'bt','aria-label':'Open task: '+r.text,style:'border:0;background:none;text-align:left;padding:6px 0;color:inherit;font:inherit;cursor:pointer',onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}}},[r.text]),changeBtn(pl,it,r),r.done||r.gone?null:waitBtn(it,r)]));
     });
     wrap.appendChild(blk);
   });
@@ -2123,7 +2156,7 @@ function planBlocks(pl){
     if(sb&&open)tile.appendChild(h('div',{class:'sb',text:sb}));
     if(r.gone)tile.appendChild(h('div',{class:'sb',text:'No longer in your list'}));
     if(open)tile.appendChild(h('div',{class:'acts'},[
-      h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,'')]));
+      h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,''),r.done||r.gone?null:waitBtn(it,r,'')].filter(Boolean)));
     grid.appendChild(tile);
   });
   if(lit.length<6)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
@@ -2374,14 +2407,14 @@ function sheetEl(){
       ui.sheet=null;touchPlan(spl);
     }
     if(isBg){
-      var bgs=S.tasks.filter(function(t){return !t.done&&isBig(t);});
+      var bgs=S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isWaiting(t);});
       sel2=h('select',{class:'sel','aria-label':'Big task'},[h('option',{value:'',text:'Choose a big task…'})].concat(bgs.map(function(t){return h('option',{value:t.id,text:t.text});})));
       var holder=h('div',null);
       sel3=null;var selA=null;
       sel2.addEventListener('change',function(){
         holder.replaceChildren();sel3=null;selA=null;
         var bt=task(sel2.value);if(!bt)return;
-        var un=partsOf(bt).filter(function(p){return !p.done;});
+        var un=partsOf(bt).filter(function(p){return !p.done&&!isWaiting(p);});
         sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'Choose…'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'})]));
         if(!un.length)sel3.value='__self';
         holder.appendChild(sel3);
@@ -2459,6 +2492,17 @@ function sheetEl(){
         if(n){ui.partsOpen[lt.id]=true;ui.bigCards[lt.id]=true;}
         ui.sheet=null;if(n)commit();else render();}},['Make subtasks'])]));
     inner.push(box2);
+  }else if(s.type==='wait'){
+    var wt=task(ui.waitFor);if(!wt)return null;
+    inner.push(h('h2',{text:'Wait'}));
+    inner.push(h('p',{class:'note',text:'“'+wt.text+'” stays in your lists, but it is left out of your day until the time is up. Then it comes back by itself.'}));
+    var wb=h('div',{class:'field'});
+    [['week','For a week'],['month','For a month'],['two','For two months']].forEach(function(o){
+      wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0]);}},[o[1]]));
+    });
+    if(waitUntil(wt))wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;stopWaiting(wt);}},['Stop waiting']));
+    wb.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel'])]));
+    inner.push(wb);
   }else if(s.type==='slot'){
     var sl=ui.slot=ui.slot||{mins:'',dev:''};
     inner.push(h('h2',{text:'I’ve got a slot'}));
@@ -2649,6 +2693,9 @@ function sheetEl(){
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
       if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
     var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
+    var wBtn=t.done?null:(waitUntil(t)
+      ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(t);ui.sheet=null;render();}},['Waiting until '+niceDate(waitUntil(t))+'. Stop waiting'])
+      :h('button',{class:'btn',type:'button',onclick:function(){if(!saveEdit())return;ui.waitFor=t.id;ui.sheet={type:'wait'};render();}},['Wait…']));
     inner.push(h('h2',{text:'Edit task'}));
     var subNow=childrenOf(t);
     var subList=subNow.length?h('div',{style:'border-top:1px solid var(--line);padding-top:8px'},[
@@ -2669,7 +2716,7 @@ function sheetEl(){
     showPanel('t');
     inner.push(h('div',{class:'field'},[h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),
       h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
-      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,wBtn,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
