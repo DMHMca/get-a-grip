@@ -357,17 +357,26 @@ function waitTask(t,kind){
   t.wait=waitKey(kind);t.updated=iso();
   var pl=planFor(todayKey()),it=pl&&pl.items.find(function(x){return x.tid===t.id;});
   if(it){
-    pl.items=pl.items.filter(function(x){return x!==it;});
-    var rep=null;
+    var at=pl.items.indexOf(it),rep=null;
+    pl.items.splice(at,1);
     if(it.k==='big'){
       var par=isChild(t)?task(t.parent):null;
       var nx=par&&childrenOf(par).find(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);});
       if(nx)rep=mkItem('big',par.id,nx.id);
+      else{
+        /* nothing left of that big task to offer: the next big task in the Big list steps in */
+        var inDay={};pl.items.forEach(function(x){var q=task(x.tid);if(q)inDay[isChild(q)?q.parent:q.id]=1;});
+        var nb=bigCandidates().find(function(x){return !inDay[x.id]&&x.id!==(par?par.id:t.id);});
+        if(nb){
+          var f=childrenOf(nb).find(function(c){return !c.done&&!isWaiting(c);});
+          rep=f?mkItem('big',nb.id,f.id):mkItem('big',nb.id);
+        }
+      }
     }else{
       var n2=smallPicks(1,function(c){return inPlan(pl,c.id);})[0];
       if(n2)rep=mkItem('little',n2.id);
     }
-    if(rep)pl.items.push(rep);
+    if(rep)pl.items.splice(at,0,rep);
     pl.updated=iso();
   }
   commit();
@@ -932,7 +941,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n36';
+var APP_VERSION='n37';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
