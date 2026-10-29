@@ -360,7 +360,7 @@ function heldBy(t){
 }
 function waitInfo(t){return waitUntil(t)||(heldBy(t)?waitUntil(heldBy(t)):'');}
 function isWaiting(t){if(!t)return false;if(waitUntil(t)||heldBy(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&waitUntil(p));}
-function waitKey(kind){var d=new Date();if(kind==='week')d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+(kind==='month'?1:2));return dkey(d);}
+function waitKey(kind){var d=new Date();if(kind==='day')d.setDate(d.getDate()+1);else if(kind==='week')d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+1);return dkey(d);}
 function laterOpen(t){
   if(!isChild(t))return [];
   var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
@@ -963,7 +963,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n40';
+var APP_VERSION='n41';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2544,7 +2544,7 @@ function sheetEl(){
       holdCb=h('input',{type:'checkbox',checked:getWaitHold(),'aria-label':'Also hold the subtasks after this one',onchange:function(e){setWaitHold(e.target.checked);}});
       wb.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text);display:flex'},[holdCb,h('span',{text:'Also hold the '+later.length+(later.length===1?' subtask':' subtasks')+' after this one'})]));
     }
-    [['week','For a week'],['month','For a month'],['two','For two months']].forEach(function(o){
+    [['day','For a day'],['week','For a week'],['month','For a month']].forEach(function(o){
       wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0],!!(holdCb&&holdCb.checked));}},[o[1]]));
     });
     if(waitUntil(wt))wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;stopWaiting(wt);}},['Stop waiting']));
