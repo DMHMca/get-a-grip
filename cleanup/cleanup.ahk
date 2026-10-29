@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 7
+VERSION := 8
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -299,6 +299,8 @@ SetupTray() {
     A_TrayMenu.Add("Edit my words and names", (*) => Run('notepad.exe "' VocabFile '"'))
     A_TrayMenu.Add("Copy the last original text back", (*) => CopyOriginal())
     A_TrayMenu.Add("Change the model...", (*) => ChangeModel())
+    A_TrayMenu.Add("Voice typing: set up ChatRite Dictate...", (*) => InstallDictate())
+    A_TrayMenu.Add("Voice typing: start it now", (*) => StartDictate())
     A_TrayMenu.Add("Check for updates now", (*) => CheckUpdate(true))
     A_TrayMenu.Add("Open the log folder", (*) => Run('explorer.exe "' DataDir '"'))
     A_TrayMenu.Add("Start with Windows", ToggleStartup)
@@ -410,6 +412,117 @@ SayTo(ed, t) {
         ed.Value .= t "`r`n"
         SendMessage(0x0115, 7, 0, ed)
     }
+}
+
+
+; ---------------------------------------------------------------- ChatRite Dictate (voice typing) set-up
+RunLine(cmd, outFile) {
+    try FileDelete(outFile)
+    RunWait(A_ComSpec ' /c "' cmd ' > "' outFile '" 2>&1"', , "Hide")
+    return FileExist(outFile) ? Trim(FileRead(outFile, "CP0"), " `t`r`n") : ""
+}
+
+RunLogged(cmd, logFile, Say) {
+    try FileDelete(logFile)
+    Run(A_ComSpec ' /c "' cmd ' > "' logFile '" 2>&1"', , "Hide", &pid)
+    last := ""
+    while ProcessExist(pid) {
+        Sleep(2000)
+        try {
+            txt := Trim(FileRead(logFile, "CP0"), " `t`r`n")
+            ln := StrSplit(txt, "`n", "`r")
+            line := Trim(ln[ln.Length])
+            if (line != "" && line != last) {
+                last := line
+                Say("   " SubStr(line, 1, 110))
+            }
+        }
+    }
+}
+
+FindPython() {
+    for p in [EnvGet("LOCALAPPDATA") "\Programs\Python\Python312\python.exe", A_ProgramFiles "\Python312\python.exe"] {
+        if FileExist(p)
+            return p
+    }
+    out := RunLine('py -3.12 -c "import sys;print(sys.executable)"', A_Temp "\chatrite-py.txt")
+    if (out != "" && FileExist(out))
+        return out
+    return ""
+}
+
+StartDictate() {
+    pyw := InstallDir "\dictate\venv\Scripts\pythonw.exe"
+    script := InstallDir "\dictate\dictate.py"
+    if (!FileExist(pyw) || !FileExist(script)) {
+        MsgBox("ChatRite Dictate is not set up yet. Use 'Voice typing: set up ChatRite Dictate...' first.", "ChatRite", 48)
+        return
+    }
+    Run('"' pyw '" "' script '"', InstallDir "\dictate")
+}
+
+InstallDictate() {
+    if Cfg.Busy
+        return
+    Cfg.Busy := true
+    dir := InstallDir "\dictate"
+    venv := dir "\venv"
+    vpy := venv "\Scripts\python.exe"
+    pyw := venv "\Scripts\pythonw.exe"
+    win := Gui("+AlwaysOnTop", "ChatRite Dictate: setting up")
+    win.SetFont("s11", "Segoe UI")
+    ed := win.Add("Edit", "w660 h420 ReadOnly -Wrap +VScroll")
+    win.Add("Button", "w120", "Close").OnEvent("Click", (*) => win.Destroy())
+    win.OnEvent("Close", (*) => win.Destroy())
+    win.Show()
+    Say := (t) => SayTo(ed, t)
+    try {
+        Say("Setting up voice typing. This takes about ten minutes the first time, mostly downloading. You can leave it.")
+        Say("")
+        Say("1. Looking for Python 3.12 ...")
+        py := FindPython()
+        if (py = "") {
+            Say("   Not found. Installing it with Windows' own installer (winget) ...")
+            RunLogged('winget install -e --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements', A_Temp "\chatrite-winget.txt", Say)
+            py := FindPython()
+            if (py = "")
+                throw Error("Python 3.12 could not be installed automatically. Install it from python.org (version 3.12), then run this again.")
+        }
+        Say("   Found: " py)
+        DirCreate(dir)
+        if !FileExist(vpy) {
+            Say("2. Making a private Python environment ...")
+            RunLogged('"' py '" -m venv "' venv '"', A_Temp "\chatrite-venv.txt", Say)
+            if !FileExist(vpy)
+                throw Error("Could not create the Python environment.")
+        } else
+            Say("2. The private Python environment already exists.")
+        Say("3. Downloading the programs it needs (about 1 GB, the slow part) ...")
+        RunLine('curl.exe -s --max-time 30 -o "' dir '\requirements.txt" "https://dmhmca.github.io/get-a-grip/dictate/requirements.txt?t=' A_Now '"', A_Temp "\chatrite-req.txt")
+        if !FileExist(dir "\requirements.txt")
+            throw Error("Could not download the list of programs to install.")
+        RunLogged('"' vpy '" -m pip install --upgrade pip --progress-bar off', A_Temp "\chatrite-pip0.txt", Say)
+        RunLogged('"' vpy '" -m pip install -r "' dir '\requirements.txt" --progress-bar off', A_Temp "\chatrite-pip.txt", Say)
+        chk := RunLine('"' vpy '" -c "import faster_whisper, sounddevice, pystray, keyboard, numpy; print(\"ok\")"', A_Temp "\chatrite-chk.txt")
+        if !InStr(chk, "ok")
+            throw Error("Some programs did not install. The last message was: " SubStr(chk, -300))
+        Say("4. Downloading ChatRite Dictate itself ...")
+        RunLine('curl.exe -s --max-time 30 -o "' dir '\dictate.py" "https://dmhmca.github.io/get-a-grip/dictate/dictate.py?t=' A_Now '"', A_Temp "\chatrite-dl.txt")
+        if (!FileExist(dir "\dictate.py") || !InStr(FileRead(dir "\dictate.py", "UTF-8"), "CHATRITE-DICTATE-END"))
+            throw Error("Could not download ChatRite Dictate.")
+        FileCreateShortcut(pyw, A_Startup "\ChatRite Dictate.lnk", dir, '"' dir '\dictate.py"')
+        Say("5. Starting it ...")
+        Run('"' pyw '" "' dir '\dictate.py"', dir)
+        Say("")
+        Say("DONE. Look for a new grey ring icon by the clock (under the up arrow if needed). The first start downloads the speech model, about 1.6 GB, so wait for a notification that says Ready.")
+        Say("Then press Ctrl+Alt+Space to start listening, and again to stop. It switches itself off after 90 seconds of quiet.")
+        Say("It also starts with Windows. Say 'new line' or 'new paragraph' for line breaks, and 'stop dictation' to switch off.")
+    } catch as e {
+        Say("")
+        Say("STOPPED: " e.Message)
+        Say("Take a screenshot of this window and send it to your assistant.")
+    }
+    Cfg.Busy := false
 }
 
 ; ---------------------------------------------------------------- Ollama and model checks
