@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 2
+VERSION := 3
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -338,6 +338,7 @@ SampleTest() {
     if Cfg.Busy
         return
     Cfg.Busy := true
+    Msg("ChatRite is testing... the first time can take up to a minute while the model loads.", 120000)
     try {
         sample := "Yesterday I opened Kodak's in crime and read the hole thing again. We dug a hole in the ground, then I read the whole document twice. Their going to send it to us tomorrow, and the new version is likely to be much Fuller of errors."
         t0 := A_TickCount
@@ -347,8 +348,10 @@ SampleTest() {
         f2 := AskModel(sample)
         s2 := Round((A_TickCount - t0) / 1000, 1)
         out := ApplyFixes(sample, f2, &applied, &skipped)
+        Msg("Done.", 500)
         MsgBox("First go: " s1 " s (includes loading the model).`nSecond go: " s2 " s.`n`nFixes applied: " applied ", skipped: " skipped ".`n`nBefore:`n" sample "`n`nAfter:`n" out, "ChatRite: sample", 64)
     } catch as e {
+        Msg("", 100)
         MsgBox("The test could not finish:`n" e.Message, "ChatRite", 48)
     }
     Cfg.Busy := false
