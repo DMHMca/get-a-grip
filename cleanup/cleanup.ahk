@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 6
+VERSION := 7
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -155,6 +155,7 @@ BuildPrompt() {
     lines.Push('Reply ONLY with JSON like {"fixes":[{"wrong":"...","right":"..."}]}.')
     lines.Push("")
     lines.Push("Fix only real recognition errors: words that sound alike but do not fit the meaning (whole/hole, their/there/they're, to/too, and so on), mis-heard names and technical terms, wrong capital letters in the middle of a sentence, an accidentally repeated or doubled word, and clearly wrong punctuation. Work out what the speaker meant from the whole text.")
+    lines.Push("Real words can still be wrong. Read each sentence as the speaker meant it. Ask of every word: does it make sense here? If a real word does not fit but a similar-sounding or similar-looking small word would (like/my, of/have, a/the, then/than, no/know, were/where, its/it's), fix it. A word with a capital letter in the middle of a sentence is wrong unless it is a name or a title; make it lower case.")
     lines.Push("Never rephrase, reword, improve the style, change the meaning, or change words that are correct. Keep British spelling. If a word is right in context, leave it alone even if it sounds like another word.")
     lines.Push("'wrong' must be copied exactly from the text. Include a neighbouring word or two only when needed to make it unique. 'right' is what replaces it. If nothing needs fixing reply {" '"fixes":[]' "}.")
     lines.Push("")
@@ -165,6 +166,10 @@ BuildPrompt() {
     lines.Push('{"fixes":[]}')
     lines.Push("Text: It was good, but are the longer ones are likely to be much Fuller with errors.")
     lines.Push('{"fixes":[{"wrong":"but are the longer ones are","right":"but the longer ones are"},{"wrong":"much Fuller","right":"much fuller"}]}')
+    lines.Push("Text: Plus at the moment I have no photographs and like inclination is to leave them out because I find travel posts with lots of photographs very Samey.")
+    lines.Push('{"fixes":[{"wrong":"and like inclination","right":"and my inclination"},{"wrong":"very Samey","right":"very samey"}]}')
+    lines.Push("Text: I would of gone but I new the way was longer then expected.")
+    lines.Push('{"fixes":[{"wrong":"would of gone","right":"would have gone"},{"wrong":"I new the way","right":"I knew the way"},{"wrong":"longer then expected","right":"longer than expected"}]}')
     names := []
     heard := []
     try {
