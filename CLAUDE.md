@@ -8,6 +8,7 @@ Read this first. It records what this app is, how it is built and hosted, the ru
 - Use British English. Be practical and direct. Prefer short prose over bullet lists when talking to them.
 - They are frustrated by fragmented tools and sessions. Keep things simple, tell them what changed after each piece of work, and avoid jargon.
 - They use an Android phone (Chrome) and a Windows PC. The app is used mostly on the phone.
+- Always give web addresses as CLICKABLE links (markdown links with the full address), never as plain text or code, because copying and pasting on the phone is tedious for them. Say what the link opens in a few words.
 - Never ask them to paste secrets into chat. Prefer signing in through the tool's own GitHub login.
 
 ## What the app is
