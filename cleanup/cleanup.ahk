@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 1
+VERSION := 2
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -28,7 +28,7 @@ DirCreate(DataDir)
 Cfg := {Model: IniRead(IniFile, "Tidy", "Model", "qwen2.5:7b"), Busy: false, LastOriginal: ""}
 
 if !FileExist(VocabFile) {
-    FileAppend("; Your words and names, one per line. Lines starting with ; are ignored.`n"
+    FileAppend("; Your words and names, one per line. Lines starting with a semicolon are ignored.`n"
         . "; To tell it what the recogniser often gets wrong, write:  heard => meant`n"
         . "Codex`nChrome`nClaude`nChatGPT`n"
         . "Kodak's => Codex`ncrime => Chrome`n", VocabFile, "UTF-8")
