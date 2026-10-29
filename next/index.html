@@ -351,37 +351,59 @@ function topLevel(t){return !isChild(t);}
 /* WAITING: a task can be put off for a week, a month or two months. It stays in every list but is left out of the day (Automatic, Custom, Slot) until the
    stored date (task.wait, a plain date key) arrives. A subtask also waits when its parent does. */
 function waitUntil(t){return t&&t.wait&&t.wait>todayKey()?t.wait:'';}
-function isWaiting(t){if(!t)return false;if(waitUntil(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&waitUntil(p));}
+/* an earlier unfinished subtask of the same parent that is waiting and also holds back the ones after it (t.wh) */
+function heldBy(t){
+  if(!isChild(t))return null;
+  var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
+  for(var k=0;k<i;k++){var q=sibs[k];if(!q.done&&q.wh&&waitUntil(q))return q;}
+  return null;
+}
+function waitInfo(t){return waitUntil(t)||(heldBy(t)?waitUntil(heldBy(t)):'');}
+function isWaiting(t){if(!t)return false;if(waitUntil(t)||heldBy(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&waitUntil(p));}
 function waitKey(kind){var d=new Date();if(kind==='week')d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+(kind==='month'?1:2));return dkey(d);}
-function waitTask(t,kind){
-  t.wait=waitKey(kind);t.updated=iso();
-  var pl=planFor(todayKey()),it=pl&&pl.items.find(function(x){return x.tid===t.id;});
-  if(it){
-    var at=pl.items.indexOf(it),rep=null;
-    pl.items.splice(at,1);
-    if(it.k==='big'){
-      var par=isChild(t)?task(t.parent):null;
-      var nx=par&&childrenOf(par).find(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);});
-      if(nx)rep=mkItem('big',par.id,nx.id);
-      else{
-        /* nothing left of that big task to offer: the next big task in the Big list steps in */
-        var inDay={};pl.items.forEach(function(x){var q=task(x.tid);if(q)inDay[isChild(q)?q.parent:q.id]=1;});
-        var nb=bigCandidates().find(function(x){return !inDay[x.id]&&x.id!==(par?par.id:t.id);});
-        if(nb){
-          var f=childrenOf(nb).find(function(c){return !c.done&&!isWaiting(c);});
-          rep=f?mkItem('big',nb.id,f.id):mkItem('big',nb.id);
+function laterOpen(t){
+  if(!isChild(t))return [];
+  var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
+  return sibs.slice(i+1).filter(function(c){return !c.done;});
+}
+function getWaitHold(){try{return localStorage.getItem('next.gag.waitHold')==='1';}catch(e){return false;}}
+function setWaitHold(v){try{localStorage.setItem('next.gag.waitHold',v?'1':'0');}catch(e){}}
+function waitTask(t,kind,hold){
+  t.wait=waitKey(kind);if(hold&&laterOpen(t).length)t.wh=true;else delete t.wh;
+  t.updated=iso();
+  var pl=planFor(todayKey());
+  if(pl){
+    /* anything in today's plan that now waits comes out, and the next one takes its place at once */
+    var items=pl.items.slice();
+    for(var i=0;i<items.length;i++){
+      var q=task(items[i].tid);
+      if(!(q&&isWaiting(q)))continue;
+      var old=items[i],rep=null;
+      items.splice(i,1);pl.items=items;
+      if(old.k==='big'){
+        var par=isChild(q)?task(q.parent):null;
+        var nx=par&&childrenOf(par).find(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);});
+        if(nx)rep=mkItem('big',par.id,nx.id);
+        else{
+          /* nothing left of that big task to offer: the next big task in the Big list steps in */
+          var inDay={};pl.items.forEach(function(x){var z=task(x.tid);if(z)inDay[isChild(z)?z.parent:z.id]=1;});
+          var nb=bigCandidates().find(function(x){return !inDay[x.id]&&x.id!==(par?par.id:q.id);});
+          if(nb){
+            var f=childrenOf(nb).find(function(c){return !c.done&&!isWaiting(c);});
+            rep=f?mkItem('big',nb.id,f.id):mkItem('big',nb.id);
+          }
         }
+      }else{
+        var n2=smallPicks(1,function(c){return inPlan(pl,c.id);})[0];
+        if(n2)rep=mkItem('little',n2.id);
       }
-    }else{
-      var n2=smallPicks(1,function(c){return inPlan(pl,c.id);})[0];
-      if(n2)rep=mkItem('little',n2.id);
+      if(rep)items.splice(i,0,rep);else i--;
     }
-    if(rep)pl.items.splice(at,0,rep);
-    pl.updated=iso();
+    pl.items=items;pl.updated=iso();
   }
   commit();
 }
-function stopWaiting(t){delete t.wait;t.updated=iso();commit();}
+function stopWaiting(t){delete t.wait;delete t.wh;t.updated=iso();commit();}
 function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&!x.done&&!isChild(x)&&!childrenOf(x).length;});}
 /* the SMALL list (internally still called master): small tasks only, never big tasks or the subtasks of big tasks (those live on the Big page).
    A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, and once all are done the parent itself. */
@@ -792,7 +814,7 @@ function taskRow(t,showAct,opts){
     h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
     h('button',{class:'rowtext','aria-label':(big?'Big. ':'')+'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
       h('span',{class:'rtl'},[house(big),h('span',{text:t.text})]),sub,
-      waitUntil(t)?h('small',{text:'Waiting until '+niceDate(waitUntil(t))}):null]),
+      waitInfo(t)?h('small',{text:'Waiting until '+niceDate(waitInfo(t))+(t.wh&&waitUntil(t)?', and the subtasks after it':'')}):null]),
     hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
       onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
     h('button',{class:'handle','data-handle':slot,'aria-label':'Reorder: '+(owner?owner.text:t.text)+'. Drag, or use the up and down arrow keys.',
@@ -941,7 +963,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n37';
+var APP_VERSION='n38';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2260,12 +2282,16 @@ function bigCard(t){
   var ps=childrenOf(t),dn=partsDone(t),open=!!ui.bigCards[t.id],nx=ps.find(function(c){return !c.done;});
   var a=t.activityId?act(t.activityId):null;
   var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet';
-  var head=h('button',{class:'bhead','aria-expanded':open?'true':'false','aria-label':(open?'Close ':'Open ')+'big task: '+t.text,onclick:function(){if(ui.bigCards[t.id])delete ui.bigCards[t.id];else ui.bigCards[t.id]=true;render();}},[
-    h('span',{class:'tt'},[house(true),h('span',{text:t.text})]),
+  /* tapping the title edits the task; tapping the activity, bar or progress line opens and closes the card */
+  var titleBtn=h('button',{class:'tt','aria-label':'Edit big task: '+t.text,style:'border:0;background:none;padding:0;text-align:left;width:100%;color:inherit;font-family:inherit;cursor:pointer',
+    onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[house(true),h('span',{text:t.text})]);
+  var tgl=h('button',{class:'tgl','aria-expanded':open?'true':'false','aria-label':(open?'Close ':'Open ')+'big task: '+t.text,style:'display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;font-family:inherit;cursor:pointer',
+    onclick:function(){if(ui.bigCards[t.id])delete ui.bigCards[t.id];else ui.bigCards[t.id]=true;render();}},[
     a?h('small',{text:a.name}):null,
     ps.length>1?h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]):null,
-    h('small',{text:info}),
-    (!open&&t.notes&&t.notes.trim())?h('div',{class:'prv',text:t.notes}):null]);
+    h('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:8px'},[h('small',{text:info}),svg(open?ICON.chevup:ICON.down,18)]),
+    (!open&&t.notes&&t.notes.trim())?h('div',{class:'prv',text:t.notes}):null].filter(Boolean));
+  var head=h('div',{class:'bhead'},[titleBtn,tgl]);
   var grip=h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder big task: '+t.text+'. Drag, or use the up and down arrow keys. Automatic starts from the top one.',style:'align-self:flex-start;margin-top:6px',
     onpointerdown:function(e){startDrag(e,t.id,'.bcard');},onkeydown:function(e){nudge(e,t.id,'.bcard');}},
     [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]);
@@ -2506,8 +2532,13 @@ function sheetEl(){
     inner.push(h('h2',{text:'Wait'}));
     inner.push(h('p',{class:'note',text:'“'+wt.text+'” stays in your lists, but it is left out of your day until the time is up. Then it comes back by itself.'}));
     var wb=h('div',{class:'field'});
+    var later=laterOpen(wt),holdCb=null;
+    if(later.length){
+      holdCb=h('input',{type:'checkbox',checked:getWaitHold(),'aria-label':'Also hold the subtasks after this one',onchange:function(e){setWaitHold(e.target.checked);}});
+      wb.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text);display:flex'},[holdCb,h('span',{text:'Also hold the '+later.length+(later.length===1?' subtask':' subtasks')+' after this one'})]));
+    }
     [['week','For a week'],['month','For a month'],['two','For two months']].forEach(function(o){
-      wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0]);}},[o[1]]));
+      wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0],!!(holdCb&&holdCb.checked));}},[o[1]]));
     });
     if(waitUntil(wt))wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;stopWaiting(wt);}},['Stop waiting']));
     wb.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel'])]));
@@ -2702,7 +2733,9 @@ function sheetEl(){
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
       if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
     var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
-    var wBtn=t.done?null:(waitUntil(t)
+    var wBtn=t.done?null:(!waitUntil(t)&&heldBy(t)
+      ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(heldBy(t));ui.sheet=null;render();}},['Held until '+niceDate(waitInfo(t))+' behind “'+heldBy(t).text+'”. Stop waiting'])
+      :waitUntil(t)
       ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(t);ui.sheet=null;render();}},['Waiting until '+niceDate(waitUntil(t))+'. Stop waiting'])
       :h('button',{class:'btn',type:'button',onclick:function(){if(!saveEdit())return;ui.waitFor=t.id;ui.sheet={type:'wait'};render();}},['Wait…']));
     inner.push(h('h2',{text:'Edit task'}));
