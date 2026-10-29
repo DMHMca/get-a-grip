@@ -46,7 +46,7 @@ Where a task sits in your own list is the only statement of importance, so there
 
 **Wait** puts a task off for a week, a month or two months. It stays in every list, marked "Waiting until" a date, but it is left out of the day and the Slot finder until the time is up, then it comes back by itself. It is for things like a part that is out of stock. When the task is a subtask, you can also hold the subtasks after it, so a stuck step does not keep offering the next ones. It is a snooze, not a deadline, so nothing is ever overdue.
 
-**Tags** are two optional labels on any task: roughly how long it takes (15 minutes, 30 minutes or 1 hour) and the least equipment it needs (phone, tablet or laptop). They exist for the Slot finder. They are never shown on ordinary rows.
+**Tags** are two optional labels on any task: roughly how long it takes (15 minutes, 30 minutes, 1 hour or all day) and the least equipment it needs (none needed, phone, tablet or laptop). They exist for the Slot finder. They are never shown on ordinary rows.
 
 **Activities** are broad areas of work or life that never finish: Finance, AI SEO, Health, Travel. You do not tick off an activity, you archive it when it goes dormant. Activities are a flat list, with no activities inside activities. A task can belong to one activity or to none.
 
