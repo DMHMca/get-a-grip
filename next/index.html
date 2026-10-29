@@ -963,7 +963,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n38';
+var APP_VERSION='n39';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2004,13 +2004,20 @@ function viewToday(){
   kids.push(navBar('today'));
   return kids;
 }
+/* the start card asks every morning, but begins with what was chosen last time */
+function loadDayOpts(){
+  var o={bigs:1,subs:3};
+  try{var v=JSON.parse(localStorage.getItem('next.gag.dayOpts')||'null');if(v&&v.bigs>=1&&v.bigs<=3&&v.subs>=1&&v.subs<=3)o={bigs:v.bigs,subs:v.subs};}catch(e){}
+  return o;
+}
+function saveDayOpts(o){try{localStorage.setItem('next.gag.dayOpts',JSON.stringify({bigs:o.bigs,subs:o.subs}));}catch(e){}}
 function startView(key){
   var forTom=key===tomorrowKey();
-  var o=ui.dayOpts=ui.dayOpts||{bigs:1,subs:3};
+  var o=ui.dayOpts=ui.dayOpts||loadDayOpts();
   function pickRow(label,vals,cur,fn){
     return h('div',{style:'margin-top:8px'},[h('p',{class:'note',style:'padding:0 0 2px',text:label}),
       h('div',{class:'tags',style:'padding-left:0',role:'group','aria-label':label},vals.map(function(v){
-        return h('button',{class:'btn',type:'button','aria-pressed':cur===v?'true':'false',onclick:function(){fn(v);render();}},[String(v)]);}))]);
+        return h('button',{class:'btn',type:'button','aria-pressed':cur===v?'true':'false',onclick:function(){fn(v);saveDayOpts(o);render();}},[String(v)]);}))]);
   }
   return h('div',{class:'card'},[
     h('h3',{text:'Start today'}),
