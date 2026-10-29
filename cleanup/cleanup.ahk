@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 4
+VERSION := 5
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -284,6 +284,7 @@ Fetch(url) {
 
 ; ---------------------------------------------------------------- tray menu
 SetupTray() {
+    global VERSION
     A_IconTip := "ChatRite (Ctrl+Shift+Space)"
     A_TrayMenu.Delete()
     A_TrayMenu.Add("Version " VERSION, (*) => 0)
@@ -404,15 +405,20 @@ AutoUpdate() {
 }
 
 CheckUpdate(manual := false) {
-    ver := Trim(Fetch(UpdateUrl "version.txt?t=" A_Now))
-    if !RegExMatch(ver, "^\d+$") {
+    global VERSION
+    raw := Fetch(UpdateUrl "version.txt?t=" A_Now)
+    ver := RegExReplace(raw, "\D")
+    if (ver = "") {
         if manual
-            Msg("Could not check for updates just now.", 3000)
+            Msg("Could not check for updates just now. (Got: " SubStr(raw, 1, 40) ")", 5000)
         return
     }
-    if (Integer(ver) <= VERSION) {
+    mine := RegExReplace(VERSION, "\D")
+    if (mine = "")
+        mine := "0"
+    if (ver + 0 <= mine + 0) {
         if manual
-            Msg("You have the newest version (" VERSION ").", 3000)
+            Msg("You have the newest version (" mine ").", 3000)
         return
     }
     newTxt := Fetch(UpdateUrl "cleanup.ahk?t=" A_Now)
