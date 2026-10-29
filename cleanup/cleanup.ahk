@@ -3,14 +3,14 @@
 Persistent()
 CoordMode("ToolTip", "Screen")
 
-; Get a grip tidy: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
+; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
 VERSION := 1
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
-InstallDir := EnvGet("LOCALAPPDATA") "\GetAGripTidy"
-DataDir := EnvGet("APPDATA") "\GetAGripTidy"
+InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
+DataDir := EnvGet("APPDATA") "\ChatRite"
 IniFile := DataDir "\settings.ini"
 VocabFile := DataDir "\vocabulary.txt"
 LogFile := DataDir "\tidy-log.txt"
@@ -38,7 +38,7 @@ SetupTray()
 if (IniRead(IniFile, "Tidy", "Installed", "") = "") {
     IniWrite("1", IniFile, "Tidy", "Installed")
     SetStartup(true)
-    Msg("Get a grip tidy is running. Press Ctrl+Shift+Space in any text box.", 6000)
+    Msg("ChatRite is running. Press Ctrl+Shift+Space in any text box.", 6000)
 }
 SetTimer(StartUp, -400)
 SetTimer(AutoUpdate, 6 * 3600 * 1000)
@@ -120,8 +120,8 @@ AskModel(text) {
         . '"options":{"temperature":0,"num_ctx":4096,"num_predict":400},'
         . '"format":{"type":"object","properties":{"fixes":{"type":"array","items":{"type":"object","properties":{"wrong":{"type":"string"},"right":{"type":"string"}},"required":["wrong","right"]}}},"required":["fixes"]},'
         . '"messages":[{"role":"system","content":' JStr(BuildPrompt()) '},{"role":"user","content":' JStr(text) '}]}'
-    tmpIn := A_Temp "\gagtidy-in.json"
-    tmpOut := A_Temp "\gagtidy-out.json"
+    tmpIn := A_Temp "\chatrite-in.json"
+    tmpOut := A_Temp "\chatrite-out.json"
     try FileDelete(tmpOut)
     f := FileOpen(tmpIn, "w", "UTF-8-RAW")
     f.Write(body)
@@ -270,7 +270,7 @@ WriteLog(secs, applied, skipped, text) {
 }
 
 Fetch(url) {
-    tmp := A_Temp "\gagtidy-fetch.txt"
+    tmp := A_Temp "\chatrite-fetch.txt"
     try FileDelete(tmp)
     code := RunWait('curl.exe -s --max-time 20 -o "' tmp '" "' url '"', , "Hide")
     if (code != 0 || !FileExist(tmp))
@@ -280,7 +280,7 @@ Fetch(url) {
 
 ; ---------------------------------------------------------------- tray menu
 SetupTray() {
-    A_IconTip := "Get a grip tidy (Ctrl+Shift+Space)"
+    A_IconTip := "ChatRite (Ctrl+Shift+Space)"
     A_TrayMenu.Delete()
     A_TrayMenu.Add("Version " VERSION, (*) => 0)
     A_TrayMenu.Disable("Version " VERSION)
@@ -292,14 +292,14 @@ SetupTray() {
     A_TrayMenu.Add("Check for updates now", (*) => CheckUpdate(true))
     A_TrayMenu.Add("Open the log folder", (*) => Run('explorer.exe "' DataDir '"'))
     A_TrayMenu.Add("Start with Windows", ToggleStartup)
-    if FileExist(A_Startup "\Get a grip tidy.lnk")
+    if FileExist(A_Startup "\ChatRite.lnk")
         A_TrayMenu.Check("Start with Windows")
     A_TrayMenu.Add()
     A_TrayMenu.Add("Exit", (*) => ExitApp())
 }
 
 SetStartup(on) {
-    lnk := A_Startup "\Get a grip tidy.lnk"
+    lnk := A_Startup "\ChatRite.lnk"
     if on
         FileCreateShortcut(A_AhkPath, lnk, InstallDir, '"' InstallDir '\cleanup.ahk"')
     else
@@ -307,7 +307,7 @@ SetStartup(on) {
 }
 
 ToggleStartup(name, *) {
-    on := !FileExist(A_Startup "\Get a grip tidy.lnk")
+    on := !FileExist(A_Startup "\ChatRite.lnk")
     SetStartup(on)
     if on
         A_TrayMenu.Check(name)
@@ -347,9 +347,9 @@ SampleTest() {
         f2 := AskModel(sample)
         s2 := Round((A_TickCount - t0) / 1000, 1)
         out := ApplyFixes(sample, f2, &applied, &skipped)
-        MsgBox("First go: " s1 " s (includes loading the model).`nSecond go: " s2 " s.`n`nFixes applied: " applied ", skipped: " skipped ".`n`nBefore:`n" sample "`n`nAfter:`n" out, "Get a grip tidy: sample", 64)
+        MsgBox("First go: " s1 " s (includes loading the model).`nSecond go: " s2 " s.`n`nFixes applied: " applied ", skipped: " skipped ".`n`nBefore:`n" sample "`n`nAfter:`n" out, "ChatRite: sample", 64)
     } catch as e {
-        MsgBox("The test could not finish:`n" e.Message, "Get a grip tidy", 48)
+        MsgBox("The test could not finish:`n" e.Message, "ChatRite", 48)
     }
     Cfg.Busy := false
 }
@@ -364,14 +364,14 @@ StartUp() {
 EnsureModel() {
     tags := Fetch(OllamaUrl "/api/tags")
     if (tags = "") {
-        r := MsgBox("Ollama does not seem to be running.`n`nIt is the free program that runs the language model on your PC. Install it (or start it from the Start menu), then right-click this program's icon by the clock and choose Exit, and start it again.`n`nOpen the Ollama download page now?", "Get a grip tidy", 36)
+        r := MsgBox("Ollama does not seem to be running.`n`nIt is the free program that runs the language model on your PC. Install it (or start it from the Start menu), then right-click this program's icon by the clock and choose Exit, and start it again.`n`nOpen the Ollama download page now?", "ChatRite", 36)
         if (r = "Yes")
             Run("https://ollama.com/download/windows")
         return false
     }
     if InStr(tags, '"name":"' Cfg.Model) || InStr(tags, '"model":"' Cfg.Model)
         return true
-    r := MsgBox("The language model " Cfg.Model " is not on this PC yet.`n`nDownload it now? It is a few gigabytes and takes a few minutes. A black window will show the progress. When it finishes, close the window.", "Get a grip tidy", 36)
+    r := MsgBox("The language model " Cfg.Model " is not on this PC yet.`n`nDownload it now? It is a few gigabytes and takes a few minutes. A black window will show the progress. When it finishes, close the window.", "ChatRite", 36)
     if (r = "Yes") {
         exe := EnvGet("LOCALAPPDATA") "\Programs\Ollama\ollama.exe"
         if !FileExist(exe)
@@ -382,7 +382,7 @@ EnsureModel() {
 }
 
 Warm() {
-    tmp := A_Temp "\gagtidy-warm.json"
+    tmp := A_Temp "\chatrite-warm.json"
     try FileDelete(tmp)
     f := FileOpen(tmp, "w", "UTF-8-RAW")
     f.Write('{"model":' JStr(Cfg.Model) ',"keep_alive":"24h"}')
@@ -409,12 +409,12 @@ CheckUpdate(manual := false) {
         return
     }
     newTxt := Fetch(UpdateUrl "cleanup.ahk?t=" A_Now)
-    if (!RegExMatch(newTxt, "m)^VERSION := (\d+)\s*$", &mm) || mm[1] != ver || !InStr(newTxt, "; GAG-TIDY-END")) {
+    if (!RegExMatch(newTxt, "m)^VERSION := (\d+)\s*$", &mm) || mm[1] != ver || !InStr(newTxt, "; CHATRITE-END")) {
         if manual
             Msg("The update did not download properly. Nothing was changed.", 4000)
         return
     }
-    tmp := A_Temp "\gagtidy-new.ahk"
+    tmp := A_Temp "\chatrite-new.ahk"
     try FileDelete(tmp)
     FileAppend(newTxt, tmp, "UTF-8-RAW")
     FileCopy(A_ScriptFullPath, InstallDir "\cleanup.previous.ahk", true)
@@ -423,4 +423,4 @@ CheckUpdate(manual := false) {
     Sleep(800)
     Reload()
 }
-; GAG-TIDY-END
+; CHATRITE-END
