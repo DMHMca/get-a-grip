@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 3
+VERSION := 4
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -126,10 +126,14 @@ AskModel(text) {
     f := FileOpen(tmpIn, "w", "UTF-8-RAW")
     f.Write(body)
     f.Close()
-    cmd := 'curl.exe -s --max-time 60 -H "Content-Type: application/json" --data-binary "@' tmpIn '" -o "' tmpOut '" ' OllamaUrl '/api/chat'
+    errFile := A_Temp "\chatrite-err.txt"
+    try FileDelete(errFile)
+    cmd := A_ComSpec ' /c curl.exe -s -S --max-time 60 -H "Content-Type: application/json" --data-binary "@' tmpIn '" -o "' tmpOut '" ' OllamaUrl '/api/chat 2>"' errFile '"'
     code := RunWait(cmd, , "Hide")
-    if (code != 0 || !FileExist(tmpOut))
-        throw Error("could not reach Ollama. Is it running? (Start menu, Ollama)")
+    if (code != 0 || !FileExist(tmpOut)) {
+        why := FileExist(errFile) ? Trim(FileRead(errFile)) : ""
+        throw Error("could not reach Ollama (code " code "). " SubStr(why, 1, 200) "`n`nIs Ollama running? Open it from the Start menu (type Ollama), then try again.")
+    }
     resp := FileRead(tmpOut, "UTF-8")
     if RegExMatch(resp, '"error"\s*:\s*"((?:[^"\\]|\\.)*)"', &em)
         throw Error(JUnesc(em[1]))
