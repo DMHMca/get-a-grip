@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 5
+VERSION := 6
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -340,26 +340,71 @@ ChangeModel() {
 }
 
 SampleTest() {
+    global VERSION
     if Cfg.Busy
         return
     Cfg.Busy := true
-    Msg("ChatRite is testing... the first time can take up to a minute while the model loads.", 120000)
+    win := Gui("+AlwaysOnTop", "ChatRite: checking everything")
+    win.SetFont("s11", "Segoe UI")
+    ed := win.Add("Edit", "w640 h400 ReadOnly -Wrap +VScroll")
+    win.Add("Button", "w120", "Close").OnEvent("Click", (*) => win.Destroy())
+    win.OnEvent("Close", (*) => win.Destroy())
+    win.Show()
+    Say := (t) => SayTo(ed, t)
     try {
         sample := "Yesterday I opened Kodak's in crime and read the hole thing again. We dug a hole in the ground, then I read the whole document twice. Their going to send it to us tomorrow, and the new version is likely to be much Fuller of errors."
+        Say("ChatRite version " VERSION ". Model chosen: " Cfg.Model)
+        Say("")
+        Say("1. Looking for Ollama at " OllamaUrl " ...")
         t0 := A_TickCount
+        tags := Fetch(OllamaUrl "/api/tags")
+        if (tags = "")
+            throw Error("Ollama did not answer. Open Ollama from the Start menu (type Ollama), wait for the llama icon by the clock, then run this check again.")
+        names := ""
+        pos := 1
+        while RegExMatch(tags, '"name":"([^"]*)"', &nm, pos) {
+            names .= (names = "" ? "" : ", ") nm[1]
+            pos := nm.Pos + nm.Len
+        }
+        shown := (names = "") ? "none" : names
+        Say("   Ollama answered. Models on this PC: " shown)
+        if !InStr(names, Cfg.Model)
+            throw Error("The model " Cfg.Model " is not on this PC. Close this window, right-click the ChatRite icon, choose 'Change the model...' and press OK to download it.")
+        Say("2. The model " Cfg.Model " is installed.")
+        Say("3. First request. This can take up to a minute while the model loads into the graphics card ...")
+        t1 := A_TickCount
         f1 := AskModel(sample)
-        s1 := Round((A_TickCount - t0) / 1000, 1)
-        t0 := A_TickCount
+        s1 := Round((A_TickCount - t1) / 1000, 1)
+        Say("   done in " s1 " seconds")
+        Say("4. Second request ...")
+        t2 := A_TickCount
         f2 := AskModel(sample)
-        s2 := Round((A_TickCount - t0) / 1000, 1)
+        s2 := Round((A_TickCount - t2) / 1000, 1)
+        Say("   done in " s2 " seconds")
         out := ApplyFixes(sample, f2, &applied, &skipped)
-        Msg("Done.", 500)
-        MsgBox("First go: " s1 " s (includes loading the model).`nSecond go: " s2 " s.`n`nFixes applied: " applied ", skipped: " skipped ".`n`nBefore:`n" sample "`n`nAfter:`n" out, "ChatRite: sample", 64)
+        Say("")
+        Say("Fixes applied: " applied ", skipped: " skipped)
+        Say("")
+        Say("BEFORE: " sample)
+        Say("")
+        Say("AFTER:  " out)
+        Say("")
+        if (s2 <= 2)
+            Say("RESULT: fast enough. The second request took " s2 " seconds, under the 2 second target.")
+        else
+            Say("RESULT: the second request took " s2 " seconds, slower than the 2 second target. Is the laptop plugged in? Tell David's assistant this number.")
     } catch as e {
-        Msg("", 100)
-        MsgBox("The test could not finish:`n" e.Message, "ChatRite", 48)
+        Say("")
+        Say("STOPPED: " e.Message)
     }
     Cfg.Busy := false
+}
+
+SayTo(ed, t) {
+    try {
+        ed.Value .= t "`r`n"
+        SendMessage(0x0115, 7, 0, ed)
+    }
 }
 
 ; ---------------------------------------------------------------- Ollama and model checks
