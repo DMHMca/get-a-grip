@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 9
+VERSION = 10
 
 import os
 import json
@@ -620,8 +620,9 @@ class App:
                 return
             elif cmd and cmd[0] == "polish":
                 # ChatRite (the other program) does the polishing: it takes the selection, or the whole box
-                import keyboard
-                keyboard.send("ctrl+shift+alt+space")
+                # a small signal file, which ChatRite checks for; sending the hotkey as keystrokes was not reliable
+                with open(os.path.join(DATA, "polish.now"), "w", encoding="utf-8") as f:
+                    f.write("now")
                 log("polish asked for")
                 # speech heard meanwhile waits in the queue, so nothing is lost; give the paste time to finish
                 time.sleep(float(self.s.get("polish_wait_s", "5")))

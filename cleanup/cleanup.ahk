@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 9
+VERSION := 10
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -42,6 +42,7 @@ if (IniRead(IniFile, "Tidy", "Installed", "") = "") {
 }
 SetTimer(StartUp, -400)
 SetTimer(AutoUpdate, 6 * 3600 * 1000)
+SetTimer(CheckSignal, 300)
 
 $^+Space:: Tidy()
 $^+!Space:: Polish()
@@ -202,6 +203,15 @@ VocabNotes() {
 }
 
 ; ---------------------------------------------------------------- Polish: punctuation and capitals for a whole passage
+; ChatRite Dictate asks for a polish by leaving a small file, because keystrokes sent from another program are not reliable.
+CheckSignal() {
+    sig := DataDir "\polish.now"
+    if FileExist(sig) {
+        try FileDelete(sig)
+        Polish()
+    }
+}
+
 Polish() {
     if Cfg.Busy
         return
