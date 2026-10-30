@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 6
+VERSION = 7
 
 import os
 import json
@@ -184,9 +184,7 @@ def make_boundary(settings):
                 state["warned"] = True
                 log("sentence check unavailable (is Ollama running?): %r" % (e,))
             return None
-        if answer.startswith("QUESTION"):
-            return "?"
-        if answer.startswith("YES"):
+        if answer.startswith(("YES", "QUESTION")):  # a question mark is left to "question mark" or Polish
             return "."
         return None
 
@@ -221,7 +219,7 @@ class Output:
         text = re.sub(r"\s*(?:\.{2,}|…)$", "", text)
         text = re.sub(r"\s*(?:\.{2,}|…)\s*", ", ", text)
         if not self.auto_stops:
-            text = re.sub(r"[\s.,;:]+$", "", text)
+            text = re.sub(r"[\s.,;:?]+$", "", text)
         for words, mark in SPOKEN:
             text = re.sub(r"[\s,.]*\b" + words + r"\b[.,]?", mark, text, flags=re.I)
         text = re.sub(r"([.,?!;:])(?=[A-Za-z])", r"\1 ", text)
