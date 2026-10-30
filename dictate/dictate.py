@@ -3,9 +3,10 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 5
+VERSION = 6
 
 import os
+import json
 import re
 import sys
 import time
@@ -35,6 +36,8 @@ DEFAULTS = {
     "microphone": "",          # part of a device name; empty = Windows default
     "beeps": "yes",
     "auto_stops": "no",        # yes = let Whisper put a full stop or comma at every pause
+    "smart_stops": "yes",      # yes = the local model decides, from the grammar, where a sentence ends
+    "stops_model": "",         # empty = the model ChatRite uses (settings.ini), else qwen2.5:7b
 }
 
 
@@ -116,6 +119,80 @@ KEEP_CAPITAL = set("monday tuesday wednesday thursday friday saturday sunday jan
 SPOKEN = [(r"full stop", "."), (r"comma", ","), (r"question mark", "?"), (r"exclamation (?:mark|point)", "!")]
 
 
+OLLAMA = "http://127.0.0.1:11434"
+BOUNDARY_PROMPT = """Text was dictated and has no punctuation. A pause came between PART A and PART B.
+Decide from the grammar and meaning, not from the pause: does a NEW SENTENCE begin at the start of PART B?
+Answer with one word: YES (a new sentence begins, and PART A was a statement), QUESTION (a new sentence begins, and PART A was a question), or NO (PART B continues the same sentence).
+
+PART A: the meeting went well
+PART B: we agreed to start in March
+Answer: YES
+
+PART A: I think the best way to do this is
+PART B: to use a local model
+Answer: NO
+
+PART A: because I stop often
+PART B: when I am thinking
+Answer: NO
+
+PART A: can you check the figures
+PART B: I will send the invoice tomorrow
+Answer: QUESTION
+
+PART A: it looks fine I think except that now punctuation is not working
+PART B: I would have expected a full stop after the word app
+Answer: YES
+
+PART A: and the second thing is that
+PART B: the file is too large
+Answer: NO
+
+PART A: %s
+PART B: %s
+Answer:"""
+
+
+def make_boundary(settings):
+    """Returns a function that asks the local model whether a new sentence starts at a join, or None if switched off."""
+    if settings.get("smart_stops", "yes") != "yes":
+        return None
+    model = settings.get("stops_model", "").strip()
+    if not model:
+        try:
+            cp = configparser.ConfigParser()
+            cp.read(os.path.join(DATA, "settings.ini"), encoding="utf-8")
+            model = cp.get("Tidy", "Model", fallback="")
+        except Exception:
+            model = ""
+    model = model or "qwen2.5:7b"
+    state = {"down_until": 0.0, "warned": False}
+
+    def boundary(prev, new):
+        if time.time() < state["down_until"]:
+            return None
+        body = json.dumps({"model": model, "stream": False, "keep_alive": "24h",
+                           "options": {"temperature": 0, "num_predict": 4, "num_ctx": 2048},
+                           "prompt": BOUNDARY_PROMPT % (prev[-200:], new[:200])}).encode("utf-8")
+        try:
+            req = urllib.request.Request(OLLAMA + "/api/generate", data=body, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=4) as r:
+                answer = json.loads(r.read().decode("utf-8")).get("response", "").strip().upper()
+        except Exception as e:
+            state["down_until"] = time.time() + 30
+            if not state["warned"]:
+                state["warned"] = True
+                log("sentence check unavailable (is Ollama running?): %r" % (e,))
+            return None
+        if answer.startswith("QUESTION"):
+            return "?"
+        if answer.startswith("YES"):
+            return "."
+        return None
+
+    return boundary
+
+
 class Output:
     """Decides what exactly to type for each phrase.
 
@@ -123,7 +200,8 @@ class Output:
     "comma", "question mark" or "exclamation mark" where you want one. Coughs and other noises are dropped,
     and a phrase that continues a sentence starts with a small letter."""
 
-    def __init__(self, names=None, auto_stops=False):
+    def __init__(self, names=None, auto_stops=False, boundary=None):
+        self.boundary = boundary
         self.last = ""
         self.names = set(n.lower() for n in (names or []))
         self.auto_stops = auto_stops
@@ -157,14 +235,22 @@ class Output:
         if words and all(w in NOISES for w in words):
             return ""
         if self.last and not self.last.endswith("\n"):
-            if not re.search(r"[.?!][\"')\]]*$", self.last):
+            ended = re.search(r"[.?!][\"')\]]*$", self.last)
+            if not ended and not re.search(r"[,;:]$", self.last) and self.boundary and not self.auto_stops:
+                mark = self.boundary(self.last[-200:], text)  # None, "." or "?"
+                if mark:
+                    text = mark + " " + text[0].upper() + text[1:]
+                    self.last = text.strip()
+                    return text
+            if not ended:
                 first = text.split()[0].strip(",.;:!?\"')")
                 low = first.lower()
                 if (text[0].isupper() and low != "i" and not low.startswith("i'")
                         and not (len(first) > 1 and first.isupper())
                         and low not in self.names and low not in KEEP_CAPITAL):
                     text = text[0].lower() + text[1:]
-            text = " " + text
+            if text[0] not in ".,?!;:":
+                text = " " + text
         self.last = text.strip()
         return text
 
@@ -378,7 +464,7 @@ class App:
     def __init__(self):
         self.s = load_settings()
         self.engine = Engine(self.s)
-        self.out = Output(load_vocab(), self.s.get("auto_stops", "no") == "yes")
+        self.out = Output(load_vocab(), self.s.get("auto_stops", "no") == "yes", make_boundary(self.s))
         self.q = queue.Queue()
         self.listening = False
         self.busy = False
