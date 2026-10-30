@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 3
+VERSION = 4
 
 import os
 import re
@@ -34,6 +34,7 @@ DEFAULTS = {
     "threshold": "0",          # 0 = work it out from the room noise
     "microphone": "",          # part of a device name; empty = Windows default
     "beeps": "yes",
+    "auto_stops": "no",        # yes = let Whisper put a full stop or comma at every pause
 }
 
 
@@ -110,11 +111,22 @@ def parse_command(text):
     return None
 
 
-class Output:
-    """Decides what exactly to type for each phrase: spacing, and no wrong capital after a mid-sentence pause."""
+NOISES = set("ahem hmm hm mm mmm mhm um uh er erm ah huh cough coughs coughing sniff sniffs sigh sighs laughs laughter music applause".split())
+KEEP_CAPITAL = set("monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december".split())
+SPOKEN = [(r"full stop", "."), (r"comma", ","), (r"question mark", "?"), (r"exclamation (?:mark|point)", "!")]
 
-    def __init__(self):
+
+class Output:
+    """Decides what exactly to type for each phrase.
+
+    A pause is not a full stop, so by default nothing is added at the end of a phrase; you say "full stop",
+    "comma", "question mark" or "exclamation mark" where you want one. Coughs and other noises are dropped,
+    and a phrase that continues a sentence starts with a small letter."""
+
+    def __init__(self, names=None, auto_stops=False):
         self.last = ""
+        self.names = set(n.lower() for n in (names or []))
+        self.auto_stops = auto_stops
 
     def reset(self):
         self.last = ""
@@ -124,18 +136,33 @@ class Output:
 
     def prepare(self, text):
         text = " ".join(text.split())
+        # sounds in brackets or asterisks, such as [coughs] or (laughs)
+        text = " ".join(re.sub(r"\[[^\]]*\]|\([^)]*\)|\*[^*]*\*", " ", text).split())
         # Whisper marks a phrase that starts or stops mid-thought with "..."; a pause is not an ellipsis.
         text = re.sub(r"^(?:\.{2,}|…)\s*", "", text)
         text = re.sub(r"\s*(?:\.{2,}|…)$", "", text)
         text = re.sub(r"\s*(?:\.{2,}|…)\s*", ", ", text)
+        if not self.auto_stops:
+            text = re.sub(r"[\s.,;:]+$", "", text)
+        for words, mark in SPOKEN:
+            text = re.sub(r"[\s,.]*\b" + words + r"\b[.,]?", mark, text, flags=re.I)
+        text = re.sub(r"([.,?!;:])(?=[A-Za-z])", r"\1 ", text)
+        text = re.sub(r"([.?!]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text)
+        text = text.strip()
         if not text:
             return ""
         if normalise(text) in HALLUCINATIONS:
             return ""
+        words = normalise(text).split()
+        if words and all(w in NOISES for w in words):
+            return ""
         if self.last and not self.last.endswith("\n"):
             if not re.search(r"[.?!][\"')\]]*$", self.last):
-                first = text.split()[0].strip(",.;:!?").lower()
-                if first in STARTERS and text[0].isupper() and first != "i" and not first.startswith("i'"):
+                first = text.split()[0].strip(",.;:!?\"')")
+                low = first.lower()
+                if (text[0].isupper() and low != "i" and not low.startswith("i'")
+                        and not (len(first) > 1 and first.isupper())
+                        and low not in self.names and low not in KEEP_CAPITAL):
                     text = text[0].lower() + text[1:]
             text = " " + text
         self.last = text.strip()
@@ -346,7 +373,7 @@ class App:
     def __init__(self):
         self.s = load_settings()
         self.engine = Engine(self.s)
-        self.out = Output()
+        self.out = Output(load_vocab(), self.s.get("auto_stops", "no") == "yes")
         self.q = queue.Queue()
         self.listening = False
         self.busy = False
