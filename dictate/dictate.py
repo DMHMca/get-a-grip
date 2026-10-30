@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 4
+VERSION = 5
 
 import os
 import re
@@ -324,7 +324,12 @@ def already_running():
     try:
         import ctypes
         _mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\ChatRiteDictate")
-        return ctypes.windll.kernel32.GetLastError() == 183
+        if ctypes.windll.kernel32.GetLastError() == 183:
+            # let go of our own handle, or it would keep the marker alive after the old copy quits
+            ctypes.windll.kernel32.CloseHandle(_mutex)
+            _mutex = None
+            return True
+        return False
     except Exception:
         return False
 
