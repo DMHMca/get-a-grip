@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 2
+VERSION = 3
 
 import os
 import re
@@ -570,7 +570,12 @@ def main():
         sys.stdout = sys.stderr = open(os.path.join(DATA, "dictate-console.txt"), "a", buffering=1, encoding="utf-8")
     except Exception:
         pass
-    if already_running():
+    # after an update the old copy is still shutting down for a moment, so wait for it before giving up
+    for _ in range(20):
+        if not already_running():
+            break
+        time.sleep(0.5)
+    else:
         return
     App().run()
 
