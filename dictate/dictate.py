@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 1
+VERSION = 2
 
 import os
 import re
@@ -87,7 +87,7 @@ def build_prompt(names, previous):
     if names:
         parts.append("Names and terms: " + ", ".join(names[:60]) + ".")
     if previous:
-        parts.append(previous[-200:])
+        parts.append(previous[-120:])
     return " ".join(parts)
 
 
@@ -124,6 +124,10 @@ class Output:
 
     def prepare(self, text):
         text = " ".join(text.split())
+        # Whisper marks a phrase that starts or stops mid-thought with "..."; a pause is not an ellipsis.
+        text = re.sub(r"^(?:\.{2,}|…)\s*", "", text)
+        text = re.sub(r"\s*(?:\.{2,}|…)$", "", text)
+        text = re.sub(r"\s*(?:\.{2,}|…)\s*", ", ", text)
         if not text:
             return ""
         if normalise(text) in HALLUCINATIONS:
