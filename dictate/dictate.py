@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 7
+VERSION = 8
 
 import os
 import json
@@ -36,7 +36,8 @@ DEFAULTS = {
     "microphone": "",          # part of a device name; empty = Windows default
     "beeps": "yes",
     "auto_stops": "no",        # yes = let Whisper put a full stop or comma at every pause
-    "smart_stops": "yes",      # yes = the local model decides, from the grammar, where a sentence ends
+    "polish_wait_s": "5",      # after you say "polish", wait this long before typing again
+    "smart_stops": "yes",     # yes = the local model decides, from the grammar, where a sentence ends
     "stops_model": "",         # empty = the model ChatRite uses (settings.ini), else qwen2.5:7b
 }
 
@@ -111,6 +112,8 @@ def parse_command(text):
         return ("newline", 2)
     if t in ("stop dictation", "stop listening", "chatrite off", "chat right off"):
         return ("stop", 0)
+    if t in ("polish", "polish that", "polish it", "polish this", "polish the text", "chatrite polish", "chat right polish"):
+        return ("polish", 0)
     return None
 
 
@@ -593,6 +596,14 @@ class App:
             elif cmd and cmd[0] == "stop":
                 self.stop("stopped by voice")
                 return
+            elif cmd and cmd[0] == "polish":
+                # ChatRite (the other program) does the polishing: it takes the selection, or the whole box
+                import keyboard
+                keyboard.send("ctrl+shift+alt+space")
+                log("polish asked for")
+                # speech heard meanwhile waits in the queue, so nothing is lost; give the paste time to finish
+                time.sleep(float(self.s.get("polish_wait_s", "5")))
+                self.out.last = "."  # the polished text ends a sentence, and the next phrase follows a space
             else:
                 typed = self.out.prepare(text)
                 if typed:
