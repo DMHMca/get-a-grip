@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
 """
-VERSION = 8
+VERSION = 9
 
 import os
 import json
@@ -151,9 +151,31 @@ PART A: and the second thing is that
 PART B: the file is too large
 Answer: NO
 
+PART A: to see whether the
+PART B: extraneous question marks have been reduced
+Answer: NO
+
+PART A: I wonder if this has actually fixed the problem
+PART B: I think that it is missing some full stops
+Answer: YES
+
+PART A: it is putting in
+PART B: full stops for every pause
+Answer: NO
+
+Remember that the start of PART B may have a capital letter only because it was typed first in a phrase; ignore capitals.
+
 PART A: %s
 PART B: %s
 Answer:"""
+
+
+def lower_start(text):
+    """Whisper capitalises the start of every phrase, which would tempt the model to see a sentence start."""
+    first = text.split()[0] if text.split() else ""
+    if first and first[0].isupper() and first != "I" and not first.startswith("I'") and not (len(first) > 1 and first.isupper()):
+        return text[0].lower() + text[1:]
+    return text
 
 
 def make_boundary(settings):
@@ -176,7 +198,7 @@ def make_boundary(settings):
             return None
         body = json.dumps({"model": model, "stream": False, "keep_alive": "24h",
                            "options": {"temperature": 0, "num_predict": 4, "num_ctx": 2048},
-                           "prompt": BOUNDARY_PROMPT % (prev[-200:], new[:200])}).encode("utf-8")
+                           "prompt": BOUNDARY_PROMPT % (prev[-200:], lower_start(new[:200]))}).encode("utf-8")
         try:
             req = urllib.request.Request(OLLAMA + "/api/generate", data=body, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=4) as r:
