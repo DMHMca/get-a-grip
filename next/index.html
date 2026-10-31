@@ -235,7 +235,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .opt.link{padding-left:20px;font-weight:700;color:var(--accent)}
 .sep{margin:6px 20px 0;border-top:1px solid var(--line)}
 .field{padding:8px 20px 0;display:flex;flex-direction:column;gap:12px}
-.field input[type=text],.field select{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:0 14px}
+.field input[type=text],.field input[type=date],.field select{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:0 14px}
 .field label{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .field .btns{display:flex;gap:8px}
 .field .btns .btn{flex:1;height:48px}
@@ -360,7 +360,14 @@ function heldBy(t){
 }
 function waitInfo(t){return waitUntil(t)||(heldBy(t)?waitUntil(heldBy(t)):'');}
 function isWaiting(t){if(!t)return false;if(waitUntil(t)||heldBy(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&waitUntil(p));}
-function waitKey(kind){var d=new Date();if(kind==='day')d.setDate(d.getDate()+1);else if(kind==='week')d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+1);return dkey(d);}
+function waitKey(kind){
+  /* kind: 'day' | 'week' | 'month' (one of them), {n:2,unit:'day'} (a number of them), or a picked date 'YYYY-MM-DD' */
+  if(typeof kind==='string'&&/^\d{4}-\d\d-\d\d$/.test(kind))return kind;
+  var d=new Date(),n=1,u=kind;
+  if(kind&&typeof kind==='object'){n=kind.n||1;u=kind.unit;}
+  if(u==='day')d.setDate(d.getDate()+n);else if(u==='week')d.setDate(d.getDate()+7*n);else d.setMonth(d.getMonth()+n);
+  return dkey(d);
+}
 function laterOpen(t){
   if(!isChild(t))return [];
   var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
@@ -963,7 +970,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n41';
+var APP_VERSION='n42';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2547,6 +2554,23 @@ function sheetEl(){
     [['day','For a day'],['week','For a week'],['month','For a month']].forEach(function(o){
       wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0],!!(holdCb&&holdCb.checked));}},[o[1]]));
     });
+    var MAXN={day:6,week:3,month:6};
+    var nSel=h('select',{'aria-label':'How many'}),uSel=h('select',{'aria-label':'Days, weeks or months'},[h('option',{value:'day',text:'days'}),h('option',{value:'week',text:'weeks'}),h('option',{value:'month',text:'months'})]);
+    function fillN(keep){
+      nSel.replaceChildren();
+      for(var i=1;i<=MAXN[uSel.value];i++)nSel.appendChild(h('option',{value:String(i),text:String(i)}));
+      nSel.value=String(Math.min(keep||1,MAXN[uSel.value]));
+    }
+    fillN(2);uSel.addEventListener('change',function(){fillN(+nSel.value);});
+    wb.appendChild(h('p',{class:'note',style:'padding:6px 0 0',text:'Or choose how long:'}));
+    wb.appendChild(h('div',{style:'display:flex;gap:10px;align-items:center'},[nSel,uSel,
+      h('button',{class:'btn primary',type:'button',style:'flex:none',onclick:function(){ui.sheet=null;waitTask(wt,{n:+nSel.value,unit:uSel.value},!!(holdCb&&holdCb.checked));}},['Wait'])]));
+    var tom=new Date();tom.setDate(tom.getDate()+1);
+    var dIn=h('input',{type:'date',min:dkey(tom),'aria-label':'Wait until this date'});
+    wb.appendChild(h('p',{class:'note',style:'padding:6px 0 0',text:'Or until a date, when it comes back:'}));
+    wb.appendChild(h('div',{style:'display:flex;gap:10px;align-items:center'},[dIn,
+      h('button',{class:'btn primary',type:'button',style:'flex:none',onclick:function(){
+        if(!dIn.value||dIn.value<=todayKey())return;ui.sheet=null;waitTask(wt,dIn.value,!!(holdCb&&holdCb.checked));}},['Wait'])]));
     if(waitUntil(wt))wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;stopWaiting(wt);}},['Stop waiting']));
     wb.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel'])]));
     inner.push(wb);
@@ -2709,7 +2733,7 @@ function sheetEl(){
     var nt=h('textarea',{id:'sheetnotes','aria-label':isBig(t)?'Thinking':'Details',placeholder:isBig(t)?'Think it through here: what are the parts of this?':'A list of steps, a web address, a phone number, anything useful',autocapitalize:'sentences',style:'min-height:120px;resize:none;overflow:hidden',
       oninput:function(e){grow(e.target);}});
     nt.value=t.notes||'';
-    function saveEdit(openParts){
+    function applyFields(openParts){
       var v=ti.value.trim();if(!v)return false;
       if(nowBig!==wasBig)setSize(t,nowBig);
       if(openParts===true)ui.partsOpen[t.id]=true;
@@ -2721,8 +2745,11 @@ function sheetEl(){
       var nv=nt.value.trim();
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
-      ui.sheet=null;commit();return true;
+      return true;
     }
+    function saveEdit(openParts){if(!applyFields(openParts))return false;ui.sheet=null;commit();return true;}
+    /* open another task (a subtask, or the task it belongs to) in this same sheet, keeping what has been typed */
+    function goEdit(id){if(!applyFields())return;ui.editId=id;ui.sheet={type:'edit'};commit();}
     var wasBig=isBig(t),nowBig=wasBig;
     var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
     var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big']);
@@ -2736,7 +2763,7 @@ function sheetEl(){
     }
     var durRadio=radioGroup('dur','How long it takes',DURS,t.dur),devRadio=radioGroup('dev','Needs at least',DEVS,t.dev);
     var panelT=h('div',{style:'display:flex;gap:14px'},[durRadio.el,devRadio.el]);
-    var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){saveEdit(true);}},['Add subtasks']):null;
+    var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){if(!applyFields())return;ui.partsOpen[t.id]=true;commit();}},['Add subtasks']):null;
     var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
       if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
     var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
@@ -2747,13 +2774,34 @@ function sheetEl(){
       :h('button',{class:'btn',type:'button',onclick:function(){if(!saveEdit())return;ui.waitFor=t.id;ui.sheet={type:'wait'};render();}},['Wait…']));
     inner.push(h('h2',{text:'Edit task'}));
     var subNow=childrenOf(t);
-    var subList=subNow.length?h('div',{style:'border-top:1px solid var(--line);padding-top:8px'},[
-      h('div',{style:'font-size:14px;color:var(--muted);padding-bottom:4px',text:'Subtasks ('+partsDone(t)+' of '+subNow.length+' done)'})].concat(subNow.map(function(c){
-        return h('div',{style:'display:flex;align-items:center;gap:8px;min-height:36px;font-size:15px'+(c.done?';color:var(--muted);text-decoration:line-through':'')},[h('span',{text:c.done?'✓':'•',style:'width:18px;text-align:center;color:var(--accent);font-weight:700'}),h('span',{text:c.text,style:'overflow-wrap:anywhere'})]);}))):null;
-    var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,(linesBtn||addP)?h('div',{class:'btns'},[linesBtn,addP].filter(Boolean)):null,subList]);
+    var par=isChild(t)?task(t.parent):null;
+    var partOf=par?h('button',{class:'btn',type:'button',onclick:function(){goEdit(par.id);}},['‹ Part of: '+par.text]):null;
+    var subBox=null;
+    if(!isChild(t)&&(subNow.length||ui.partsOpen[t.id])){
+      var addIn=h('input',{type:'text',id:'subadd','aria-label':'Add a subtask',placeholder:'Add a subtask',autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
+        onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
+      function doAdd(){
+        var v=addIn.value.trim();if(!v)return;if(!applyFields())return;
+        addSub(t.id,v);ui.partsOpen[t.id]=true;commit();
+        setTimeout(function(){var e=document.getElementById('subadd');if(e)e.focus();},0);
+      }
+      subBox=h('div',{style:'display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:8px 12px'},
+        [h('div',{style:'font-size:14px;color:var(--muted);padding:2px 0 4px',text:subNow.length?'Subtasks ('+partsDone(t)+' of '+subNow.length+' done)':'Subtasks'})]
+        .concat(subNow.map(function(c){
+          var cb=h('input',{type:'checkbox',checked:!!c.done,'aria-label':'Tick “'+c.text+'”',style:'flex:none;width:24px;height:24px',
+            onchange:function(){if(!applyFields()){cb.checked=!cb.checked;return;}toggle(c.id);}});
+          return h('div',{style:'display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line)'},[cb,
+            h('button',{type:'button','aria-label':'Open “'+c.text+'”',onclick:function(){goEdit(c.id);},
+              style:'flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;min-height:48px;background:none;border:0;padding:0;font:inherit;font-size:16px;color:'+(c.done?'var(--muted)':'var(--text)')+(c.done?';text-decoration:line-through':'')},
+              [h('span',{text:c.text,style:'flex:1;overflow-wrap:anywhere'}),h('span',{text:'›','aria-hidden':'true',style:'color:var(--muted);font-size:20px'})])]);
+        })).concat([h('div',{style:'display:flex;gap:10px;align-items:center;padding-top:8px'},[addIn,
+          h('button',{class:'btn',type:'button',style:'flex:none',onclick:doAdd},['Add'])])]));
+    }
+    var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,linesBtn?h('div',{class:'btns'},[linesBtn]):null]);
     var tagNow=tagText(t);
-    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[(isBig(t)?'Thinking':'Details')+(((t.notes&&t.notes.trim())||subNow.length)?' •':'')]);
-    var bT=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='t'?'':'t');}},['Time and equipment']);
+    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[(isBig(t)?'Thinking':'Details')+((t.notes&&t.notes.trim())?' •':'')]);
+    var bT=h('button',{class:'btn',type:'button','aria-pressed':'false',style:'height:auto;min-height:64px;padding-top:8px;padding-bottom:8px',onclick:function(){showPanel(shown==='t'?'':'t');}},[h('span',{style:'display:flex;flex-direction:column;align-items:center;gap:2px'},['Time and equipment',
+      h('small',{style:'font-weight:400;color:var(--muted)',text:tagNow||'not set'})])]);
     var panel=h('div',{style:'border:1.5px solid var(--border);border-radius:12px;padding:12px',hidden:true},[panelD,panelT]);
     var shown='';
     function showPanel(w){
@@ -2762,8 +2810,8 @@ function sheetEl(){
       bD.setAttribute('aria-pressed',w==='d'?'true':'false');bT.setAttribute('aria-pressed',w==='t'?'true':'false');
       if(w==='d')setTimeout(function(){grow(nt);},0);
     }
-    showPanel('t');
-    inner.push(h('div',{class:'field'},[h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),
+    showPanel('');
+    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),subBox||addP,
       h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,wBtn,
       h('div',{class:'btns'},[
