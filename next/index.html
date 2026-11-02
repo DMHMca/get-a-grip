@@ -970,7 +970,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n44';
+var APP_VERSION='n45';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2031,26 +2031,32 @@ function refreshDay(pl){
     var t=task(x.tid),par=t?(isChild(t)?task(t.parent):t):null;
     if(par&&parents.indexOf(par.id)<0)parents.push(par.id);
   });
-  var target=parents.length>1?1:loadDayOpts().subs;
-  parents.slice().forEach(function(pid){
-    var par=task(pid);if(!par)return;
-    function openOf(){return pl.items.filter(function(x){
+  if(parents.length){
+    /* the day keeps as many big tasks going as it was started with (never more than it already holds) */
+    var opts=loadDayOpts(),wantBigs=Math.max(1,Math.min(opts.bigs,parents.length)),target=wantBigs>1?1:opts.subs;
+    function openOf(pid){return pl.items.filter(function(x){
       if(x.k!=='big')return false;var t=task(x.tid);
       return t&&!t.done&&!isWaiting(t)&&(isChild(t)?t.parent===pid:t.id===pid);}).length;}
-    var n=openOf();
-    childrenOf(par).filter(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);}).forEach(function(c){
-      if(n>=target)return;pl.items.push(mkItem('big',pid,c.id));n++;added++;});
-    if(n===0&&!par.done&&!childrenOf(par).length&&!isWaiting(par)&&!inPlan(pl,par.id)){pl.items.push(mkItem('big',pid));n++;added++;}
-    if(n===0){
-      var nb=bigCandidates().find(function(x){return parents.indexOf(x.id)<0&&x.id!==pid;});
-      if(nb){
-        parents.push(nb.id);
-        var ks=childrenOf(nb).filter(function(c){return !c.done&&!isWaiting(c);}).slice(0,target);
-        if(ks.length)ks.forEach(function(c){pl.items.push(mkItem('big',nb.id,c.id));added++;});
-        else{pl.items.push(mkItem('big',nb.id));added++;}
-      }
+    var active=0;
+    parents.slice().forEach(function(pid){
+      var par=task(pid);if(!par)return;
+      var n=openOf(pid);
+      childrenOf(par).filter(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);}).forEach(function(c){
+        if(n>=target)return;pl.items.push(mkItem('big',pid,c.id));n++;added++;});
+      if(n===0&&!par.done&&!childrenOf(par).length&&!isWaiting(par)&&!inPlan(pl,par.id)){pl.items.push(mkItem('big',pid));n++;added++;}
+      if(n>0)active++;
+    });
+    /* a finished big task is replaced by the next one in the Big list, but only up to the number the day is meant to have */
+    while(active<wantBigs){
+      var nb=bigCandidates().find(function(x){return parents.indexOf(x.id)<0;});
+      if(!nb)break;
+      parents.push(nb.id);
+      var ks=childrenOf(nb).filter(function(c){return !c.done&&!isWaiting(c);}).slice(0,target);
+      if(ks.length)ks.forEach(function(c){pl.items.push(mkItem('big',nb.id,c.id));added++;});
+      else{pl.items.push(mkItem('big',nb.id));added++;}
+      active++;
     }
-  });
+  }
   pl.items=pl.items.filter(Boolean);
   ui.refreshNote=added?('Brought in '+added+' more from your lists.'):'Nothing more to bring in just now.';
   setTimeout(function(){if(ui.refreshNote){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},5000);
