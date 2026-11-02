@@ -970,7 +970,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n42';
+var APP_VERSION='n43';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -1996,9 +1996,30 @@ function syncAll(reason,opts){
 
 /* ---------- Today ---------- */
 function openSlot(){ui.slot=ui.slot||{mins:'',dev:''};ui.sheet={type:'slot'};render();}
+/* a tile made before its task gained subtasks is still the parent; swap it for the unfinished subtasks, in their order (a big piece takes up to three) */
+function expandPlan(pl){
+  if(!pl||isClosed(pl))return false;
+  var out=[],changed=false,have={};
+  pl.items.forEach(function(it){have[it.tid]=1;});
+  pl.items.forEach(function(it){
+    var t=task(it.tid);
+    if(t&&!t.done&&!isChild(t)){
+      var kids=childrenOf(t).filter(function(c){return !c.done&&!isWaiting(c);});
+      if(kids.length){
+        if(it.k==='big')kids=kids.slice(0,3);
+        kids.forEach(function(c){if(!have[c.id]){have[c.id]=1;out.push(mkItem(it.k,it.k==='big'?t.id:c.id,it.k==='big'?c.id:null));}});
+        changed=true;return;
+      }
+    }
+    out.push(it);
+  });
+  if(changed){pl.items=out.filter(Boolean);pl.updated=iso();}
+  return changed;
+}
 function viewToday(){
   var key=todayKey();
   var pl=planFor(key);
+  if(pl&&expandPlan(pl)){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}scheduleSync();}
   var kids=[];
   var body=[];
   if(pl)body.push(planView(pl));
