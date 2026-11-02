@@ -496,7 +496,7 @@ function addToDay(r){
   var key=todayKey(),pl=planFor(key);
   if(!pl){pl=newPlan(key,'custom',[it]);}
   else{
-    if(kind==='little'&&pl.items.filter(function(x){return x.k!=='big';}).length>=6){alert('Your day already has six small ones. Swap one out first.');return;}
+    if(kind==='little'&&openLit(pl).length>=6){alert('Your day already has six small ones. Swap one out first.');return;}
     pl.items.push(it);
   }
   ui.planDay='today';ui.view='today';ui.sheet=null;ui.cust=null;touchPlan(pl);
@@ -970,7 +970,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n43';
+var APP_VERSION='n44';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2016,6 +2016,46 @@ function expandPlan(pl){
   if(changed){pl.items=out.filter(Boolean);pl.updated=iso();}
   return changed;
 }
+/* the number of small ones in the day that are still to do (ticked ones stay on show but no longer use a place) */
+function openLit(pl){return pl.items.filter(function(x){return x.k!=='big'&&!resolveItem(x).done;});}
+/* REFRESH: keep everything ticked and everything still open, and bring in the next items from your lists:
+   small ones up to six still to do, and each big task up to its number of subtasks still to do (when a big task has nothing left, the next big task steps in) */
+function refreshDay(pl){
+  var added=0;
+  expandPlan(pl);
+  var need=6-openLit(pl).length;
+  if(need>0)smallPicks(need,function(c){return inPlan(pl,c.id);}).forEach(function(c){var it=mkItem('little',c.id);if(it){pl.items.push(it);added++;}});
+  var parents=[];
+  pl.items.forEach(function(x){
+    if(x.k!=='big')return;
+    var t=task(x.tid),par=t?(isChild(t)?task(t.parent):t):null;
+    if(par&&parents.indexOf(par.id)<0)parents.push(par.id);
+  });
+  var target=parents.length>1?1:loadDayOpts().subs;
+  parents.slice().forEach(function(pid){
+    var par=task(pid);if(!par)return;
+    function openOf(){return pl.items.filter(function(x){
+      if(x.k!=='big')return false;var t=task(x.tid);
+      return t&&!t.done&&!isWaiting(t)&&(isChild(t)?t.parent===pid:t.id===pid);}).length;}
+    var n=openOf();
+    childrenOf(par).filter(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);}).forEach(function(c){
+      if(n>=target)return;pl.items.push(mkItem('big',pid,c.id));n++;added++;});
+    if(n===0&&!par.done&&!childrenOf(par).length&&!isWaiting(par)&&!inPlan(pl,par.id)){pl.items.push(mkItem('big',pid));n++;added++;}
+    if(n===0){
+      var nb=bigCandidates().find(function(x){return parents.indexOf(x.id)<0&&x.id!==pid;});
+      if(nb){
+        parents.push(nb.id);
+        var ks=childrenOf(nb).filter(function(c){return !c.done&&!isWaiting(c);}).slice(0,target);
+        if(ks.length)ks.forEach(function(c){pl.items.push(mkItem('big',nb.id,c.id));added++;});
+        else{pl.items.push(mkItem('big',nb.id));added++;}
+      }
+    }
+  });
+  pl.items=pl.items.filter(Boolean);
+  ui.refreshNote=added?('Brought in '+added+' more from your lists.'):'Nothing more to bring in just now.';
+  setTimeout(function(){if(ui.refreshNote){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},5000);
+  if(added){pl.updated=iso();commit();}else render();
+}
 function viewToday(){
   var key=todayKey();
   var pl=planFor(key);
@@ -2225,7 +2265,7 @@ function planBlocks(pl){
       h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,''),r.done||r.gone?null:waitBtn(it,r,'')].filter(Boolean)));
     grid.appendChild(tile);
   });
-  if(lit.length<6)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
+  if(openLit(pl).length<6)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
   wrap.appendChild(grid);
   return wrap;
 }
@@ -2240,19 +2280,21 @@ function planView(pl){
     if(big.length)big.forEach(function(x){L.appendChild(itemRow(pl,x,true));});
     else L.appendChild(h('div',{class:'empty',style:'padding:8px 20px'},['No big piece today. ',
       h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])]));
-    R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+lit.length+' of 6)'})]));
+    R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+openLit(pl).length+' of 6)'})]));
     lit.forEach(function(x){R.appendChild(itemRow(pl,x,true));});
-    if(lit.length<6)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
+    if(openLit(pl).length<6)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
     main=h('div',{class:'daygrid'},[L,R]);
   }
   return h('div',null,[
     main,
     h('div',{class:'two',style:'padding:12px 12px 0;gap:6px'},[
       h('button',{class:'btn primary',style:'height:42px;font-size:15px',onclick:function(){ui.sheet={type:'finish',pid:pl.id};render();}},['Finish']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'Refresh: bring in the next items',onclick:function(){refreshDay(pl);}},['Refresh']),
       h('button',{class:'btn',style:'height:42px;font-size:15px',onclick:function(){
         if(!confirm('Clear this plan and start again? Nothing in your tasks changes.'))return;
         S.gone.push({id:pl.id,at:iso()});S.plans=S.plans.filter(function(x){return x.id!==pl.id;});commit();}},['Redo']),
-      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])])]);
+      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
+    ui.refreshNote?h('p',{class:'note',role:'status',style:'padding:8px 16px 0',text:ui.refreshNote}):null].filter(Boolean));
 }
 
 /* what was done on a day is worked out from the ticks' own time stamps */

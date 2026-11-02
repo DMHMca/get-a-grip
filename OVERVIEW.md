@@ -60,7 +60,7 @@ When you start the day you choose how many big tasks (one to three) and how many
 
 Custom asks a few questions (what sort of day it is, which big piece, which small ones) and builds the day from your answers.
 
-The plan is shown as a block for the big piece, with the big task as its heading and today's subtasks inside, and a grid of small tiles for the small ones. Tap anything to open the original task and change it. Any item can be swapped, taken out or added to at any time, so the day is something you keep rejigging, not a contract. "Finish" adds an optional note, "Redo" clears the plan so you can start again, "Slot" finds something for a spare gap, and "Past days" keeps a quiet record of what was done. Planning is for today only.
+The plan is shown as a block for the big piece, with the big task as its heading and today's subtasks inside, and a grid of small tiles for the small ones. Tap anything to open the original task and change it. Any item can be swapped, taken out or added to at any time, so the day is something you keep rejigging, not a contract. "Finish" adds an optional note, "Refresh" keeps what you have ticked and brings in the next items from your lists to replace them, "Redo" clears the plan so you can start again, "Slot" finds something for a spare gap, and "Past days" keeps a quiet record of what was done. Planning is for today only.
 
 **Big.** Your big tasks as cards, in your own order. Each card opens to show its Thinking box and its subtasks, with a progress bar once there is more than one subtask. The first big task in this list is the one Automatic chooses.
 
