@@ -979,7 +979,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n46';
+var APP_VERSION='n47';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2868,6 +2868,8 @@ function sheetEl(){
     }
     function saveEdit(openParts){if(!applyFields(openParts))return false;ui.sheet=null;commit();return true;}
     /* open another task (a subtask, or the task it belongs to) in this same sheet, keeping what has been typed */
+    /* dragging a subtask in this sheet: save what has been typed first, so the redraw loses nothing */
+    function reorderSubs(ids){applyFields();applyOrder(ids);}
     function goEdit(id){if(!applyFields())return;ui.editId=id;ui.sheet={type:'edit'};commit();}
     var wasBig=isBig(t),nowBig=wasBig;
     var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
@@ -2908,14 +2910,17 @@ function sheetEl(){
       }
       subBox=h('div',{style:'display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:8px 12px'},
         [h('div',{style:'font-size:14px;color:var(--muted);padding:2px 0 4px',text:subNow.length?'Subtasks ('+partsDone(t)+' of '+subNow.length+' done)':'Subtasks'})]
-        .concat(subNow.map(function(c){
+        .concat([h('div',{class:'sublist'},subNow.map(function(c){
           var cb=h('input',{type:'checkbox',checked:!!c.done,'aria-label':'Tick “'+c.text+'”',style:'flex:none;width:24px;height:24px',
             onchange:function(){if(!applyFields()){cb.checked=!cb.checked;return;}toggle(c.id);}});
-          return h('div',{style:'display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line)'},[cb,
+          return h('div',{class:'subrow','data-id':c.id,style:'display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line)'},[cb,
             h('button',{type:'button','aria-label':'Open “'+c.text+'”',onclick:function(){goEdit(c.id);},
               style:'flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;min-height:48px;background:none;border:0;padding:0;font:inherit;font-size:16px;color:'+(c.done?'var(--muted)':'var(--text)')+(c.done?';text-decoration:line-through':'')},
-              [h('span',{text:c.text,style:'flex:1;overflow-wrap:anywhere'}),h('span',{text:'›','aria-hidden':'true',style:'color:var(--muted);font-size:20px'})])]);
-        })).concat([h('div',{style:'display:flex;gap:10px;align-items:center;padding-top:8px'},[addIn,
+              [h('span',{text:c.text,style:'flex:1;overflow-wrap:anywhere'}),h('span',{text:'›','aria-hidden':'true',style:'color:var(--muted);font-size:20px'})]),
+            h('button',{class:'handle',type:'button','data-handle':c.id,'aria-label':'Reorder: '+c.text+'. Drag, or use the up and down arrow keys.',style:'flex:none',
+              onpointerdown:function(e){startDrag(e,c.id,'.subrow',reorderSubs);},onkeydown:function(e){nudge(e,c.id,'.subrow',reorderSubs);}},
+              [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)])]);
+        }))]).concat([h('div',{style:'display:flex;gap:10px;align-items:center;padding-top:8px'},[addIn,
           h('button',{class:'btn',type:'button',style:'flex:none',onclick:doAdd},['Add'])])]));
     }
     var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,linesBtn?h('div',{class:'btns'},[linesBtn]):null]);

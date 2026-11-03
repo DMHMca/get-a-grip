@@ -40,7 +40,7 @@ Where a task sits in your own list is the only statement of importance, so there
 
 **Small tasks** are the default: usually an hour or less, marked with a small amber house. You put them in your own order too.
 
-**Subtasks** are ordinary tasks that sit under another task, one level deep. They are listed in their main task's edit screen, and tapping one opens it in the same screen, with a link back to the main task. Big tasks nearly always have them, because a big task is made startable by its subtasks. You add a subtask exactly as you add any task, you can attach an existing task from a dropdown, and you can drag subtasks into the order you want to do them. New subtasks go at the bottom.
+**Subtasks** are ordinary tasks that sit under another task, one level deep. They are listed in their main task's edit screen, and tapping one opens it in the same screen, with a link back to the main task. Each has a grip, so you can drag them into a new order there as well as on the Big card. Big tasks nearly always have them, because a big task is made startable by its subtasks. You add a subtask exactly as you add any task, you can attach an existing task from a dropdown, and you can drag subtasks into the order you want to do them. New subtasks go at the bottom.
 
 **Thinking** is a roomy writing box on every big task, for working out what its parts might be. Write loosely, then use "Turn lines into subtasks" to turn the lines you choose into real subtasks. Those lines are taken out of the details so nothing is held twice, and any line you leave unticked, such as a phone number or web address, stays where it was. That option works on any task, big or small: write a list in a task's details, then turn it into subtasks in one tap.
 
