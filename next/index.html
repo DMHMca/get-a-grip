@@ -979,7 +979,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n47';
+var APP_VERSION='n48';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2026,6 +2026,10 @@ function expandPlan(pl){
   return changed;
 }
 /* the number of small ones in the day that are still to do (ticked ones stay on show but no longer use a place) */
+/* everything the day has held, including ticked items that Refresh cleared off the screen (they still count in the record of the day) */
+function allItems(pl){return pl.items.concat(pl.cleared||[]);}
+function getRefreshClear(){try{return localStorage.getItem('next.gag.refreshClear')!=='0';}catch(e){return true;}}
+function setRefreshClear(v){try{localStorage.setItem('next.gag.refreshClear',v?'1':'0');}catch(e){}}
 function openLit(pl){return pl.items.filter(function(x){return x.k!=='big'&&!resolveItem(x).done;});}
 /* REFRESH: keep everything ticked and everything still open, and bring in the next items from your lists:
    small ones up to six still to do, and each big task up to its number of subtasks still to do (when a big task has nothing left, the next big task steps in) */
@@ -2067,9 +2071,18 @@ function refreshDay(pl){
     }
   }
   pl.items=pl.items.filter(Boolean);
-  ui.refreshNote=added?('Brought in '+added+' more from your lists.'):'Nothing more to bring in just now.';
+  var cleared=0;
+  if(getRefreshClear()){
+    var keep=[],gone=[];
+    pl.items.forEach(function(x){(resolveItem(x).done?gone:keep).push(x);});
+    if(gone.length){pl.cleared=(pl.cleared||[]).concat(gone);pl.items=keep;cleared=gone.length;}
+  }
+  var parts=[];
+  if(added)parts.push('Brought in '+added+' more from your lists');
+  if(cleared)parts.push('cleared '+cleared+' ticked one'+(cleared===1?'':'s'));
+  ui.refreshNote=parts.length?(parts.join(', ')+'.').replace(/^./,function(c){return c.toUpperCase();}):'Nothing more to bring in just now.';
   setTimeout(function(){if(ui.refreshNote){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},5000);
-  if(added){pl.updated=iso();commit();}else render();
+  if(added||cleared){pl.updated=iso();commit();}else render();
 }
 /* a brand-new small task typed on Today: top of the Small list, front of the day; if that makes seven still to do, the last one moves out of the day */
 function addNewSmall(text,activityId){
@@ -2334,18 +2347,21 @@ function planView(pl){
         if(!confirm('Clear this plan and start again? Nothing in your tasks changes.'))return;
         S.gone.push({id:pl.id,at:iso()});S.plans=S.plans.filter(function(x){return x.id!==pl.id;});commit();}},['Redo']),
       h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
+    h('label',{style:'display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px 16px 0;font-size:14px;color:var(--muted)'},[
+      h('input',{type:'checkbox',checked:getRefreshClear(),'aria-label':'Clear ticked ones when I press Refresh',onchange:function(e){setRefreshClear(e.target.checked);}}),
+      h('span',{text:'Clear ticked ones when I press Refresh'})]),
     ui.refreshNote?h('p',{class:'note',role:'status',style:'padding:8px 16px 0',text:ui.refreshNote}):null].filter(Boolean));
 }
 
 /* what was done on a day is worked out from the ticks' own time stamps */
 function dayReport(pl){
   var achieved=[],missed=[];
-  pl.items.forEach(function(it){
+  allItems(pl).forEach(function(it){
     var r=resolveItem(it),ok=r.done&&r.doneAt&&dkey(r.doneAt)===pl.date;
     (ok?achieved:missed).push({it:it,r:r});
   });
   var planned={};
-  pl.items.forEach(function(it){planned[it.tid+'|']=1;});
+  allItems(pl).forEach(function(it){planned[it.tid+'|']=1;});
   var extra=0;
   S.tasks.forEach(function(t){
     if(t.done&&dkey(t.done)===pl.date&&!planned[t.id+'|'])extra++;
@@ -2354,7 +2370,7 @@ function dayReport(pl){
 }
 var NOTE_TAGS=['Took longer than I thought','Waiting on someone','Got interrupted','Went better than expected','Had a good day out','A rest day'];
 function pastDays(){
-  var past=plans().filter(function(x){return isClosed(x)&&x.items.length>0;}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:((a.created||'')<(b.created||'')?1:-1);});
+  var past=plans().filter(function(x){return isClosed(x)&&allItems(x).length>0;}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:((a.created||'')<(b.created||'')?1:-1);});
   if(!past.length)return null;
   var shown=ui.histAll?past:past.slice(0,14);
   var kids=[h('button',{class:'histrow',style:'background:var(--tint)','aria-expanded':ui.histOpen?'true':'false',onclick:function(){ui.histOpen=!ui.histOpen;render();}},[
@@ -2363,7 +2379,7 @@ function pastDays(){
     shown.forEach(function(pl){
       var rep=dayReport(pl),open=ui.histId===pl.id;
       kids.push(h('button',{class:'histrow','aria-expanded':open?'true':'false',onclick:function(){ui.histId=open?null:pl.id;render();}},[
-        h('span',{class:'t'},[h('b',{text:niceDate(pl.date)}),h('small',{text:rep.achieved.length+' of '+pl.items.length+' done'+(rep.extra?', and '+rep.extra+' other'+(rep.extra===1?'':'s')+' ticked':'')})]),svg(open?ICON.chevup:ICON.down,20)]));
+        h('span',{class:'t'},[h('b',{text:niceDate(pl.date)}),h('small',{text:rep.achieved.length+' of '+allItems(pl).length+' done'+(rep.extra?', and '+rep.extra+' other'+(rep.extra===1?'':'s')+' ticked':'')})]),svg(open?ICON.chevup:ICON.down,20)]));
       if(open){
         var det=h('div',{class:'histdet'});
         rep.achieved.forEach(function(x){det.appendChild(h('div',null,[h('span',{class:'mk',text:'✓'}),h('span',{text:x.r.text+(x.r.parent?' (subtask of '+x.r.parent+')':'')})]));});
