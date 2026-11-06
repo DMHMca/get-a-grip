@@ -6,7 +6,7 @@ CoordMode("ToolTip", "Screen")
 ; ChatRite: fixes speech-to-text mistakes (whole/hole, Kodak's/Codex ...) in the text box you are in.
 ; Press Ctrl+Shift+Space. It uses a language model running on THIS PC (Ollama). Nothing leaves the PC.
 ; This file is kept up to date automatically from https://dmhmca.github.io/get-a-grip/cleanup/
-VERSION := 10
+VERSION := 11
 
 UpdateUrl := "https://dmhmca.github.io/get-a-grip/cleanup/"
 InstallDir := EnvGet("LOCALAPPDATA") "\ChatRite"
@@ -119,7 +119,7 @@ TidyCore() {
 ; ---------------------------------------------------------------- the model
 AskModel(text) {
     body := '{"model":' JStr(Cfg.Model) ',"stream":false,"keep_alive":"24h",'
-        . '"options":{"temperature":0,"num_ctx":4096,"num_predict":400},'
+        . '"options":{"temperature":0,"num_ctx":8192,"num_predict":400},'
         . '"format":{"type":"object","properties":{"fixes":{"type":"array","items":{"type":"object","properties":{"wrong":{"type":"string"},"right":{"type":"string"}},"required":["wrong","right"]}}},"required":["fixes"]},'
         . '"messages":[{"role":"system","content":' JStr(BuildPrompt()) '},{"role":"user","content":' JStr(text) '}]}'
     tmpIn := A_Temp "\chatrite-in.json"
@@ -561,7 +561,7 @@ SampleTest() {
         if (s2 <= 2)
             Say("RESULT: fast enough. The second request took " s2 " seconds, under the 2 second target.")
         else
-            Say("RESULT: the second request took " s2 " seconds, slower than the 2 second target. Is the laptop plugged in? Tell David's assistant this number.")
+            Say("RESULT: the second request took " s2 " seconds, slower than the 2 second target. Is the laptop plugged in? Tell your assistant this number.")
     } catch as e {
         Say("")
         Say("STOPPED: " e.Message)
@@ -677,7 +677,7 @@ InstallDictate() {
         Run('"' pyw '" "' dir '\dictate.py"', dir)
         Say("")
         Say("DONE. Look for a new grey ring icon by the clock (under the up arrow if needed). The first start downloads the speech model, about 1.6 GB, so wait for a notification that says Ready.")
-        Say("Then press Ctrl+Alt+Space to start listening, and again to stop. It switches itself off after 90 seconds of quiet.")
+        Say("Then press Ctrl+Alt+M to start listening, and again to stop. It switches itself off after 90 seconds of quiet.")
         Say("It also starts with Windows. Say 'new line' or 'new paragraph' for line breaks, and 'stop dictation' to switch off.")
     } catch as e {
         Say("")
@@ -718,7 +718,7 @@ Warm() {
     tmp := A_Temp "\chatrite-warm.json"
     try FileDelete(tmp)
     f := FileOpen(tmp, "w", "UTF-8-RAW")
-    f.Write('{"model":' JStr(Cfg.Model) ',"keep_alive":"24h"}')
+    f.Write('{"model":' JStr(Cfg.Model) ',"keep_alive":"24h","options":{"num_ctx":8192}}')
     f.Close()
     Run('curl.exe -s --max-time 120 -H "Content-Type: application/json" --data-binary "@' tmp '" -o nul ' OllamaUrl '/api/generate', , "Hide")
 }

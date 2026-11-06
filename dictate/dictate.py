@@ -1,9 +1,9 @@
 """ChatRite Dictate: switch it on once and it keeps listening, typing what you say into whichever window has focus.
 
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
-and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+Space) switches listening on and off.
+and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+M) switches listening on and off.
 """
-VERSION = 10
+VERSION = 11
 
 import os
 import json
@@ -28,7 +28,7 @@ RATE = 16000
 BLOCK = 320  # 20 ms
 
 DEFAULTS = {
-    "hotkey": "ctrl+alt+space",
+    "hotkey": "ctrl+alt+m",
     "model": "large-v3-turbo",
     "silence_ms": "600",       # a pause this long ends a phrase
     "idle_timeout_s": "90",    # switch off after this long without speech (0 = never)
@@ -37,7 +37,7 @@ DEFAULTS = {
     "beeps": "yes",
     "auto_stops": "no",        # yes = let Whisper put a full stop or comma at every pause
     "polish_wait_s": "5",      # after you say "polish", wait this long before typing again
-    "smart_stops": "yes",     # yes = the local model decides, from the grammar, where a sentence ends
+    "smart_stops": "no",      # yes =the local model decides, from the grammar, where a sentence ends
     "stops_model": "",         # empty = the model ChatRite uses (settings.ini), else qwen2.5:7b
 }
 
@@ -112,6 +112,10 @@ def parse_command(text):
         return ("newline", 2)
     if t in ("stop dictation", "stop listening", "chatrite off", "chat right off"):
         return ("stop", 0)
+    if t in ("press enter", "press return", "hit enter", "carriage return", "cr", "c r", "press cr", "press c r"):
+        return ("enter", 0)
+    if t in ("paste that", "paste it", "paste this", "paste", "press paste", "paste the clipboard"):
+        return ("paste", 0)
     if t in ("polish", "polish that", "polish it", "polish this", "polish the text", "chatrite polish", "chat right polish"):
         return ("polish", 0)
     return None
@@ -180,7 +184,7 @@ def lower_start(text):
 
 def make_boundary(settings):
     """Returns a function that asks the local model whether a new sentence starts at a join, or None if switched off."""
-    if settings.get("smart_stops", "yes") != "yes":
+    if settings.get("smart_stops", "no") != "yes":
         return None
     model = settings.get("stops_model", "").strip()
     if not model:
@@ -197,7 +201,7 @@ def make_boundary(settings):
         if time.time() < state["down_until"]:
             return None
         body = json.dumps({"model": model, "stream": False, "keep_alive": "24h",
-                           "options": {"temperature": 0, "num_predict": 4, "num_ctx": 2048},
+                           "options": {"temperature": 0, "num_predict": 4, "num_ctx": 8192},
                            "prompt": BOUNDARY_PROMPT % (prev[-200:], lower_start(new[:200]))}).encode("utf-8")
         try:
             req = urllib.request.Request(OLLAMA + "/api/generate", data=body, headers={"Content-Type": "application/json"})
@@ -413,6 +417,18 @@ def press_shift_enter(times):
         time.sleep(0.02)
 
 
+def press_keys(vks):
+    """Press keys together (for example Ctrl+V) in the focused window, then release them."""
+    ctypes, INPUT, KEYBDINPUT = _win()
+    seq = [(vk, 0) for vk in vks] + [(vk, 0x0002) for vk in reversed(vks)]
+    arr = (INPUT * len(seq))()
+    for i, (vk, fl) in enumerate(seq):
+        arr[i].type = 1
+        arr[i].u.ki = KEYBDINPUT(vk, 0, fl, 0, 0)
+    ctypes.windll.user32.SendInput(len(arr), arr, ctypes.sizeof(INPUT))
+    time.sleep(0.05)
+
+
 def beep(kind, on=True):
     if not on:
         return
@@ -457,7 +473,7 @@ class Engine:
         import numpy as np
         name = self.s.get("model")
         try:
-            say("Loading the speech model (the first time it downloads about 1.6 GB)...")
+            say("Loading the speech model (only the very first start downloads it, about 1.6 GB)...")
             self.model = WhisperModel(name, device="cuda", compute_type="float16")
             list(self.model.transcribe(np.zeros(RATE, dtype="float32"), language="en")[0])
             self.device = "graphics card"
@@ -615,6 +631,13 @@ class App:
             if cmd and cmd[0] == "newline":
                 press_shift_enter(cmd[1])
                 self.out.newline(cmd[1])
+            elif cmd and cmd[0] == "enter":
+                # only when asked for by voice: this is the one place a plain Enter is pressed (it sends chat messages)
+                press_keys([0x0D])
+                self.out.newline(1)
+            elif cmd and cmd[0] == "paste":
+                press_keys([0x11, 0x56])
+                self.out.last = "."  # pasted text counts as a finished sentence; the next phrase starts a new one
             elif cmd and cmd[0] == "stop":
                 self.stop("stopped by voice")
                 return
