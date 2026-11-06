@@ -3,7 +3,7 @@
 Runs on your own PC (Whisper on the graphics card). Nothing is sent anywhere except the one-off model download
 and a check for updates on GitHub Pages. Hotkey (default Ctrl+Alt+M) switches listening on and off.
 """
-VERSION = 11
+VERSION = 12
 
 import os
 import json
@@ -20,7 +20,7 @@ from collections import deque
 APP = "ChatRite"
 DATA = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), APP)
 INSTALL = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), APP, "dictate")
-UPDATE_URL = "https://dmhmca.github.io/get-a-grip/dictate/"
+UPDATE_URL = "https://dmhmca.github.io/ChatRite/dictate/"
 INI = os.path.join(DATA, "dictate.ini")
 VOCAB = os.path.join(DATA, "vocabulary.txt")
 LOG = os.path.join(DATA, "dictate-log.txt")
@@ -123,7 +123,7 @@ def parse_command(text):
 
 NOISES = set("ahem hmm hm mm mmm mhm um uh er erm ah huh cough coughs coughing sniff sniffs sigh sighs laughs laughter music applause".split())
 KEEP_CAPITAL = set("monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december".split())
-SPOKEN = [(r"full stop", "."), (r"comma", ","), (r"question mark", "?"), (r"exclamation (?:mark|point)", "!")]
+SPOKEN = [(r"full stop", "."), (r"comma", ","), (r"semi[\s-]?colon", ";"), (r"colon", ":"), (r"question mark", "?"), (r"exclamation (?:mark|point)", "!")]
 
 
 OLLAMA = "http://127.0.0.1:11434"
@@ -251,6 +251,8 @@ class Output:
             text = re.sub(r"[\s.,;:?]+$", "", text)
         for words, mark in SPOKEN:
             text = re.sub(r"[\s,.]*\b" + words + r"\b[.,]?", mark, text, flags=re.I)
+        # "period" is a common word, so it only counts as punctuation when it ends the phrase
+        text = re.sub(r"[\s,.]*\bperiod\s*[.,]?$", ".", text, flags=re.I)
         text = re.sub(r"([.,?!;:])(?=[A-Za-z])", r"\1 ", text)
         text = re.sub(r"([.?!]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text)
         text = text.strip()
@@ -261,6 +263,7 @@ class Output:
         words = normalise(text).split()
         if words and all(w in NOISES for w in words):
             return ""
+        sentence_start = bool(self.last) and (self.last.endswith("\n") or bool(re.search(r"[.?!][\"')\]]*$", self.last)))
         if self.last and not self.last.endswith("\n"):
             ended = re.search(r"[.?!][\"')\]]*$", self.last)
             if not ended and not re.search(r"[,;:]$", self.last) and self.boundary and not self.auto_stops:
@@ -278,6 +281,9 @@ class Output:
                     text = text[0].lower() + text[1:]
             if text[0] not in ".,?!;:":
                 text = " " + text
+        # a new sentence or a new line starts with a capital, whatever the speech engine gave us
+        if sentence_start:
+            text = re.sub(r"[A-Za-z]", lambda m: m.group(0).upper(), text, count=1) if re.match(r"\s*[A-Za-z]", text) else text
         self.last = text.strip()
         return text
 
