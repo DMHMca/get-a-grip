@@ -979,7 +979,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n48';
+var APP_VERSION='n49';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2034,7 +2034,9 @@ function openLit(pl){return pl.items.filter(function(x){return x.k!=='big'&&!res
 /* REFRESH: keep everything ticked and everything still open, and bring in the next items from your lists:
    small ones up to six still to do, and each big task up to its number of subtasks still to do (when a big task has nothing left, the next big task steps in) */
 function refreshDay(pl){
-  var added=0;
+  var added=0,removed=0;
+  /* a place held for a task that no longer exists ("No longer in your list") is simply dropped */
+  pl.items=pl.items.filter(function(x){if(task(x.tid))return true;removed++;return false;});
   expandPlan(pl);
   var need=6-openLit(pl).length;
   if(need>0)smallPicks(need,function(c){return inPlan(pl,c.id);}).forEach(function(c){var it=mkItem('little',c.id);if(it){pl.items.push(it);added++;}});
@@ -2078,11 +2080,12 @@ function refreshDay(pl){
     if(gone.length){pl.cleared=(pl.cleared||[]).concat(gone);pl.items=keep;cleared=gone.length;}
   }
   var parts=[];
-  if(added)parts.push('Brought in '+added+' more from your lists');
+  if(removed)parts.push('removed '+removed+' that '+(removed===1?'is':'are')+' no longer in your lists');
+  if(added)parts.push('brought in '+added+' more from your lists');
   if(cleared)parts.push('cleared '+cleared+' ticked one'+(cleared===1?'':'s'));
   ui.refreshNote=parts.length?(parts.join(', ')+'.').replace(/^./,function(c){return c.toUpperCase();}):'Nothing more to bring in just now.';
   setTimeout(function(){if(ui.refreshNote){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},5000);
-  if(added||cleared){pl.updated=iso();commit();}else render();
+  if(added||cleared||removed){pl.updated=iso();commit();}else render();
 }
 /* a brand-new small task typed on Today: top of the Small list, front of the day; if that makes seven still to do, the last one moves out of the day */
 function addNewSmall(text,activityId){
