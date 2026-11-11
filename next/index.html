@@ -981,7 +981,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n50';
+var APP_VERSION='n51';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2150,7 +2150,7 @@ function startView(key){
     h('p',{text:'A short menu for the day, not a timetable. It starts blank and nothing is carried over.'}),
     pickRow('How many big tasks?',[0,1,2,3],o.bigs,function(v){o.bigs=v;if(v>0)o.subs=v===1?3:1;}),
     o.bigs>0?pickRow('Subtasks of each?',[1,2,3],o.subs,function(v){o.subs=v;}):null,
-    pickRow('How many small ones?',[0,2,4,6],o.smalls,function(v){o.smalls=v;}),
+    pickRow('How many small ones?',[0,1,2,3,4,5,6],o.smalls,function(v){o.smalls=v;}),
     h('div',{class:'two',style:'margin-top:10px'},[
       h('button',{class:'btn primary',onclick:function(){
         var items=autoItems(o.bigs,o.subs,o.smalls);
