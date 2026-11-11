@@ -620,14 +620,16 @@ function smallPicks(n,skip){
   return out;
 }
 /* nBig big tasks from the top of the Big list, each with up to nSub of its next unfinished subtasks (or itself if it has none) */
-function autoItems(nBig,nSub){
+function autoItems(nBig,nSub,nSmall){
   var out=[];
-  bigCandidates().slice(0,nBig||1).forEach(function(best){
+  if(nBig==null)nBig=1;
+  bigCandidates().slice(0,nBig).forEach(function(best){
     var ps=partsOf(best).filter(function(x){return !x.done&&!isWaiting(x);}).slice(0,nSub||3);
     if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
     else out.push(mkItem('big',best.id));
   });
-  smallPicks(6).forEach(function(c){out.push(mkItem('little',c.id));});
+  var ns=nSmall==null?6:nSmall;
+  if(ns>0)smallPicks(ns).forEach(function(c){out.push(mkItem('little',c.id));});
   return out.filter(Boolean);
 }
 function littleChoices(pl,cust){
@@ -979,7 +981,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n49';
+var APP_VERSION='n50';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2038,7 +2040,8 @@ function refreshDay(pl){
   /* a place held for a task that no longer exists ("No longer in your list") is simply dropped */
   pl.items=pl.items.filter(function(x){if(task(x.tid))return true;removed++;return false;});
   expandPlan(pl);
-  var need=6-openLit(pl).length;
+  var cap=pl.cap||{bigs:loadDayOpts().bigs,subs:loadDayOpts().subs,smalls:6};
+  var need=cap.smalls-openLit(pl).length;
   if(need>0)smallPicks(need,function(c){return inPlan(pl,c.id);}).forEach(function(c){var it=mkItem('little',c.id);if(it){pl.items.push(it);added++;}});
   var parents=[];
   pl.items.forEach(function(x){
@@ -2048,7 +2051,7 @@ function refreshDay(pl){
   });
   if(parents.length){
     /* the day keeps as many big tasks going as it was started with (never more than it already holds) */
-    var opts=loadDayOpts(),wantBigs=Math.max(1,Math.min(opts.bigs,parents.length)),target=wantBigs>1?1:opts.subs;
+    var wantBigs=Math.max(1,Math.min(cap.bigs>0?cap.bigs:parents.length,parents.length)),target=wantBigs>1?1:cap.subs;
     function openOf(pid){return pl.items.filter(function(x){
       if(x.k!=='big')return false;var t=task(x.tid);
       return t&&!t.done&&!isWaiting(t)&&(isChild(t)?t.parent===pid:t.id===pid);}).length;}
@@ -2128,11 +2131,12 @@ function viewToday(){
 }
 /* the start card asks every morning, but begins with what was chosen last time */
 function loadDayOpts(){
-  var o={bigs:1,subs:3};
-  try{var v=JSON.parse(localStorage.getItem('next.gag.dayOpts')||'null');if(v&&v.bigs>=1&&v.bigs<=3&&v.subs>=1&&v.subs<=3)o={bigs:v.bigs,subs:v.subs};}catch(e){}
+  var o={bigs:1,subs:3,smalls:6};
+  try{var v=JSON.parse(localStorage.getItem('next.gag.dayOpts')||'null');
+    if(v&&v.bigs>=0&&v.bigs<=3&&v.subs>=1&&v.subs<=3)o={bigs:v.bigs,subs:v.subs,smalls:(v.smalls>=0&&v.smalls<=6)?v.smalls:6};}catch(e){}
   return o;
 }
-function saveDayOpts(o){try{localStorage.setItem('next.gag.dayOpts',JSON.stringify({bigs:o.bigs,subs:o.subs}));}catch(e){}}
+function saveDayOpts(o){try{localStorage.setItem('next.gag.dayOpts',JSON.stringify({bigs:o.bigs,subs:o.subs,smalls:o.smalls}));}catch(e){}}
 function startView(key){
   var forTom=key===tomorrowKey();
   var o=ui.dayOpts=ui.dayOpts||loadDayOpts();
@@ -2144,16 +2148,18 @@ function startView(key){
   return h('div',{class:'card'},[
     h('h3',{text:'Start today'}),
     h('p',{text:'A short menu for the day, not a timetable. It starts blank and nothing is carried over.'}),
-    pickRow('How many big tasks?',[1,2,3],o.bigs,function(v){o.bigs=v;o.subs=v===1?3:1;}),
-    pickRow('Subtasks of each?',[1,2,3],o.subs,function(v){o.subs=v;}),
+    pickRow('How many big tasks?',[0,1,2,3],o.bigs,function(v){o.bigs=v;if(v>0)o.subs=v===1?3:1;}),
+    o.bigs>0?pickRow('Subtasks of each?',[1,2,3],o.subs,function(v){o.subs=v;}):null,
+    pickRow('How many small ones?',[0,2,4,6],o.smalls,function(v){o.smalls=v;}),
     h('div',{class:'two',style:'margin-top:10px'},[
       h('button',{class:'btn primary',onclick:function(){
-        var items=autoItems(o.bigs,o.subs);
-        if(!items.length){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
-        newPlan(key,'auto',items);commit();}},['Automatic']),
+        var items=autoItems(o.bigs,o.subs,o.smalls);
+        if(!items.length&&(o.bigs>0||o.smalls>0)){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
+        /* the choices stay with the plan, so Refresh keeps to them (0 and 0 gives a blank day to fill by hand) */
+        var np=newPlan(key,'auto',items);np.cap={bigs:o.bigs,subs:o.subs,smalls:o.smalls};commit();}},['Automatic']),
       h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',extra:[],littles:[]};render();}},['Custom'])]),
     h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
-    h('p',{text:'Automatic builds the day from the first big tasks in your Big list, with the number of subtasks you chose, and the first six small ones from your Small list. Custom lets you choose. Slot suggests something for a spare gap.'})]);
+    h('p',{text:'Automatic builds the day from the first big tasks in your Big list, with the number of subtasks you chose, and the first small ones from your Small list. Choose 0 to leave big or small out. Custom lets you choose. Slot suggests something for a spare gap.'})]);
 }
 
 /* Custom: a short conversation, one question at a time */
