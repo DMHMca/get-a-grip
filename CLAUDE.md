@@ -2,6 +2,14 @@
 
 Read this first. It records what this app is, how it is built and hosted, the rules the owner has agreed, and what is still to do.
 
+## SWITCH-OVER DONE (November 2026): READ THIS BEFORE THE OLDER TEXT BELOW
+
+The plum "preview" app is now the MAIN app at the repository root (`index.html`, `sw.js`, cache `get-a-grip-v31`, `APP_VERSION` `n52`-based; bump both on every release). The owner decided it ("well past the point of it being a live app"), accepted plum, and no longer uses Google Tasks, so the Google Tasks list sync and import are NOT in the main app. Wherever the text below describes the old live layout (four-button bar, "All tasks"/Master-only model, rules 1, 2, 7, 8, the Google Tasks sections, `Settings` page), the redesign text (Today, Big, Small, Master, Activities, three-dot menu, subtasks, Wait, Slot, Refresh, Update banner) is what is true now.
+- Storage keys are the live names again (`tasks.v1`, `gag.*`, Drive file `get-a-grip-data.json`). On first start, if `next.tasks.v1` exists and `gag.migrated` is not set, a sheet offers "Bring them over" (`bringOver`): saves `tasks.v1.beforemove`, copies the preview's data and `next.gag.*` settings, moves any own `gag.clientId` aside to `gag.clientId.old`, sets `gag.migrated`, reloads. The preview in `next/` is untouched and stays as a fallback with its own data; its menu still has "Copy my live tasks".
+- Tests: the scratchpad suites run against the root by replacing `/next/` and the `next.` key prefix.
+- Still to update when convenient: the long older sections of this file, and `next/` can be deleted once the owner is happy.
+- Next ideas (owner, via his daughter Lauren): a household version where big and small tasks are shared and assigned between two people, first as a local demo, later possibly a small hosted store under the owner's own Cloudflare account with fake data only. Keep Get a grip personal.
+
 ## The owner and how to work with them
 
 - The owner has very little coding experience. Explain what you are doing in plain English, give step-by-step instructions for anything they must do themselves, and say exactly what screen they should see.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Get a grip</title>
 <meta name="description" content="Get a grip: a plain to-do list with activities.">
-<meta name="theme-color" content="#234E70">
+<meta name="theme-color" content="#5B3A7A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Get a grip">
@@ -19,8 +19,9 @@
 <style>
 :root{
   --bg:#F3F4F2; --surface:#ffffff; --text:#1B1F1D; --muted:#5B625E;
-  --line:#D9DCD8; --border:#BFC5C0; --accent:#234E70; --on-accent:#ffffff;
-  --tint:#E4ECF2; --scrim:rgba(27,31,29,.5); --dot:#B5BBB6; --danger:#9B2C2C;
+  --line:#D9DCD8; --border:#BFC5C0; --accent:#5B3A7A; --on-accent:#ffffff;
+  --tint:#ECE5F2; --scrim:rgba(27,31,29,.5); --dot:#B5BBB6; --danger:#8A4B00;
+  --big:#1F5F99; --big-edge:#123E66; --small:#E8A317; --small-edge:#7A5200;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
@@ -28,17 +29,20 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#15191A; --surface:#1F2527; --text:#E8ECEA; --muted:#A0A8A4;
-    --line:#2F3639; --border:#4A5357; --accent:#7FB0D6; --on-accent:#10202D;
-    --tint:#22323E; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F09A9A;
+    --line:#2F3639; --border:#4A5357; --accent:#C3A5E6; --on-accent:#21102F;
+    --tint:#2E2638; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F0B45A;
+    --big:#7FB6E8; --big-edge:#BFE0FA; --small:#F0B93A; --small-edge:#FFE2A0;
   }
 }
 :root[data-theme="dark"]{
   --bg:#15191A; --surface:#1F2527; --text:#E8ECEA; --muted:#A0A8A4;
-  --line:#2F3639; --border:#4A5357; --accent:#7FB0D6; --on-accent:#10202D;
-  --tint:#22323E; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F09A9A;
+  --line:#2F3639; --border:#4A5357; --accent:#C3A5E6; --on-accent:#21102F;
+  --tint:#2E2638; --scrim:rgba(0,0,0,.6); --dot:#4A5357; --danger:#F0B45A;
+  --big:#7FB6E8; --big-edge:#BFE0FA; --small:#F0B93A; --small-edge:#FFE2A0;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;height:100%;background:var(--bg);color:var(--text);
   font-family:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
   font-size:17px;-webkit-text-size-adjust:100%}
@@ -55,8 +59,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .tab{flex:1;min-width:0;justify-content:space-between;text-align:left;padding:0 10px 0 14px}
 .tab span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .title{flex:1;margin:0;font-size:20px;font-weight:700}
-.brand{flex:none;margin:0;padding:12px 16px 0;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:.02em;color:var(--accent)}
-.brand + .topbar{padding-top:6px}
+.tools{flex:none;display:flex;gap:6px}
+.apphead{flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 8px 0 16px;min-height:52px}
+.apphead + .topbar{padding-top:2px}
+.brand{flex:1;min-width:0;margin:0;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:.02em;color:var(--accent)}
+.menubtn{flex:none;width:48px;height:48px;border:0;background:none;padding:0;color:var(--text);display:flex;align-items:center;justify-content:center;border-radius:12px}
 .addwrap{padding:8px 16px 0}
 .addbox{display:flex;align-items:center;min-height:56px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:0 6px 0 16px;gap:8px}
 .addbox input,.addbox textarea{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:inherit;font-size:17px;color:var(--text);height:48px}
@@ -81,16 +88,117 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .details a{color:var(--accent);text-decoration:underline}
 .field textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px 14px;resize:vertical}
 .field textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.rowbar{flex:0 0 calc(100% - 100px);width:calc(100% - 100px);height:5px;margin:0 52px 6px 48px;background:var(--line);border-radius:3px;overflow:hidden}
+.rowbar i{display:block;height:5px;background:var(--big);border-radius:3px}
+.ptag{display:inline-block;align-self:flex-start;margin-top:3px;padding:1px 8px;border:1.5px solid var(--accent);border-radius:9px;color:var(--accent);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.rtl{display:flex;align-items:flex-start;gap:8px}
+.rtl svg{margin-top:3px}
+.row.big .rtl>span{font-weight:700}
+.partsbar{flex:0 0 100%;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 52px 4px 48px;border:0;background:none;text-align:left;font-size:15px;color:var(--muted)}
+.partsbar[aria-expanded="true"]{color:var(--accent)}
+.partsbar b{font-weight:700;color:var(--text)}
+.parts{flex:0 0 100%;min-width:0;padding:0 12px 10px 48px}
+.part{display:flex;align-items:center;min-height:46px}
+.part .ptick{flex:none;width:44px;height:44px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
+.part .ptext{flex:1;min-width:0;border:0;background:none;text-align:left;font-size:16px;line-height:1.3;padding:8px 0;color:var(--text);overflow-wrap:anywhere}
+.part.done .ptext{color:var(--muted);text-decoration:line-through}
+.padd{display:flex;align-items:center;gap:8px;min-height:46px;padding-left:44px;min-width:0}
+.padd input{flex:1;width:0;min-width:0;height:42px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:16px;padding:0 12px}
+.padd button{flex:none;width:42px;height:42px;border-radius:10px;border:0;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;padding:0}
+.card{margin:12px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px}
+.card h3{margin:0 0 4px;font-size:17px}
+.card p{margin:6px 0;line-height:1.45;color:var(--muted);font-size:15px}
+.two{display:flex;gap:8px}
+.two .btn{flex:1;height:52px;font-size:17px}
+.choice{display:flex;width:100%;align-items:center;gap:12px;min-height:56px;padding:8px 14px;margin-top:8px;border-radius:12px;border:1.5px solid var(--border);background:transparent;text-align:left;font-size:17px}
+.choice small{display:block;font-size:14px;color:var(--muted)}
+.choice[aria-pressed="true"]{background:var(--tint);border-color:var(--accent)}
+.sec{margin:0;padding:14px 16px 4px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--muted);text-transform:none}
+.item{display:flex;align-items:center;min-height:60px;padding:0 4px;border-bottom:1px solid var(--line);background:var(--surface)}
+.item.done .itext{color:var(--muted);text-decoration:line-through}
+.itext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:8px 0;border:0;background:none;text-align:left;font-size:17px;line-height:1.3;color:var(--text);overflow-wrap:anywhere}
+.itext small{font-size:14px;color:var(--muted)}
+.item .chg{flex:none;height:44px;padding:0 12px;border:0;background:none;color:var(--accent);font-size:15px;font-weight:700}
+.dayhead{padding:2px 16px 0;color:var(--muted);font-size:15px}
+.prog{padding:10px 16px 0;font-size:16px;font-weight:700}
+.hist{border-top:1px solid var(--line);margin-top:16px}
+.histrow{display:flex;width:100%;align-items:center;gap:10px;min-height:56px;padding:8px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;font-size:16px}
+.histrow .t{flex:1;min-width:0}
+.histrow small{display:block;font-size:14px;color:var(--muted)}
+.histdet{padding:4px 16px 12px 16px;font-size:15px;line-height:1.5;border-bottom:1px solid var(--line)}
+.histdet div{display:flex;gap:8px;align-items:flex-start;padding:2px 0}
+.histdet .mk{flex:none;width:18px;color:var(--accent);font-weight:700}
+.tags{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px}
+.tags .btn{height:44px;font-size:15px;padding:0 12px}
+.tags .btn[aria-pressed="true"]{background:var(--tint);border-color:var(--accent);font-weight:700}
+@media (min-width:900px){
+  #app.wide{max-width:960px}
+  .daygrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start}
+}
+.bcard{margin:10px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.bhead{display:block;flex:1;min-width:0;text-align:left;border:0;background:none;padding:12px 14px 10px}
+.bhead .tt{display:flex;gap:8px;align-items:flex-start;font-weight:700;font-size:17px;line-height:1.3}
+.bhead small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.bhead .pb{height:6px;background:var(--line);border-radius:3px;margin-top:8px}
+.bhead .pb i{display:block;height:6px;background:var(--big);border-radius:3px}
+.bhead .prv{color:var(--muted);font-size:14px;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.bbody{border-top:1px solid var(--line);padding:10px 0 12px}
+.bbody label{display:block;padding:0 14px;font-size:14px;color:var(--muted)}
+.thinking{display:block;width:calc(100% - 28px);margin:6px 14px 0;min-height:96px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:16px;line-height:1.4;padding:12px;resize:none;overflow:hidden}
+.bbody .parts{padding:8px 8px 0 14px}
+.bgroup{margin:0;padding:16px 16px 0;font-size:15px;font-weight:700;color:var(--muted)}
+.blocks{padding:0 12px}
+.bblock{margin:6px 0 0;background:var(--surface);border:2px solid var(--big);border-radius:14px;padding:10px 12px}
+.bblock .tt{display:flex;gap:8px;align-items:flex-start;font-weight:700;font-size:15px;line-height:1.3}
+.bblock .sm{color:var(--muted);font-size:12px;margin:2px 0 0}
+.bblock .pb{height:6px;background:var(--line);border-radius:3px;margin-top:8px}
+.bblock .pb i{display:block;height:6px;background:var(--big);border-radius:3px}
+.bi{display:flex;align-items:center;gap:4px;min-height:44px;margin-top:4px}
+.bi.done .bt{color:var(--muted);text-decoration:line-through}
+.bi .bt{flex:1;min-width:0;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.bi .tk,.tile .tk{flex:none;width:34px;height:34px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
+.bi .tk svg,.tile .tk svg{width:21px;height:21px}
+.bi .chg{flex:none;height:40px;padding:0 6px;border:0;background:none;color:var(--accent);font-size:13px;font-weight:700}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.tile{background:var(--surface);border:1.5px solid var(--border);border-left:5px solid var(--small);border-radius:10px;padding:2px 5px 5px 3px;height:86px;font-size:12px;line-height:1.28;cursor:pointer;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.tile .top{display:flex;align-items:center;gap:1px;flex:none}
+.tile .tk{flex:none;width:30px;height:30px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center}
+.tile .tk svg{width:19px;height:19px}
+.tile .top svg.hs{margin:0 0 0 1px;width:14px;height:14px}
+.tile .tpar{flex:none;padding:2px 2px 0 4px;font-size:11.5px;line-height:1.2;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.open .tpar{white-space:normal;font-size:13px}
+.tile.haspar .tx{-webkit-line-clamp:2}
+.tile.haspar.open .tx{-webkit-line-clamp:unset}
+.tile .tx{padding:0 2px 0 4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tile .sb{color:var(--muted);font-size:11.5px;padding:2px 2px 0 4px;overflow-wrap:anywhere}
+.tile.done .tx{color:var(--muted);text-decoration:line-through}
+.tile.open{grid-column:1/4;height:auto;background:var(--tint);border-color:var(--accent);border-left-color:var(--small);font-size:14px;overflow:visible}
+.tile.open .tx{display:block;-webkit-line-clamp:unset;padding:2px 4px 0}
+.tile .acts{display:flex;gap:8px;padding:8px 0 2px 4px}
+.tile .acts button{height:40px;padding:0 14px;border-radius:9px;border:1.5px solid var(--accent);background:none;color:var(--accent);font-weight:700;font-size:13px}
+.tile.add{border-style:dashed;border-left-style:dashed;color:var(--muted);align-items:center;justify-content:center;flex-direction:column;gap:2px;text-align:center;font-size:12px}
+.dayrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px;color:var(--muted);font-size:14px;min-height:36px}
+.dayrow .sorts{padding:0;gap:6px}
+.dayrow .sorts .btn{height:32px;font-size:13px;padding:0 10px}
+.bigtoggle{display:flex;width:100%;align-items:center;gap:10px;min-height:52px;padding:0 16px;border:0;border-bottom:1px solid var(--line);background:var(--tint);text-align:left;font-size:16px}
+.bigtoggle span.l{flex:1;font-weight:700}
+.seg{display:flex;gap:8px}
+.seg .btn{flex:1;gap:10px}
+.seg .btn[aria-pressed="true"]{background:var(--tint);border-color:var(--accent);font-weight:700}
 .row.done .rowtext{color:var(--muted);text-decoration:line-through}
 .empty{padding:28px 20px;color:var(--muted);line-height:1.45}
 .strip{margin:8px 16px 0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 16px}
 .strip div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .strip small{font-size:14px;color:var(--muted)}
 .strip span{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
-.nav{flex:none;display:flex;border-top:1px solid var(--line);background:var(--surface);margin-top:8px}
-.nav button{flex:1;min-width:0;height:56px;border:0;border-top:3px solid transparent;background:transparent;font-size:14px;color:var(--muted);padding:0 8px;display:flex;align-items:center;justify-content:center}
-.nav button span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav button[aria-current="page"]{color:var(--accent);font-weight:700;border-top-color:var(--accent);background:var(--tint)}
+.nav{flex:none;position:relative;display:flex;border-top:1px solid var(--line);background:var(--surface);margin-top:8px}
+.navscroll{flex:1;min-width:0;display:flex;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.navscroll::-webkit-scrollbar{display:none}
+.navscroll button{flex:1 0 70px;height:64px;border:0;border-top:3px solid transparent;background:transparent;font-size:14px;line-height:1.15;color:var(--muted);padding:0 8px;display:flex;align-items:center;justify-content:center;text-align:center}
+.navscroll button span{min-width:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.navscroll button[aria-current="page"]{color:var(--accent);font-weight:700;border-top-color:var(--accent);background:var(--tint)}
+.navarrow{flex:none;width:40px;height:64px;border:0;border-top:3px solid transparent;background:var(--surface);color:var(--accent);display:flex;align-items:center;justify-content:center;padding:0}
+.navarrow[hidden]{display:none}
 .handle{flex:none;width:44px;height:48px;border:0;background:none;padding:0;color:var(--muted);display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
 .row.dragging,.arow.dragging{position:relative;z-index:5;background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.25);border-radius:12px}
 .arow{display:flex;align-items:center;border-bottom:1px solid var(--line);padding-right:4px}
@@ -121,12 +229,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sheet h2{margin:0;padding:8px 20px;font-size:17px;font-weight:700}
 .opt{display:flex;width:100%;align-items:center;gap:12px;min-height:56px;padding:0 20px 0 54px;border:0;background:transparent;text-align:left;font-size:17px}
 .opt span.l{flex:1;min-width:0;overflow-wrap:anywhere}
-.opt small{font-size:14px;color:var(--muted)}
+.opt small{font-size:14px;color:var(--muted);max-width:55%;text-align:right;overflow-wrap:anywhere}
+.opt span.l{min-width:6em}
 .opt.sel{background:var(--tint);font-weight:700;padding-left:20px}
 .opt.link{padding-left:20px;font-weight:700;color:var(--accent)}
 .sep{margin:6px 20px 0;border-top:1px solid var(--line)}
 .field{padding:8px 20px 0;display:flex;flex-direction:column;gap:12px}
-.field input[type=text],.field select{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:0 14px}
+.field input[type=text],.field input[type=date],.field select{width:100%;height:52px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:0 14px}
 .field label{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .field .btns{display:flex;gap:8px}
 .field .btns .btn{flex:1;height:48px}
@@ -152,7 +261,7 @@ input[type=checkbox]{width:24px;height:24px;accent-color:var(--accent)}
 'use strict';
 
 /* ---------- state ---------- */
-var KEY='tasks.v1';
+var KEY='tasks.v1';var PREVKEY='next.tasks.v1';
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
 function iso(){return new Date().toISOString();}
 function seed(){
@@ -164,7 +273,7 @@ function loadLocal(){
 }
 var S=loadLocal()||seed();
 
-var ui={view:'master',activityId:null,lastActivityId:null,sheet:null,draft:'',pick:null,lastTicked:null,
+var ui={view:'today',back:[],partsOpen:{},bigCards:{},tileOpen:{},bigOpen:false,activityId:null,lastActivityId:null,sheet:null,draft:'',pick:null,lastTicked:null,
   q:'',sort:'archived',rev:false,editId:null,afterCreate:null,status:'device',open:{},dirty:false,dragging:false};
 
 /* ---------- persistence ---------- */
@@ -231,6 +340,324 @@ function tickIcon(done){
   return s;
 }
 
+/* ---------- big and small jobs, and parts ---------- */
+function isBig(t){return !!t&&t.size==='big';}
+/* a subtask is an ordinary task with a parent: t.parent is the id of the task it sits under (one level only) */
+function childrenOf(t){return t?S.tasks.filter(function(x){return x.parent===t.id;}):[];}
+function partsOf(t){return childrenOf(t);}
+function partsDone(t){return childrenOf(t).filter(function(p){return p.done;}).length;}
+function isChild(t){return !!(t&&t.parent&&task(t.parent));}
+function topLevel(t){return !isChild(t);}
+/* WAITING: a task can be put off for a week, a month or two months. It stays in every list but is left out of the day (Automatic, Custom, Slot) until the
+   stored date (task.wait, a plain date key) arrives. A subtask also waits when its parent does. */
+function waitUntil(t){return t&&t.wait&&t.wait>todayKey()?t.wait:'';}
+/* an earlier unfinished subtask of the same parent that is waiting and also holds back the ones after it (t.wh) */
+function heldBy(t){
+  if(!isChild(t))return null;
+  var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
+  for(var k=0;k<i;k++){var q=sibs[k];if(!q.done&&q.wh&&waitUntil(q))return q;}
+  return null;
+}
+function waitInfo(t){return waitUntil(t)||(heldBy(t)?waitUntil(heldBy(t)):'');}
+/* WAITING FOR ANOTHER BIG TASK: t.wf is the id of a big task; while it is unfinished (not ticked, and not all its subtasks done) t waits like a timed wait */
+function finishedTask(b){if(b.done)return true;var k=childrenOf(b);return k.length>0&&k.every(function(c){return c.done;});}
+function blockerOf(t){if(!t||!t.wf)return null;var b=task(t.wf);return(b&&!finishedTask(b))?b:null;}
+function isWaiting(t){if(!t)return false;if(waitUntil(t)||heldBy(t)||blockerOf(t))return true;var p=isChild(t)?task(t.parent):null;return !!(p&&(waitUntil(p)||blockerOf(p)));}
+function waitLabel(t){
+  if(waitInfo(t))return 'Waiting until '+niceDate(waitInfo(t))+(t.wh&&waitUntil(t)?', and the subtasks after it':'');
+  var b=blockerOf(t);if(b)return 'Waiting until “'+b.text+'” is finished';
+  return '';
+}
+function waitKey(kind){
+  /* kind: 'day' | 'week' | 'month' (one of them), {n:2,unit:'day'} (a number of them), or a picked date 'YYYY-MM-DD' */
+  if(typeof kind==='string'&&/^\d{4}-\d\d-\d\d$/.test(kind))return kind;
+  var d=new Date(),n=1,u=kind;
+  if(kind&&typeof kind==='object'){n=kind.n||1;u=kind.unit;}
+  if(u==='day')d.setDate(d.getDate()+n);else if(u==='week')d.setDate(d.getDate()+7*n);else d.setMonth(d.getMonth()+n);
+  return dkey(d);
+}
+function laterOpen(t){
+  if(!isChild(t))return [];
+  var sibs=childrenOf(task(t.parent)),i=sibs.indexOf(t);
+  return sibs.slice(i+1).filter(function(c){return !c.done;});
+}
+function getWaitHold(){try{return localStorage.getItem('gag.waitHold')==='1';}catch(e){return false;}}
+function setWaitHold(v){try{localStorage.setItem('gag.waitHold',v?'1':'0');}catch(e){}}
+function waitTask(t,kind,hold){
+  if(kind&&kind.forTask){t.wf=kind.forTask;delete t.wait;delete t.wh;}
+  else{t.wait=waitKey(kind);delete t.wf;if(hold&&laterOpen(t).length)t.wh=true;else delete t.wh;}
+  t.updated=iso();
+  var pl=planFor(todayKey());
+  if(pl){
+    /* anything in today's plan that now waits comes out, and the next one takes its place at once */
+    var items=pl.items.slice();
+    for(var i=0;i<items.length;i++){
+      var q=task(items[i].tid);
+      if(!(q&&isWaiting(q)))continue;
+      var old=items[i],rep=null;
+      items.splice(i,1);pl.items=items;
+      if(old.k==='big'){
+        var par=isChild(q)?task(q.parent):null;
+        var nx=par&&childrenOf(par).find(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);});
+        if(nx)rep=mkItem('big',par.id,nx.id);
+        else{
+          /* nothing left of that big task to offer: the next big task in the Big list steps in */
+          var inDay={};pl.items.forEach(function(x){var z=task(x.tid);if(z)inDay[isChild(z)?z.parent:z.id]=1;});
+          var nb=bigCandidates().find(function(x){return !inDay[x.id]&&x.id!==(par?par.id:q.id);});
+          if(nb){
+            var f=childrenOf(nb).find(function(c){return !c.done&&!isWaiting(c);});
+            rep=f?mkItem('big',nb.id,f.id):mkItem('big',nb.id);
+          }
+        }
+      }else{
+        var n2=smallPicks(1,function(c){return inPlan(pl,c.id);})[0];
+        if(n2)rep=mkItem('little',n2.id);
+      }
+      if(rep)items.splice(i,0,rep);else i--;
+    }
+    pl.items=items;pl.updated=iso();
+  }
+  commit();
+}
+function stopWaiting(t){delete t.wait;delete t.wh;delete t.wf;t.updated=iso();commit();}
+function attachChoices(t){return S.tasks.filter(function(x){return x.id!==t.id&&!x.done&&!isChild(x)&&!childrenOf(x).length;});}
+/* the SMALL list (internally still called master): small tasks only, never big tasks or the subtasks of big tasks (those live on the Big page).
+   A small task that has subtasks shows only its next unfinished subtask, labelled with its parent, and once all are done the parent itself. */
+function smallRows(){
+  /* the SMALL list: your small tasks, in your order. A small task with subtasks is one row that opens to show them all (like a card on the Big page) */
+  var out=[];
+  S.tasks.forEach(function(t){
+    if(t.done||isChild(t)||isBig(t)||t.nm)return;
+    out.push({t:t,owner:t});
+  });
+  return out;
+}
+/* MASTER: the one list of things to DO. Small tasks that have no subtasks, plus the next unfinished subtask of every parent, big or small.
+   A parent is never listed itself (you tick it off yourself in its own list). Order follows the order of the parents. */
+function masterRows(){
+  var out=[];
+  S.tasks.forEach(function(t){
+    if(t.done||isChild(t)||t.nm)return;
+    var kids=childrenOf(t);
+    if(kids.length){
+      var n=kids.find(function(c){return !c.done;});
+      if(n)out.push({t:n,owner:t});
+      return;
+    }
+    if(isBig(t))return;
+    out.push({t:t,owner:t});
+  });
+  return out;
+}
+function valueOf(t){return isChild(t)?'P:'+t.parent+':'+t.id:'T:'+t.id;}
+/* ---------- "I've got a slot": time and equipment tags, and a filter ---------- */
+var DURS=[['quick','15 minutes'],['30','30 minutes'],['60','1 hour'],['day','All day']];
+var DEVS=[['none','None needed'],['phone','Phone'],['tablet','Tablet'],['laptop','Laptop or PC']];
+function durRank(v){return DURS.findIndex(function(x){return x[0]===v;});}
+function devRank(v){return DEVS.findIndex(function(x){return x[0]===v;});}
+function tagText(t){
+  var d=DURS.find(function(x){return x[0]===t.dur;}),v=DEVS.find(function(x){return x[0]===t.dev;});
+  return [d?d[1]:'',v?v[1]:''].filter(Boolean).join(' · ');
+}
+/* things you could actually do that still lack a time or equipment tag: leaf tasks (no subtasks of their own), small list first, then big */
+function untaggedLeaves(){
+  var out=[];
+  function walk(list){
+    list.forEach(function(t){
+      var all=childrenOf(t),kids=all.filter(function(c){return !c.done;});
+      if(all.length){kids.forEach(function(c){if(!c.dur||!c.dev)out.push(c);});}
+      else if(!t.dur||!t.dev)out.push(t);
+    });
+  }
+  walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t);}));
+  walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
+  return out;
+}
+function radios(name,label,opts,cur){
+  var rows=[['','Not set']].concat(opts),box=h('div',{role:'radiogroup','aria-label':label,style:'display:flex;flex-direction:column'});
+  rows.forEach(function(o){
+    var r=h('input',{type:'radio',name:name,value:o[0],checked:o[0]===(cur||'')});
+    box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:10px;min-height:44px;font-size:16px;color:var(--text);display:flex'},[r,h('span',{text:o[1]})]));
+  });
+  return {el:h('div',{style:'flex:1;min-width:0'},[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
+}
+function setTag(t,k,v){if(v)t[k]=v;else delete t[k];t.updated=iso();commit();}
+/* tasks that could be done next, as Master tasks would offer them, minus anything already in today's plan */
+/* the Slot finder walks the SMALL list in the owner's own order, looking at every unfinished subtask (or the task itself when it has none).
+   A spare slot is a scrap of time, and big work needs context, so big tasks are included only when the owner ticks "Include big tasks" (then they follow the small ones).
+   Master is not used. */
+function slotCandidates(includeBig){
+  var pl=planFor(todayKey()),out=[];
+  function walk(list){
+    list.forEach(function(t){
+      var kids=childrenOf(t).filter(function(c){return !c.done&&!isWaiting(c);});
+      if(kids.length)kids.forEach(function(c){out.push({t:c,owner:t});});
+      else if(!childrenOf(t).length&&!isWaiting(t))out.push({t:t,owner:t});
+    });
+  }
+  walk(S.tasks.filter(function(t){return !t.done&&!isBig(t)&&!isChild(t)&&!t.nm;}));
+  if(includeBig)walk(S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isChild(t);}));
+  return out.filter(function(r){return !(pl&&inPlan(pl,r.t.id));});
+}
+function addToDay(r){
+  var t=r.t,kind=(isBig(r.owner)||isBig(t))?'big':'little';
+  var it=mkItem(kind,t.id);if(!it)return;
+  var key=todayKey(),pl=planFor(key);
+  if(!pl){pl=newPlan(key,'custom',[it]);}
+  else{
+    if(kind==='little'&&openLit(pl).length>=6){alert('Your day already has six small ones. Swap one out first.');return;}
+    pl.items.push(it);
+  }
+  ui.planDay='today';ui.view='today';ui.sheet=null;ui.cust=null;touchPlan(pl);
+}
+/* subtasks sit in the order they were added: the newest goes at the bottom of the group, and can be dragged elsewhere */
+function placeLast(child,parent){
+  S.tasks=S.tasks.filter(function(x){return x!==child;});
+  var at=S.tasks.findIndex(function(x){return x.id===parent.id;});
+  S.tasks.forEach(function(x,i){if(x.parent===parent.id&&i>at)at=i;});
+  S.tasks.splice(at+1,0,child);
+}
+function attachTo(child,parent){
+  child.parent=parent.id;child.activityId=parent.activityId||null;child.updated=iso();
+  placeLast(child,parent);
+}
+function addSub(parentId,text){
+  var t=task(parentId);text=(text||'').trim();if(!t||!text)return null;
+  var n={id:uid(),text:text,activityId:t.activityId||null,created:iso(),done:null,updated:iso(),parent:t.id};
+  S.tasks.push(n);placeLast(n,t);t.updated=iso();return n;
+}
+/* older preview data kept parts inside the task; turn them into ordinary subtasks (same ids, so every device agrees) */
+function migrateParts(){
+  var changed=false,add=[];
+  S.tasks.forEach(function(t){if(t.dur==='long'){t.dur='60';changed=true;}});
+  S.tasks.forEach(function(t){
+    if(!Array.isArray(t.parts))return;
+    t.parts.forEach(function(p){
+      if(S.tasks.some(function(x){return x.id===p.id;}))return;
+      var c={id:p.id,text:p.text,activityId:t.activityId||null,created:p.updated||t.created||iso(),done:p.done||null,updated:p.updated||t.updated||iso(),parent:t.id};
+      add.push({after:t.id,task:c});
+    });
+    delete t.parts;changed=true;
+  });
+  add.forEach(function(a){var i=S.tasks.findIndex(function(x){return x.id===a.after;});S.tasks.splice(i+1,0,a.task);});
+  plans().forEach(function(pl){pl.items.forEach(function(it){if(it.pid){it.tid=it.pid;delete it.pid;changed=true;}});});
+  return changed||add.length>0;
+}
+function house(big){
+  var n=big?26:17,s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('width',n);s.setAttribute('height',n);s.setAttribute('viewBox','0 0 24 24');s.setAttribute('aria-hidden','true');s.style.flex='none';
+  s.innerHTML=big
+    ?'<path d="M2.5 11.5 12 3.5l9.5 8V21h-19z" fill="var(--big)" stroke="var(--big-edge)" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 21v-6h4v6" fill="none" stroke="var(--on-accent)" stroke-width="1.8" stroke-linejoin="round"/>'
+    :'<path d="M3 11.5 12 4l9 7.5V20H3z" fill="var(--small)" stroke="var(--small-edge)" stroke-width="2" stroke-linejoin="round"/>';
+  return s;
+}
+/* ---------- Today: plans and the record of days ---------- */
+function plans(){if(!Array.isArray(S.plans))S.plans=[];return S.plans;}
+function dkey(d){var x=new Date(d);return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2);}
+function todayKey(){return dkey(Date.now());}
+function tomorrowKey(){return dkey(Date.now()+86400000);}
+function niceDate(k){
+  var p=k.split('-');
+  try{return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});}catch(e){return k;}
+}
+function isClosed(pl){return !!pl.closed||pl.date<todayKey();}
+/* the plan in front of you for a day: the latest one made for it that has not been finished */
+function planFor(key){
+  var c=plans().filter(function(x){return x.date===key&&!x.closed;});
+  c.sort(function(a,b){return (a.created||'')<(b.created||'')?-1:1;});
+  return c.length?c[c.length-1]:null;
+}
+function resolveItem(it){
+  var t=task(it.tid);
+  if(!t)return {text:it.text||'(removed)',parent:it.parent||'',done:false,gone:true,doneAt:null};
+  var par=isChild(t)?task(t.parent):null,a=t.activityId?act(t.activityId):null;
+  return {text:t.text,parent:par?par.text:'',sub:(!par&&a)?a.name:'',done:!!t.done,doneAt:t.done,gone:false};
+}
+function mkItem(kind,tid,pid){
+  var id=pid||tid,t=task(id);if(!t)return null;
+  var par=isChild(t)?task(t.parent):null;
+  return {k:kind,tid:id,text:t.text,parent:par?par.text:''};
+}
+function newPlan(date,mode,items){
+  var pl={id:uid(),date:date,mode:mode,items:items,closed:null,note:{tags:[],text:''},created:iso(),updated:iso()};
+  plans().push(pl);return pl;
+}
+function touchPlan(pl){pl.updated=iso();commit();}
+function tickItem(it){toggle(it.tid);}
+function inPlan(pl,tid){return pl.items.some(function(x){return x.tid===tid;});}
+
+/* the simple rules for Automatic: the big job touched most recently gives its next undone part,
+   and the first five little jobs in your own order that show in Master tasks give the rest */
+function lastTouched(t){
+  var m=t.updated||t.created||'';
+  partsOf(t).forEach(function(p){if((p.updated||'')>m)m=p.updated;});
+  return m;
+}
+function bigCandidates(){
+  return S.tasks.filter(function(t){
+    if(t.done||!isBig(t)||isChild(t)||isWaiting(t))return false;
+    var ks=childrenOf(t);
+    return !ks.length||ks.some(function(p){return !p.done&&!isWaiting(p);});
+  });
+}
+/* Automatic takes the FIRST big task in the owner's own order that still has something to do: its remaining unfinished subtasks (up to three), or the task itself if it has none */
+/* up to n small tiles for a day, taken from the top of the SMALL list in the owner's order. A small task that has unfinished subtasks
+   is represented by ALL of them together, in order (each its own tile, headed by the parent's name); a task with none is one tile. */
+function smallPicks(n,skip){
+  var out=[],seen={};
+  smallRows().forEach(function(r){
+    if(out.length>=n)return;
+    if(isWaiting(r.t))return;
+    var open=childrenOf(r.t).filter(function(c){return !c.done;});
+    var kids=open.filter(function(c){return !isWaiting(c);});
+    if(open.length&&!kids.length)return;
+    var group=kids.length?kids:[r.t];
+    group.forEach(function(c){
+      if(out.length>=n||seen[c.id]||(skip&&skip(c)))return;
+      seen[c.id]=1;out.push(c);
+    });
+  });
+  return out;
+}
+/* nBig big tasks from the top of the Big list, each with up to nSub of its next unfinished subtasks (or itself if it has none) */
+function autoItems(nBig,nSub,nSmall){
+  var out=[];
+  if(nBig==null)nBig=1;
+  bigCandidates().slice(0,nBig).forEach(function(best){
+    var ps=partsOf(best).filter(function(x){return !x.done&&!isWaiting(x);}).slice(0,nSub||3);
+    if(ps.length)ps.forEach(function(p){out.push(mkItem('big',best.id,p.id));});
+    else out.push(mkItem('big',best.id));
+  });
+  var ns=nSmall==null?6:nSmall;
+  if(ns>0)smallPicks(ns).forEach(function(c){out.push(mkItem('little',c.id));});
+  return out.filter(Boolean);
+}
+function littleChoices(pl,cust){
+  var jobs=[],parts=[];
+  S.tasks.forEach(function(t){
+    if(t.done||isBig(t)||isWaiting(t))return;
+    var par=isChild(t)?task(t.parent):null;
+    if(par&&isBig(par))return;
+    var v=par?'P:'+par.id+':'+t.id:'T:'+t.id;
+    var taken=pl?inPlan(pl,t.id):(cust&&cust.littles.indexOf(v)>-1);
+    if(taken)return;
+    if(par)parts.push({v:v,label:t.text+' (subtask of '+par.text+')'});else jobs.push({v:v,label:t.text});
+  });
+  return {jobs:jobs,parts:parts};
+}
+function itemFromValue(v,kind){
+  var a=v.split(':');
+  return a[0]==='T'?mkItem(kind,a[1],null):mkItem(kind,a[1],a[2]);
+}
+function choiceSelect(label,ch,extra){
+  var sel=h('select',{class:'sel','aria-label':label},[h('option',{value:'',text:extra||'Choose…'})]);
+  if(ch.jobs.length){var g=h('optgroup',{label:'Small'});ch.jobs.forEach(function(o){g.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g);}
+  if(ch.parts.length){var g2=h('optgroup',{label:'Subtasks of small tasks'});ch.parts.forEach(function(o){g2.appendChild(h('option',{value:o.v,text:o.label}));});sel.appendChild(g2);}
+  return sel;
+}
+
+function setSize(t,big){if(big)t.size='big';else delete t.size;t.updated=iso();}
+
 /* ---------- actions ---------- */
 function addTask(text,activityId){
   text=(text||'').trim();if(!text)return false;
@@ -238,7 +665,7 @@ function addTask(text,activityId){
   commit();return true;
 }
 /* Adds several new tasks at the top, in the order given. Nothing existing is touched; if that cannot be shown, nothing is added. */
-function addMany(text,actId,quiet){
+function addMany(text,actId,quiet,big){
   if(actId&&!act(actId))return {error:true};
   var lines=text.split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
   var have={};
@@ -250,6 +677,7 @@ function addMany(text,actId,quiet){
     have[k]=1;
     var nt={id:uid(),text:x,activityId:actId||null,created:now,done:null,updated:now};
     if(quiet&&actId)nt.nm=true;
+    if(big)nt.size='big';
     fresh.push(nt);
   });
   var before=JSON.stringify(S.tasks),n=S.tasks.length;
@@ -268,21 +696,48 @@ function setActivityMaster(actId,show){
   });
   commit();
 }
+/* A SMALL task finishes itself when its last subtask is ticked, and reopens if a subtask is unticked (t.ad marks "finished by itself").
+   A BIG task is always ticked by the owner, and a small task the owner ticked or unticked by hand is left as they set it. */
+function autoParent(t){
+  var par=isChild(t)?task(t.parent):null;
+  if(!par||isBig(par))return;
+  var kids=childrenOf(par);
+  if(!kids.length)return;
+  if(kids.every(function(c){return c.done;})){
+    if(!par.done){par.done=iso();par.ad=true;par.updated=iso();}
+  }else if(par.done&&par.ad){
+    par.done=null;delete par.ad;par.updated=iso();
+  }
+}
 function toggle(id){
   var t=task(id);if(!t)return;
   if(t.done){t.done=null;if(ui.lastTicked===id)ui.lastTicked=null;}
   else{t.done=iso();ui.lastTicked=id;}
+  delete t.ad;
   t.updated=iso();
+  autoParent(t);
   commit();
 }
-function restore(id){var t=task(id);if(t){t.done=null;t.updated=iso();}ui.lastTicked=null;commit();}
+function restore(id){var t=task(id);if(t){t.done=null;delete t.ad;t.updated=iso();autoParent(t);}ui.lastTicked=null;commit();}
 function createActivity(name){
   name=(name||'').trim();if(!name)return null;
   var a={id:uid(),name:name,created:iso(),archived:null,updated:iso()};
   S.activities.push(a);return a;
 }
 function openActivity(id){ui.view='activity';ui.activityId=id;ui.lastActivityId=id;ui.sheet=null;render();}
-function go(view){ui.view=view;ui.sheet=null;render();}
+var MAIN={today:1,master:1,small:1,big:1,activities:1};
+function go(view){ui.view=view;ui.sheet=null;if(MAIN[view])ui.back=[];render();}
+/* open a page that sits on top of the one you were on (Settings, Archive, Sync) so Back returns to it */
+function goSub(view){
+  ui.back=ui.back||[];
+  ui.back.push({view:ui.view,activityId:ui.activityId});
+  ui.view=view;ui.sheet=null;render();
+}
+function goBack(){
+  var b=(ui.back||[]).pop();
+  if(!b){go('today');return;}
+  ui.view=b.view;if(b.activityId)ui.activityId=b.activityId;ui.sheet=null;render();
+}
 function archiveActivity(id){
   var a=act(id);if(!a)return;
   a.archived=iso();a.updated=iso();
@@ -301,34 +756,46 @@ function lastAct(){
   var l=live();return l.length?l[l.length-1]:null;
 }
 
+function appHeader(){
+  return h('div',{class:'apphead'},[h('p',{class:'brand',text:'Get a grip'}),
+    h('button',{class:'menubtn','aria-label':'More: Archive and Settings',onclick:function(){ui.sheet={type:'menu'};render();}},
+      [svg('<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/>',26)])]);
+}
+function titleBar(title,tools){return h('div',{class:'topbar'},[h('h2',{class:'title',text:title})].concat(tools||[]));}
+
+/* the row at the top of an activity page: the activity's name (tap to switch) and a new-activity button */
 function topbar(){
-  var onMaster=ui.view==='master';
-  var a=onMaster?lastAct():act(ui.activityId);
-  var kids=[h('button',{class:'btn'+(onMaster?' on':''),onclick:function(){go('master');}},['Master tasks'])];
+  var a=act(ui.activityId);
+  var kids=[];
   if(a){
-    var tab=h('button',{class:'btn tab'+(onMaster?'':' on'),'aria-label':onMaster?'Open activity: '+a.name:'Switch activity: '+a.name,
-      onclick:function(){if(onMaster)openActivity(a.id);else{ui.sheet={type:'switch'};render();}}},
-      [h('span',{text:a.name}),svg(ICON.down,18)]);
-    kids.push(tab);
-  }else{
-    kids.push(h('button',{class:'btn tab',onclick:function(){go('activities');}},[h('span',{text:'Activities'}),svg(ICON.right,18)]));
+    kids.push(h('button',{class:'btn tab on','aria-label':'Switch activity: '+a.name,onclick:function(){ui.sheet={type:'switch'};render();}},
+      [h('span',{text:a.name}),svg(ICON.down,18)]));
   }
   kids.push(h('button',{class:'btn icon','aria-label':'New activity',onclick:function(){ui.afterCreate='open';ui.sheet={type:'new'};render();}},[svg(ICON.plus)]));
   return h('div',{class:'topbar'},kids);
 }
 
-function dots(cur){
-  var a=lastAct();
-  function b(i,label,fn){return h('button',{'aria-current':i===cur?'page':null,onclick:fn},[h('span',{text:label})]);}
-  return h('nav',{class:'nav','aria-label':'Pages'},[
-    b(0,'Archive',function(){go('archive');}),
-    b(1,'Activities',function(){go('activities');}),
-    b(2,'Master tasks',function(){go('master');}),
-    b(3,a?a.name:'Activity',function(){
-      if(!a){go('activities');}
-      else if(ui.view==='activity'){ui.sheet={type:'switch'};render();}
-      else openActivity(a.id);})
-  ]);
+/* the bottom bar: three buttons now. Labels wrap, and if more buttons are ever added it scrolls sideways
+   with a small arrow at each end that shows only when there is more that way */
+var NAVS=[['today','Today'],['big','Big'],['small','Small'],['master','Master'],['activities','Activities']];
+function navBar(cur){
+  var sc=h('div',{class:'navscroll'},NAVS.map(function(n){
+    return h('button',{'aria-current':n[0]===cur?'page':null,onclick:function(){go(n[0]);}},[h('span',{text:n[1]})]);
+  }));
+  var left=h('button',{class:'navarrow',hidden:true,'aria-label':'Show buttons to the left',onclick:function(){sc.scrollBy({left:-160});}},[svg('<path d="M15 6l-6 6 6 6"/>',22)]);
+  var right=h('button',{class:'navarrow',hidden:true,'aria-label':'Show buttons to the right',onclick:function(){sc.scrollBy({left:160});}},[svg(ICON.right,22)]);
+  function sync(){
+    var over=sc.scrollWidth>sc.clientWidth+2;
+    left.hidden=!over||sc.scrollLeft<=2;
+    right.hidden=!over||sc.scrollLeft+sc.clientWidth>=sc.scrollWidth-2;
+  }
+  sc.addEventListener('scroll',sync);
+  setTimeout(function(){
+    var cb=sc.querySelector('[aria-current]');
+    if(cb&&cb.scrollIntoView)cb.scrollIntoView({block:'nearest',inline:'nearest'});
+    sync();
+  },0);
+  return h('nav',{class:'nav','aria-label':'Pages'},[left,sc,right]);
 }
 
 /* turns web addresses and phone numbers in a note into tappable links; everything else stays plain text */
@@ -352,21 +819,54 @@ function richText(str){
   return out;
 }
 
-function taskRow(t,showAct){
+function subArea(t){
+  var ps=childrenOf(t);
+  var box=h('div',{class:'parts'});
+  box.appendChild(h('div',{class:'kids'},ps.map(function(c){return taskRow(c,false);})));
+  var pin=h('input',{type:'text',id:'pin-'+t.id,'aria-label':'Add a subtask to: '+t.text,placeholder:ps.length?'Add a subtask':'Add the first subtask',autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
+    onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();if(pin.value.trim()){addSub(t.id,pin.value);commit();}}}});
+  box.appendChild(h('div',{class:'padd'},[pin,h('button',{'aria-label':'Add subtask',onclick:function(){if(pin.value.trim()){addSub(t.id,pin.value);commit();}}},[svg(ICON.up,20)])]));
+  var cand=attachChoices(t);
+  if(cand.length){
+    var asel=h('select',{class:'sel','aria-label':'Attach an existing task to: '+t.text,style:'margin:0 0 0 44px;width:calc(100% - 44px)'},
+      [h('option',{value:'',text:'Or attach an existing task…'})].concat(cand.map(function(x){return h('option',{value:x.id,text:x.text});})));
+    asel.addEventListener('change',function(){var x=task(asel.value);if(!x)return;attachTo(x,t);t.updated=iso();commit();});
+    box.appendChild(asel);
+  }
+  return box;
+}
+function taskRow(t,showAct,opts){
+  opts=opts||{};
+  var owner=opts.owner&&opts.owner!==t?opts.owner:null;
+  var slot=owner?owner.id:t.id;
   var a=t.activityId?act(t.activityId):null;
-  var sub=showAct&&a?h('small',{text:a.name}):null;
+  var sub=owner?h('small',{class:'ptag',text:'Part of: '+owner.text}):(showAct&&a?h('small',{text:a.name}):null);
   var hasNotes=!!(t.notes&&t.notes.trim()),isOpen=hasNotes&&!!ui.open[t.id];
-  return h('div',{class:'row'+(t.done?' done':''),'data-id':t.id},[
+  var big=isBig(t),ps=childrenOf(t),pOpen=!!ui.partsOpen[t.id],child=isChild(t);
+  var kids=[
     h('button',{class:'tick','aria-label':(t.done?'Untick: ':'Tick: ')+t.text,onclick:function(){toggle(t.id);}},[tickIcon(!!t.done)]),
-    h('button',{class:'rowtext','aria-label':'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
-      h('span',{text:t.text}),sub]),
+    h('button',{class:'rowtext','aria-label':(big?'Big. ':'')+'Edit task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[
+      h('span',{class:'rtl'},[house(big),h('span',{text:t.text})]),sub,
+      waitLabel(t)?h('small',{text:waitLabel(t)}):null]),
     hasNotes?h('button',{class:'more','aria-expanded':isOpen?'true':'false','aria-label':(isOpen?'Hide details: ':'Show details: ')+t.text,
       onclick:function(){if(ui.open[t.id])delete ui.open[t.id];else ui.open[t.id]=true;render();}},[svg(isOpen?ICON.chevup:ICON.down,22)]):null,
-    h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder: '+t.text+'. Drag, or use the up and down arrow keys.',
-      onpointerdown:function(e){startDrag(e,t.id);},onkeydown:function(e){nudge(e,t.id);}},
+    h('button',{class:'handle','data-handle':slot,'aria-label':'Reorder: '+(owner?owner.text:t.text)+'. Drag, or use the up and down arrow keys.',
+      onpointerdown:function(e){startDrag(e,slot);},onkeydown:function(e){nudge(e,slot);}},
       [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]),
     isOpen?h('div',{class:'details'},richText(t.notes)):null
-  ]);
+  ];
+  /* subtasks: folded behind a count; a big task always offers them, a small one only once it has some (or "Add subtasks" was chosen) */
+  if(!child&&!owner&&(ps.length||big||pOpen)){
+    var label=ps.length?[h('b',{text:partsDone(t)+' of '+ps.length}),' subtasks done']:(big?['Add the first subtask']:['Subtasks']);
+    kids.push(h('button',{class:'partsbar','aria-expanded':pOpen?'true':'false','aria-label':(pOpen?'Hide subtasks: ':'Show subtasks: ')+t.text,
+      onclick:function(){
+        if(opts.master&&big&&!ps.length){ui.bigCards[t.id]=true;go('big');return;}
+        if(ui.partsOpen[t.id])delete ui.partsOpen[t.id];else ui.partsOpen[t.id]=true;render();}},
+      [h('span',null,label),svg(pOpen?ICON.chevup:ICON.down,18)]));
+    if(ps.length>1)kids.push(h('div',{class:'rowbar'},[h('i',{style:'width:'+Math.round(100*partsDone(t)/ps.length)+'%'})]));
+    if(pOpen&&!(opts.master&&big&&!ps.length))kids.push(subArea(t));
+  }
+  return h('div',{class:'row'+(t.done?' done':'')+(big?' big':''),'data-id':slot},kids);
 }
 
 /* a text box that grows to show everything typed in it */
@@ -396,11 +896,15 @@ function addBox(placeholder,aria,onAdd,withPicker,actId){
   return h('div',{class:'addwrap'},kids);
 }
 
-function viewMaster(){
-  var open=S.tasks.filter(function(t){return !t.done&&!t.nm;});
-  var list=h('div',{class:'list'},open.length?open.map(function(t){return taskRow(t,true);}):[
-    h('div',{class:'empty',text:'Nothing left to do. Add a task above.'})]);
-  var kids=[topbar(),addBox('Add a task','New task',function(txt){return addTask(txt,ui.pick);},true),
+function viewMaster(){return listPage('master');}
+function viewSmall(){return listPage('small');}
+function listPage(kind){
+  var rows=kind==='small'?smallRows():masterRows();
+  var lk=[];
+  if(rows.length)lk.push(h('div',{class:'smalllist'},rows.map(function(r){return taskRow(r.t,true,{owner:r.owner,master:true});})));
+  else lk.push(h('div',{class:'empty',text:'Nothing left to do. Add a task above.'}));
+  var list=h('div',{class:'list'},lk);
+  var kids=[titleBar(kind==='small'?'Small':'Master'),addBox('Add a small task','New small task',function(txt){return addTask(txt,ui.pick);},true),
     h('div',{style:'height:8px'}),list];
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&!lt.nm){
@@ -409,7 +913,7 @@ function viewMaster(){
       h('button',{class:'btn ghost',style:'min-width:88px',onclick:function(){restore(lt.id);}},['Restore'])]));
   }
   var sb=syncBanner();if(sb)kids.push(sb);
-  kids.push(dots(2));
+  kids.push(navBar(kind));
   return kids;
 }
 
@@ -417,7 +921,7 @@ function viewActivity(){
   var a=act(ui.activityId);
   if(!a||a.archived){ui.view='activities';return viewActivities();}
   var ts=tasksOf(a.id),done=ts.filter(function(t){return t.done;}).length;
-  var list=h('div',{class:'list'},ts.length?ts.map(function(t){return taskRow(t,false);}):[
+  var list=h('div',{class:'list'},ts.length?ts.filter(topLevel).map(function(t){return taskRow(t,false);}):[
     h('div',{class:'empty',text:'No tasks in this activity yet. Add the first one above.'})]);
   var meta=h('div',{class:'meta'},[
     h('span',{class:'count',text:done+' of '+ts.length+' done'}),
@@ -426,9 +930,9 @@ function viewActivity(){
       h('button',{class:'btn',onclick:function(){archiveActivity(a.id);}},[svg(ICON.box,20),h('span',{text:'Archive'})])])]);
   var openTs=ts.filter(function(t){return !t.done;}),hid=openTs.filter(function(t){return t.nm;}).length;
   var mrow=openTs.length?h('div',{class:'meta',style:'padding-top:0'},[
-    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from Master tasks':'All open tasks show in Master tasks'}),
-    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in Master':'Hide from Master'])]):null;
-  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,mrow,list].filter(Boolean).concat(syncBanner()||[],[dots(3)]);
+    h('span',{class:'count',text:hid?hid+' of '+openTs.length+' open hidden from the Small and Master lists':'All open tasks show in the Small and Master lists'}),
+    h('button',{class:'btn',style:'height:40px;font-size:15px;padding:0 12px',onclick:function(){setActivityMaster(a.id,hid===openTs.length);}},[hid===openTs.length?'Show in lists':'Hide from lists'])]):null;
+  var kids=[topbar(),addBox('Add a task to this activity','New task in '+a.name,function(txt){return addTask(txt,a.id);},false,a.id),meta,mrow,list].filter(Boolean).concat(syncBanner()||[],[navBar('activities')]);
   var lt=ui.lastTicked?task(ui.lastTicked):null;
   if(lt&&lt.done&&lt.activityId===a.id){/* ticked tasks stay visible here, no strip needed */}
   return kids;
@@ -436,7 +940,7 @@ function viewActivity(){
 
 function pageHeader(title){
   return h('div',{class:'topbar'},[
-    h('button',{class:'btn',onclick:function(){var sub=ui.view==='archive'||ui.view==='import'||ui.view==='sync';go(sub?'activities':'master');}},[ui.view==='archive'||ui.view==='import'||ui.view==='sync'?'Activities':'Master tasks']),
+    h('button',{class:'btn','aria-label':'Back',onclick:goBack},[svg('<path d="M15 6l-6 6 6 6"/>',20),h('span',{text:'Back'})]),
     h('h2',{class:'title',text:title})]);
 }
 
@@ -449,19 +953,11 @@ function viewActivities(){
         onpointerdown:function(e){startDrag(e,a.id,'.arow',applyActOrder);},onkeydown:function(e){nudge(e,a.id,'.arow',applyActOrder);}},
         [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)])]);
   });
-  var arch=archived().length;
   var body=h('div',{style:'flex:1;min-height:0;overflow-y:auto'},[
     h('div',{class:'pad'},[h('button',{class:'btn primary',onclick:function(){ui.afterCreate='open';ui.sheet={type:'new'};render();}},[svg(ICON.plus),h('span',{text:'New activity'})])]),
-    h('div',{style:'border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:'No activities yet. Create one to group related tasks.'})]),
-    h('button',{class:'navrow',onclick:function(){go('archive');}},[
-      h('span',{class:'t'},[h('b',{text:'Archive'}),h('small',{text:arch===1?'1 archived activity':arch+' archived activities'})]),svg(ICON.right,20)]),
-    h('button',{class:'navrow',onclick:openSync},[
-      h('span',{class:'t'},[h('b',{text:'Sync'}),h('small',{text:syncSummary()})]),svg(ICON.right,20)]),
-    getCustomCid()?h('button',{class:'navrow',onclick:openImport},[
-      h('span',{class:'t'},[h('b',{text:'Import from Google Tasks'}),h('small',{text:'Bring in tasks from a Google Tasks list'})]),svg(ICON.right,20)]):null,
-    footEl()
+    h('div',{style:'border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:'No activities yet. Create one to group related tasks.'})])
   ]);
-  return [pageHeader('Activities'),body,dots(1)];
+  return [titleBar('Activities'),body,navBar('activities')];
 }
 
 function footEl(){
@@ -489,7 +985,7 @@ function restoreFile(f){
       var d=JSON.parse(r.result);
       if(!d||!Array.isArray(d.activities)||!Array.isArray(d.tasks))throw new Error('bad');
       if(!confirm('Replace everything in the app with this backup ('+d.activities.length+' activities, '+d.tasks.length+' tasks)?'))return;
-      S=d;ui.view='master';ui.lastTicked=null;ui.lastActivityId=null;commit();
+      S=d;ensureShape();ui.sheet=null;ui.view='today';ui.back=[];ui.lastTicked=null;ui.lastActivityId=null;commit();
     }catch(e){alert('That file is not a Get a grip backup.');}
   };
   r.readAsText(f);
@@ -500,7 +996,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='29';
+var APP_VERSION='31';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -671,7 +1167,7 @@ function viewImport(){
   var body=h('div',{class:'list'},parts);
   var out=[pageHeader('Import tasks'),body];
   if(bar)out.push(bar);
-  out.push(dots(1));
+  out.push(navBar(null));
   return out;
 }
 
@@ -710,8 +1206,8 @@ function viewArchive(){
   });
   var empty=archived().length?'Nothing in the archive matches that search.':'Nothing archived yet. Archive an activity from its own screen.';
   var body=h('div',{id:'archbody',style:'flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--line)'},rows.length?rows:[h('div',{class:'empty',text:empty})]);
-  var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in Master tasks.'});
-  return [pageHeader('Archive'),search,sorts,body,note,dots(0)];
+  var note=h('div',{class:'foot',text:'Open tasks from archived activities stay in your lists.'});
+  return [pageHeader('Archive'),search,sorts,body,note,navBar(null)];
 }
 
 /* ---------- Google Tasks sync ---------- */
@@ -1050,7 +1546,7 @@ function disconnectSync(){
   G.status='idle';G.err='';G.plan=null;G.pending=null;G.lists=[];
   commit(true);
 }
-function openSync(){ui.view='sync';ui.sheet=null;if(getCid())loadGIS();render();}
+function openSync(){if(getCid())loadGIS();goSub('sync');}
 function chooseList(l){
   var c=cfg();c.listId=l.id;c.listName=l.title||'Google Tasks';c.enabled=true;c.confirmed=false;
   G.status='idle';G.plan=null;G.pending=null;G.err='';
@@ -1183,7 +1679,6 @@ function viewSync(){
     }
   }
 
-  if(custom)advKids=advKids.concat(tparts);
   var det=h('details',{class:'adv'},[h('summary',{text:'Advanced'})].concat(advKids));
   det.open=ui.adv!==undefined?ui.adv:(!!custom||!getCid());
   det.addEventListener('toggle',function(){ui.adv=det.open;});
@@ -1194,15 +1689,15 @@ function viewSync(){
     var dta=h('textarea',{readonly:'',rows:'14','aria-label':'Diagnostic report',style:'width:calc(100% - 32px);margin:0 16px 12px;font-size:13px;font-family:monospace;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:10px'});
     dta.value=ui.diag;parts.push(dta);
   }
-  parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'}),' · Version '+APP_VERSION]));
-  return [pageHeader('Sync'),h('div',{class:'list'},parts),dots(1)];
+  return [pageHeader('Sync'),h('div',{class:'list'},parts),navBar(null)];
 }
 
 /* ---------- Sync between devices (a hidden file in the user's own Google Drive) ---------- */
 var DRIVE='https://www.googleapis.com/auth/drive.appdata';
 var DB='https://www.googleapis.com/drive/v3/';
 var DU='https://www.googleapis.com/upload/drive/v3/';
-var DFILE='get-a-grip-data.json';
+/* the same hidden Drive file the preview used, so devices that have moved and devices that have not still share their tasks */
+var DFILE='get-a-grip-next-data.json';
 /* D is runtime only; the on/off setting lives in S.drive on each device and is never shared */
 var D={status:'idle',err:'',running:false,again:false,seen:null,user:null,files:[],skew:null,log:[],startedAt:0,tapped:false};
 function dlog(m){D.log.push(new Date().toISOString().slice(11,19)+' '+m);if(D.log.length>16)D.log.shift();}
@@ -1224,7 +1719,7 @@ function stable(o){
    Settings, tokens and the Google Tasks links of the other sync stay on the device. */
 function stripGs(t){if(!t||t.gs===undefined)return t;var c=Object.assign({},t);delete c.gs;return c;}
 function toDoc(st){
-  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks.map(stripGs),gone:st.gone||[],ord:st.ord||{t:'',a:''}}));
+  return JSON.parse(JSON.stringify({v:2,activities:st.activities,tasks:st.tasks.map(stripGs),gone:st.gone||[],ord:st.ord||{t:'',a:''},plans:st.plans||[]}));
 }
 function stampOf(x){return x.updated||x.created||'';}
 var lastAlias={};
@@ -1292,7 +1787,14 @@ function mergeDocs(L,R){
     Object.keys(items).forEach(function(id){if(!seen[id]){seen[id]=1;extra.push(id);}});
     return (top?extra.concat(base):base.concat(extra)).map(function(id){return items[id];});
   }
-  return {v:2,
+  /* plans and day records: the later change wins, a deletion stands unless the plan changed after it */
+  var pl={};
+  (L.plans||[]).forEach(function(x){pl[x.id]=x;});
+  (R.plans||[]).forEach(function(x){var l=pl[x.id];if(!l||stampOf(x)>stampOf(l))pl[x.id]=x;});
+  Object.keys(pl).forEach(function(id){if(gone[id]&&gone[id]>=stampOf(pl[id]))delete pl[id];});
+  var planList=Object.keys(pl).map(function(id){return pl[id];}).sort(function(a,b){return (a.created||'')<(b.created||'')?-1:(a.created||'')>(b.created||'')?1:(a.id<b.id?-1:1);});
+  goneList=goneList.filter(function(g){return !pl[g.id];});
+  return {v:2,plans:planList,
     activities:order(aWin?L.activities:R.activities,aWin?R.activities:L.activities,acts,false),
     tasks:order(tWin?L.tasks:R.tasks,tWin?R.tasks:L.tasks,tasks,true),
     gone:goneList,
@@ -1303,11 +1805,13 @@ function applyMerged(doc){
   if(stable(toDoc(S))===stable(doc))return false;
   var have={};doc.tasks.forEach(function(t){have[t.id]=1;});
   Object.keys(ui.open).forEach(function(id){if(!have[id])delete ui.open[id];});
+  Object.keys(ui.partsOpen).forEach(function(id){if(!have[id])delete ui.partsOpen[id];});
+  Object.keys(ui.bigCards).forEach(function(id){if(!have[id])delete ui.bigCards[id];});
   if(ui.lastTicked&&!have[ui.lastTicked])ui.lastTicked=null;
   ['pick','activityId','lastActivityId'].forEach(function(k){if(ui[k]&&lastAlias[ui[k]])ui[k]=lastAlias[ui[k]];});
   var gsKeep={};S.tasks.forEach(function(t){if(t.gs)gsKeep[t.id]=t.gs;});
   doc.tasks.forEach(function(t){if(!t.gs&&gsKeep[t.id])t.gs=gsKeep[t.id];});
-  S.activities=doc.activities;S.tasks=doc.tasks;S.gone=doc.gone;S.ord=doc.ord;
+  S.activities=doc.activities;S.tasks=doc.tasks;S.gone=doc.gone;S.ord=doc.ord;S.plans=doc.plans||[];migrateParts();
   return true;
 }
 
@@ -1367,7 +1871,7 @@ function driveCycle(n){
       dlog('read …'+String(f.id).slice(-6)+': '+remote.activities.length+' activities, '+remote.tasks.length+' tasks ('+D.files.length+' file(s) with this name)');
       var changedHere=applyMerged(merged);
       dlog('merged: '+merged.activities.length+' activities, '+merged.tasks.length+' tasks; this device '+(changedHere?'changed':'unchanged'));
-      if(stable(merged)===stable(toDoc({activities:remote.activities,tasks:remote.tasks,gone:remote.gone,ord:remote.ord}))){dlog('Drive already matches, nothing to write');return null;}
+      if(stable(merged)===stable(toDoc({activities:remote.activities,tasks:remote.tasks,gone:remote.gone,ord:remote.ord,plans:remote.plans}))){dlog('Drive already matches, nothing to write');return null;}
       return dversion(f.id).then(function(v){
         if(v!==f.version&&n<3)return driveCycle(n+1);
         return dupdate(f.id,merged).then(noteWrite);
@@ -1490,6 +1994,7 @@ function anySync(){var c=cfg(),d=dcfg();return !!((c.enabled&&c.listId&&c.confir
 var runLog=[],pausedUntil=0,lastAuto=0;
 function syncAll(reason,opts){
   opts=opts||{};
+  if(ui.sheet&&ui.sheet.type==='moveover')return Promise.resolve();
   if(!opts.interactive){
     var t=Date.now();
     if(t<pausedUntil)return Promise.resolve();
@@ -1516,6 +2021,539 @@ function syncAll(reason,opts){
   });
 }
 
+
+/* ---------- Today ---------- */
+function openSlot(){ui.slot=ui.slot||{mins:'',dev:''};ui.sheet={type:'slot'};render();}
+/* a tile made before its task gained subtasks is still the parent; swap it for the unfinished subtasks, in their order (a big piece takes up to three) */
+function expandPlan(pl){
+  if(!pl||isClosed(pl))return false;
+  var out=[],changed=false,have={};
+  pl.items.forEach(function(it){have[it.tid]=1;});
+  pl.items.forEach(function(it){
+    var t=task(it.tid);
+    if(t&&!t.done&&!isChild(t)){
+      var kids=childrenOf(t).filter(function(c){return !c.done&&!isWaiting(c);});
+      if(kids.length){
+        if(it.k==='big')kids=kids.slice(0,3);
+        kids.forEach(function(c){if(!have[c.id]){have[c.id]=1;out.push(mkItem(it.k,it.k==='big'?t.id:c.id,it.k==='big'?c.id:null));}});
+        changed=true;return;
+      }
+    }
+    out.push(it);
+  });
+  if(changed){pl.items=out.filter(Boolean);pl.updated=iso();}
+  return changed;
+}
+/* the number of small ones in the day that are still to do (ticked ones stay on show but no longer use a place) */
+/* everything the day has held, including ticked items that Refresh cleared off the screen (they still count in the record of the day) */
+function allItems(pl){return pl.items.concat(pl.cleared||[]);}
+function getRefreshClear(){try{return localStorage.getItem('gag.refreshClear')!=='0';}catch(e){return true;}}
+function setRefreshClear(v){try{localStorage.setItem('gag.refreshClear',v?'1':'0');}catch(e){}}
+function openLit(pl){return pl.items.filter(function(x){return x.k!=='big'&&!resolveItem(x).done;});}
+/* REFRESH: keep everything ticked and everything still open, and bring in the next items from your lists:
+   small ones up to six still to do, and each big task up to its number of subtasks still to do (when a big task has nothing left, the next big task steps in) */
+function refreshDay(pl){
+  var added=0,removed=0;
+  /* a place held for a task that no longer exists ("No longer in your list") is simply dropped */
+  pl.items=pl.items.filter(function(x){if(task(x.tid))return true;removed++;return false;});
+  expandPlan(pl);
+  var cap=pl.cap||{bigs:loadDayOpts().bigs,subs:loadDayOpts().subs,smalls:6};
+  var need=cap.smalls-openLit(pl).length;
+  if(need>0)smallPicks(need,function(c){return inPlan(pl,c.id);}).forEach(function(c){var it=mkItem('little',c.id);if(it){pl.items.push(it);added++;}});
+  var parents=[];
+  pl.items.forEach(function(x){
+    if(x.k!=='big')return;
+    var t=task(x.tid),par=t?(isChild(t)?task(t.parent):t):null;
+    if(par&&parents.indexOf(par.id)<0)parents.push(par.id);
+  });
+  if(parents.length){
+    /* the day keeps as many big tasks going as it was started with (never more than it already holds) */
+    var wantBigs=Math.max(1,Math.min(cap.bigs>0?cap.bigs:parents.length,parents.length)),target=wantBigs>1?1:cap.subs;
+    function openOf(pid){return pl.items.filter(function(x){
+      if(x.k!=='big')return false;var t=task(x.tid);
+      return t&&!t.done&&!isWaiting(t)&&(isChild(t)?t.parent===pid:t.id===pid);}).length;}
+    var active=0;
+    parents.slice().forEach(function(pid){
+      var par=task(pid);if(!par)return;
+      var n=openOf(pid);
+      childrenOf(par).filter(function(c){return !c.done&&!isWaiting(c)&&!inPlan(pl,c.id);}).forEach(function(c){
+        if(n>=target)return;pl.items.push(mkItem('big',pid,c.id));n++;added++;});
+      if(n===0&&!par.done&&!childrenOf(par).length&&!isWaiting(par)&&!inPlan(pl,par.id)){pl.items.push(mkItem('big',pid));n++;added++;}
+      if(n>0)active++;
+    });
+    /* a finished big task is replaced by the next one in the Big list, but only up to the number the day is meant to have */
+    while(active<wantBigs){
+      var nb=bigCandidates().find(function(x){return parents.indexOf(x.id)<0;});
+      if(!nb)break;
+      parents.push(nb.id);
+      var ks=childrenOf(nb).filter(function(c){return !c.done&&!isWaiting(c);}).slice(0,target);
+      if(ks.length)ks.forEach(function(c){pl.items.push(mkItem('big',nb.id,c.id));added++;});
+      else{pl.items.push(mkItem('big',nb.id));added++;}
+      active++;
+    }
+  }
+  pl.items=pl.items.filter(Boolean);
+  var cleared=0;
+  if(getRefreshClear()){
+    var keep=[],gone=[];
+    pl.items.forEach(function(x){(resolveItem(x).done?gone:keep).push(x);});
+    if(gone.length){pl.cleared=(pl.cleared||[]).concat(gone);pl.items=keep;cleared=gone.length;}
+  }
+  var parts=[];
+  if(removed)parts.push('removed '+removed+' that '+(removed===1?'is':'are')+' no longer in your lists');
+  if(added)parts.push('brought in '+added+' more from your lists');
+  if(cleared)parts.push('cleared '+cleared+' ticked one'+(cleared===1?'':'s'));
+  ui.refreshNote=parts.length?(parts.join(', ')+'.').replace(/^./,function(c){return c.toUpperCase();}):'Nothing more to bring in just now.';
+  setTimeout(function(){if(ui.refreshNote){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},5000);
+  if(added||cleared||removed){pl.updated=iso();commit();}else render();
+}
+/* a brand-new small task typed on Today: top of the Small list, front of the day; if that makes seven still to do, the last one moves out of the day */
+function addNewSmall(text,activityId){
+  var n={id:uid(),text:text,activityId:activityId||null,created:iso(),done:null,updated:iso()};
+  S.tasks.unshift(n);
+  var pl=planFor(todayKey()),note='Added “'+text+'” to your day.';
+  if(pl){
+    pl.items.unshift(mkItem('little',n.id));
+    var opens=openLit(pl);
+    if(opens.length>6){
+      var last=opens[opens.length-1],lt=task(last.tid);
+      pl.items.splice(pl.items.indexOf(last),1);
+      note+=' “'+(lt?lt.text:last.text)+'” moved out to make room.';
+    }
+    pl.updated=iso();
+  }
+  ui.refreshNote=note;
+  setTimeout(function(){if(ui.refreshNote===note){ui.refreshNote='';if(!ui.sheet&&ui.view==='today')render();}},6000);
+  commit();
+}
+function newSmallLink(){
+  return h('div',{style:'padding:6px 0 0'},[h('button',{style:'background:none;border:0;padding:6px 0;color:var(--accent);text-decoration:underline;font-size:13px',
+    onclick:function(){ui.sheet={type:'newsmall'};render();}},['Add a new small task'])]);
+}
+function viewToday(){
+  var key=todayKey();
+  var pl=planFor(key);
+  if(pl&&expandPlan(pl)){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}scheduleSync();}
+  var kids=[];
+  var body=[];
+  if(pl)body.push(planView(pl));
+  else if(ui.cust)body.push(customView(key));
+  else body.push(startView(key));
+  body.push(pastDays());
+  var sb=syncBanner();
+  kids.push(h('div',{class:'list',style:'border-top:0'},body));
+  if(sb)kids.push(sb);
+  kids.push(navBar('today'));
+  return kids;
+}
+/* the start card asks every morning, but begins with what was chosen last time */
+function loadDayOpts(){
+  var o={bigs:1,subs:3,smalls:6};
+  try{var v=JSON.parse(localStorage.getItem('gag.dayOpts')||'null');
+    if(v&&v.bigs>=0&&v.bigs<=3&&v.subs>=1&&v.subs<=3)o={bigs:v.bigs,subs:v.subs,smalls:(v.smalls>=0&&v.smalls<=6)?v.smalls:6};}catch(e){}
+  return o;
+}
+function saveDayOpts(o){try{localStorage.setItem('gag.dayOpts',JSON.stringify({bigs:o.bigs,subs:o.subs,smalls:o.smalls}));}catch(e){}}
+function startView(key){
+  var forTom=key===tomorrowKey();
+  var o=ui.dayOpts=ui.dayOpts||loadDayOpts();
+  function pickRow(label,vals,cur,fn){
+    return h('div',{style:'margin-top:8px'},[h('p',{class:'note',style:'padding:0 0 2px',text:label}),
+      h('div',{class:'tags',style:'padding-left:0',role:'group','aria-label':label},vals.map(function(v){
+        return h('button',{class:'btn',type:'button','aria-pressed':cur===v?'true':'false',onclick:function(){fn(v);saveDayOpts(o);render();}},[String(v)]);}))]);
+  }
+  return h('div',{class:'card'},[
+    h('h3',{text:'Start today'}),
+    h('p',{text:'A short menu for the day, not a timetable. It starts blank and nothing is carried over.'}),
+    pickRow('How many big tasks?',[0,1,2,3],o.bigs,function(v){o.bigs=v;if(v>0)o.subs=v===1?3:1;}),
+    o.bigs>0?pickRow('Subtasks of each?',[1,2,3],o.subs,function(v){o.subs=v;}):null,
+    pickRow('How many small ones?',[0,1,2,3,4,5,6],o.smalls,function(v){o.smalls=v;}),
+    h('div',{class:'two',style:'margin-top:10px'},[
+      h('button',{class:'btn primary',onclick:function(){
+        var items=autoItems(o.bigs,o.subs,o.smalls);
+        if(!items.length&&(o.bigs>0||o.smalls>0)){alert('There is nothing to suggest yet. Add a few tasks first, or mark a task as big and give it subtasks.');return;}
+        /* the choices stay with the plan, so Refresh keeps to them (0 and 0 gives a blank day to fill by hand) */
+        var np=newPlan(key,'auto',items);np.cap={bigs:o.bigs,subs:o.subs,smalls:o.smalls};commit();}},['Automatic']),
+      h('button',{class:'btn',onclick:function(){ui.cust={step:1,kind:'both',bigId:'',partId:'',newPart:'',extra:[],littles:[]};render();}},['Custom'])]),
+    h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',style:'height:40px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
+    h('p',{text:'Automatic builds the day from the first big tasks in your Big list, with the number of subtasks you chose, and the first small ones from your Small list. Choose 0 to leave big or small out. Custom lets you choose. Slot suggests something for a spare gap.'})]);
+}
+
+/* Custom: a short conversation, one question at a time */
+function customView(key){
+  var c=ui.cust,box=h('div',{class:'card'});
+  function next(n){c.step=n;render();}
+  function cancelBtn(){return h('button',{class:'btn',onclick:function(){ui.cust=null;render();}},['Cancel']);}
+  function maxLittles(){return c.kind==='light'?2:6;}
+  if(c.step===1){
+    box.appendChild(h('h3',{text:'What sort of day is it?'}));
+    [['both','A big piece and some small ones','One or more big tasks, a subtask of each, plus up to six small ones'],
+     ['little','Small ones only','Up to six small ones'],
+     ['light','A light day','Up to two small ones']].forEach(function(o){
+      box.appendChild(h('button',{class:'choice',onclick:function(){c.kind=o[0];c.littles=c.littles.slice(0,o[0]==='light'?2:6);next(o[0]==='both'?2:3);}},[h('span',null,[o[1],h('small',{text:o[2]})])]));
+    });
+    box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[cancelBtn()]));
+  }else if(c.step===2){
+    var bigs=S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isWaiting(t);});
+    c.extra=c.extra||[];
+    var entries=[c].concat(c.extra);
+    box.appendChild(h('h3',{text:entries.length>1?'Which big tasks, and which subtasks?':'Which big task, and which subtask?'}));
+    if(!bigs.length){
+      box.appendChild(h('p',{text:'You have no big tasks yet. Open any task and choose “Big” to make one. You can carry on without a big piece.'}));
+    }else entries.forEach(function(e,idx){
+      var wrap=h('div',{style:idx?'margin-top:14px;padding-top:10px;border-top:1px solid var(--line)':''});
+      var bs=h('select',{class:'sel','aria-label':'Big task'+(idx?' '+(idx+1):'')},[h('option',{value:'',text:'Choose a big task…'})].concat(bigs.map(function(t){return h('option',{value:t.id,text:t.text});})));
+      bs.value=e.bigId;
+      bs.addEventListener('change',function(ev){e.bigId=ev.target.value;e.partId='';e.newPart='';render();});
+      wrap.appendChild(bs);
+      var bt=e.bigId?task(e.bigId):null;
+      if(bt){
+        var taken={};entries.forEach(function(x){if(x!==e&&x.partId)taken[x.partId]=1;});
+        var undone=partsOf(bt).filter(function(p){return !p.done&&!isWaiting(p)&&!taken[p.id];});
+        var ps=h('select',{class:'sel','aria-label':'Subtask of the big task'+(idx?' '+(idx+1):'')},[h('option',{value:'',text:'Choose a subtask…'})].concat(undone.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'}),h('option',{value:'__new',text:'A new subtask…'})]));
+        ps.value=e.partId;
+        ps.addEventListener('change',function(ev){e.partId=ev.target.value;render();});
+        wrap.appendChild(ps);
+        wrap.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){ui.editId=bt.id;ui.sheet={type:'edit'};render();}},['Open this task'])]));
+        if(e.partId==='__new'){
+          wrap.appendChild(h('input',{type:'text',class:'txt',id:'newpart'+idx,'aria-label':'Today’s piece',placeholder:'What’s today’s piece?',value:e.newPart,autocomplete:'off',autocapitalize:'sentences',style:'margin-top:8px',
+            oninput:function(ev){e.newPart=ev.target.value;}}));
+        }
+      }
+      if(idx)wrap.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){c.extra.splice(idx-1,1);render();}},['Take this one out'])]));
+      box.appendChild(wrap);
+    });
+    function entryReady(e){return e.bigId&&(e.partId&&e.partId!=='__new'||(e.partId==='__new'&&e.newPart.trim()));}
+    var ready=!bigs.length||(entryReady(c)&&c.extra.every(function(e){return !e.bigId||entryReady(e);}));
+    if(bigs.length&&entryReady(c)&&c.extra.length<2)box.appendChild(h('div',{style:'margin-top:12px'},[h('button',{class:'btn',type:'button',onclick:function(){c.extra.push({bigId:'',partId:'',newPart:''});render();}},['Add another big task or subtask'])]));
+    box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
+      h('button',{class:'btn',onclick:function(){c.bigId='';c.partId='';c.extra=[];next(3);}},['No big piece today']),
+      h('button',{class:'btn primary',disabled:!ready,onclick:function(){
+        [c].concat(c.extra).forEach(function(e){
+          if(e.partId==='__new'){
+            var np=addSub(e.bigId,e.newPart);
+            if(np){e.partId=np.id;e.newPart='';commit(true);}
+          }
+        });
+        c.extra=c.extra.filter(function(e){return e.bigId&&e.partId;});
+        next(3);}},['Next'])]));
+  }else if(c.step===3){
+    box.appendChild(h('h3',{text:'Small ones'}));
+    box.appendChild(h('p',{text:c.littles.length+' of '+maxLittles()+' chosen.'}));
+    c.littles.forEach(function(v){
+      var it=itemFromValue(v,'little');if(!it)return;
+      box.appendChild(h('div',{class:'item',style:'border:1px solid var(--line);border-radius:10px;margin-top:6px'},[
+        h('span',{class:'itext',style:'padding:8px 12px'},[h('span',{text:it.text}),it.parent?h('small',{text:'subtask of '+it.parent}):null]),
+        h('button',{class:'chg','aria-label':'Take out: '+it.text,onclick:function(){c.littles=c.littles.filter(function(x){return x!==v;});render();}},['Take out'])]));
+    });
+    if(c.littles.length<maxLittles()){
+      var ch=littleChoices(null,c),sel=choiceSelect('Add a small one',ch,'Add a small one…');
+      sel.addEventListener('change',function(e){if(e.target.value){c.littles.push(e.target.value);render();}});
+      box.appendChild(sel);
+      box.appendChild(h('div',{class:'two',style:'margin-top:8px'},[h('button',{class:'btn',onclick:function(){
+        var need=maxLittles()-c.littles.length;
+        smallPicks(need,function(x){return c.littles.indexOf(valueOf(x))>-1;}).forEach(function(x){c.littles.push(valueOf(x));});
+        render();}},['Fill the rest for me'])]));
+    }
+    box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
+      h('button',{class:'btn',onclick:function(){next(c.kind==='both'?2:1);}},['Back']),
+      h('button',{class:'btn primary',onclick:function(){next(4);}},['Next'])]));
+  }else{
+    var items=[];
+    [c].concat(c.extra||[]).forEach(function(e){
+      if(e.bigId&&e.partId&&e.partId!=='__new'){var bi=mkItem('big',e.bigId,e.partId==='__self'?null:e.partId);if(bi&&!items.some(function(x){return x.tid===bi.tid;}))items.push(bi);}
+    });
+    c.littles.forEach(function(v){var li=itemFromValue(v,'little');if(li)items.push(li);});
+    box.appendChild(h('h3',{text:'Your day'}));
+    if(!items.length)box.appendChild(h('p',{text:'Nothing chosen. A day with nothing planned is fine too.'}));
+    items.forEach(function(it){box.appendChild(h('p',{style:'color:var(--text);margin:4px 0'},[(it.k==='big'?'Big piece: ':'')+it.text+(it.parent?' (subtask of '+it.parent+')':'')]));});
+    box.appendChild(h('div',{class:'two',style:'margin-top:12px'},[
+      h('button',{class:'btn',onclick:function(){next(3);}},['Back']),
+      h('button',{class:'btn primary',disabled:!items.length,onclick:function(){ui.cust=null;newPlan(key,'custom',items);commit();}},['Start'])]));
+  }
+  return box;
+}
+
+function itemRow(pl,it,editable){
+  var r=resolveItem(it);
+  var done=r.done;
+  return h('div',{class:'item'+(done?' done':'')},[
+    h('button',{class:'tick','aria-label':(done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(){tickItem(it);}},[tickIcon(done)]),
+    h('button',{class:'itext','aria-label':'Open task: '+r.text,onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}}},[h('span',{text:r.text}),r.parent?h('small',{text:'subtask of '+r.parent}):(r.sub?h('small',{text:r.sub}):null),r.gone?h('small',{text:'No longer in your list'}):null]),
+    editable?h('button',{class:'chg','aria-label':'Change: '+r.text,onclick:function(){ui.swap={pid:pl.id,item:it};ui.sheet={type:'swap'};render();}},['Change']):null,
+    editable&&!done&&!r.gone?waitBtn(it,r,'chg'):null]);
+}
+function getLayout(){try{return localStorage.getItem('gag.todayLayout')||'blocks';}catch(e){return 'blocks';}}
+function setLayout(v){try{localStorage.setItem('gag.todayLayout',v);}catch(e){}render();}
+function waitBtn(it,r,cls){
+  return h('button',{class:cls||'chg','aria-label':'Wait: '+r.text,onclick:function(ev){ev.stopPropagation();ui.waitFor=it.tid;ui.sheet={type:'wait'};render();}},['Wait']);
+}
+function changeBtn(pl,it,r,cls){
+  return h('button',{class:cls||'chg','aria-label':'Change: '+r.text,onclick:function(ev){ev.stopPropagation();ui.swap={pid:pl.id,item:it};ui.sheet={type:'swap'};render();}},['Change']);
+}
+function planBlocks(pl){
+  var big=pl.items.filter(function(x){return x.k==='big';}),lit=pl.items.filter(function(x){return x.k!=='big';});
+  var wrap=h('div',{class:'blocks'});
+  /* the big task is the heading of its block; its subtasks for today sit inside it */
+  var groups=[],byKey={};
+  big.forEach(function(it){
+    var t=task(it.tid),par=t&&isChild(t)?task(t.parent):null;
+    var key=par?par.id:(it.tid);
+    if(!byKey[key]){byKey[key]={par:par,title:par?par.text:(t?t.text:it.text),items:[]};groups.push(byKey[key]);}
+    byKey[key].items.push(it);
+  });
+  groups.forEach(function(g){
+    var a=g.par&&g.par.activityId?act(g.par.activityId):null;
+    var ps=g.par?childrenOf(g.par):[],dn=g.par?partsDone(g.par):0;
+    var openId=g.par?g.par.id:g.items[0].tid;
+    var blk=h('div',{class:'bblock'},[h('button',{class:'tt','aria-label':'Open task: '+g.title,style:'border:0;background:none;padding:0;text-align:left;width:100%;color:inherit;font:inherit;font-weight:700;cursor:pointer',onclick:function(){if(task(openId)){ui.editId=openId;ui.sheet={type:'edit'};render();}}},[house(true),h('span',{text:g.title})])]);
+    if(a)blk.appendChild(h('div',{class:'sm',text:a.name}));
+    if(ps.length>1)blk.appendChild(h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]));
+    if(ps.length)blk.appendChild(h('div',{class:'sm',text:dn+' of '+ps.length+' subtasks done'}));
+    g.items.forEach(function(it){
+      var r=resolveItem(it);
+      blk.appendChild(h('div',{class:'bi'+(r.done?' done':'')},[
+        h('button',{class:'tk','aria-label':(r.done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(){tickItem(it);}},[tickIcon(r.done)]),
+        h('button',{class:'bt','aria-label':'Open task: '+r.text,style:'border:0;background:none;text-align:left;padding:6px 0;color:inherit;font:inherit;cursor:pointer',onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}}},[r.text]),changeBtn(pl,it,r),r.done||r.gone?null:waitBtn(it,r)]));
+    });
+    wrap.appendChild(blk);
+  });
+  if(!big.length)wrap.appendChild(h('div',{class:'bblock',style:'border-style:dashed;border-color:var(--border)'},[
+    h('div',{class:'tt',style:'font-weight:400;color:var(--muted)'},[house(true),h('span',null,['No big piece today. ',h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])])])]));
+  else wrap.appendChild(h('div',{style:'padding:6px 0 0'},[h('button',{style:'background:none;border:0;padding:6px 0;color:var(--accent);text-decoration:underline;font-size:13px',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add another big task or subtask'])]));
+  var grid=h('div',{class:'tgrid'});
+  lit.forEach(function(it){
+    var r=resolveItem(it),open=!!ui.tileOpen[it.tid];
+    var top=h('div',{class:'top'},[
+      h('button',{class:'tk','aria-label':(r.done?'Untick: ':'Tick: ')+r.text,disabled:r.gone,onclick:function(ev){ev.stopPropagation();tickItem(it);}},[tickIcon(r.done)]),
+      house(false),h('span',{style:'flex:1'})]);
+    top.querySelectorAll('svg')[1].setAttribute('class','hs');
+    var chev=h('button',{class:'tk','aria-expanded':open?'true':'false','aria-label':(open?'Fewer options: ':'More options: ')+r.text,
+      onclick:function(ev){ev.stopPropagation();if(ui.tileOpen[it.tid])delete ui.tileOpen[it.tid];else ui.tileOpen[it.tid]=true;render();}},[svg(open?ICON.chevup:ICON.down,16)]);
+    top.appendChild(chev);
+    var tile=h('div',{class:'tile'+(r.done?' done':'')+(open?' open':''),role:'button',tabindex:'0','aria-label':'Open task: '+r.text,
+      onclick:function(){if(task(it.tid)){ui.editId=it.tid;ui.sheet={type:'edit'};render();}},
+      onkeydown:function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}}},[r.parent?h('div',{class:'tpar',text:r.parent}):null,top,h('div',{class:'tx',text:r.text})].filter(Boolean));
+    if(r.parent)tile.classList.add('haspar');
+    var sb=r.parent?'subtask of '+r.parent:r.sub;
+    if(sb&&open)tile.appendChild(h('div',{class:'sb',text:sb}));
+    if(r.gone)tile.appendChild(h('div',{class:'sb',text:'No longer in your list'}));
+    if(open)tile.appendChild(h('div',{class:'acts'},[
+      h('button',{onclick:function(ev){ev.stopPropagation();tickItem(it);}},[r.done?'Untick':'Tick']),changeBtn(pl,it,r,''),r.done||r.gone?null:waitBtn(it,r,'')].filter(Boolean)));
+    grid.appendChild(tile);
+  });
+  if(openLit(pl).length<6)grid.appendChild(h('button',{class:'tile add','aria-label':'Add a small one',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})]));
+  wrap.appendChild(grid);
+  wrap.appendChild(newSmallLink());
+  return wrap;
+}
+function planView(pl){
+  var big=pl.items.filter(function(x){return x.k==='big';}),lit=pl.items.filter(function(x){return x.k!=='big';});
+  var doneN=pl.items.filter(function(x){return resolveItem(x).done;}).length;
+  var main;
+  if(getLayout()==='blocks')main=planBlocks(pl);
+  else{
+    var L=h('div',null),R=h('div',null);
+    L.appendChild(h('div',{class:'sec'},[house(true),h('span',{text:'Big piece'})]));
+    if(big.length)big.forEach(function(x){L.appendChild(itemRow(pl,x,true));});
+    else L.appendChild(h('div',{class:'empty',style:'padding:8px 20px'},['No big piece today. ',
+      h('button',{style:'background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'big'};ui.sheet={type:'swap'};render();}},['Add one'])]));
+    R.appendChild(h('div',{class:'sec'},[house(false),h('span',{text:'Small ('+openLit(pl).length+' of 6)'})]));
+    lit.forEach(function(x){R.appendChild(itemRow(pl,x,true));});
+    if(openLit(pl).length<6)R.appendChild(h('div',{style:'padding:8px 16px 0'},[h('button',{class:'btn',onclick:function(){ui.swap={pid:pl.id,item:null,kind:'little'};ui.sheet={type:'swap'};render();}},[svg(ICON.plus,18),h('span',{text:'Add a small one'})])]));
+    R.appendChild(newSmallLink());
+    main=h('div',{class:'daygrid'},[L,R]);
+  }
+  return h('div',null,[
+    main,
+    h('div',{class:'two',style:'padding:12px 12px 0;gap:6px'},[
+      h('button',{class:'btn primary',style:'height:42px;font-size:15px',onclick:function(){ui.sheet={type:'finish',pid:pl.id};render();}},['Finish']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'Refresh: bring in the next items',onclick:function(){refreshDay(pl);}},['Refresh']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px',onclick:function(){
+        if(!confirm('Clear this plan and start again? Nothing in your tasks changes.'))return;
+        S.gone.push({id:pl.id,at:iso()});S.plans=S.plans.filter(function(x){return x.id!==pl.id;});commit();}},['Redo']),
+      h('button',{class:'btn',style:'height:42px;font-size:15px','aria-label':'I’ve got a slot',onclick:openSlot},['Slot'])]),
+    h('label',{style:'display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px 16px 0;font-size:14px;color:var(--muted)'},[
+      h('input',{type:'checkbox',checked:getRefreshClear(),'aria-label':'Clear ticked ones when I press Refresh',onchange:function(e){setRefreshClear(e.target.checked);}}),
+      h('span',{text:'Clear ticked ones when I press Refresh'})]),
+    ui.refreshNote?h('p',{class:'note',role:'status',style:'padding:8px 16px 0',text:ui.refreshNote}):null].filter(Boolean));
+}
+
+/* what was done on a day is worked out from the ticks' own time stamps */
+function dayReport(pl){
+  var achieved=[],missed=[];
+  allItems(pl).forEach(function(it){
+    var r=resolveItem(it),ok=r.done&&r.doneAt&&dkey(r.doneAt)===pl.date;
+    (ok?achieved:missed).push({it:it,r:r});
+  });
+  var planned={};
+  allItems(pl).forEach(function(it){planned[it.tid+'|']=1;});
+  var extra=0;
+  S.tasks.forEach(function(t){
+    if(t.done&&dkey(t.done)===pl.date&&!planned[t.id+'|'])extra++;
+  });
+  return {achieved:achieved,missed:missed,extra:extra};
+}
+var NOTE_TAGS=['Took longer than I thought','Waiting on someone','Got interrupted','Went better than expected','Had a good day out','A rest day'];
+function pastDays(){
+  var past=plans().filter(function(x){return isClosed(x)&&allItems(x).length>0;}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:((a.created||'')<(b.created||'')?1:-1);});
+  if(!past.length)return null;
+  var shown=ui.histAll?past:past.slice(0,14);
+  var kids=[h('button',{class:'histrow',style:'background:var(--tint)','aria-expanded':ui.histOpen?'true':'false',onclick:function(){ui.histOpen=!ui.histOpen;render();}},[
+    h('span',{class:'t'},[h('b',{text:'Past days'}),h('small',{text:past.length+(past.length===1?' day recorded':' days recorded')})]),svg(ui.histOpen?ICON.chevup:ICON.down,20)])];
+  if(ui.histOpen){
+    shown.forEach(function(pl){
+      var rep=dayReport(pl),open=ui.histId===pl.id;
+      kids.push(h('button',{class:'histrow','aria-expanded':open?'true':'false',onclick:function(){ui.histId=open?null:pl.id;render();}},[
+        h('span',{class:'t'},[h('b',{text:niceDate(pl.date)}),h('small',{text:rep.achieved.length+' of '+allItems(pl).length+' done'+(rep.extra?', and '+rep.extra+' other'+(rep.extra===1?'':'s')+' ticked':'')})]),svg(open?ICON.chevup:ICON.down,20)]));
+      if(open){
+        var det=h('div',{class:'histdet'});
+        rep.achieved.forEach(function(x){det.appendChild(h('div',null,[h('span',{class:'mk',text:'✓'}),h('span',{text:x.r.text+(x.r.parent?' (subtask of '+x.r.parent+')':'')})]));});
+        rep.missed.forEach(function(x){det.appendChild(h('div',{style:'color:var(--muted)'},[h('span',{class:'mk',text:'–'}),h('span',{text:x.r.text+(x.r.parent?' (subtask of '+x.r.parent+')':'')})]));});
+        var n=pl.note||{};
+        if((n.tags&&n.tags.length)||n.text){det.appendChild(h('div',{style:'margin-top:6px'},[h('span',{class:'mk'}),h('span',{text:(n.tags||[]).join(', ')+((n.tags&&n.tags.length&&n.text)?'. ':'')+(n.text||'')})]));}
+        det.appendChild(h('div',{style:'margin-top:6px'},[h('button',{class:'btn',style:'height:40px;font-size:15px',onclick:function(){ui.sheet={type:'finish',pid:pl.id,edit:true};render();}},[(n.tags&&n.tags.length)||n.text?'Change note':'Add a note'])]));
+        kids.push(det);
+      }
+    });
+    if(past.length>shown.length)kids.push(h('button',{class:'histrow',onclick:function(){ui.histAll=true;render();}},['Show all '+past.length+' days']));
+  }
+  return h('div',{class:'hist'},kids);
+}
+
+/* ---------- Big: where big tasks are structured ---------- */
+var thinkTimer=0;
+function quietSave(){
+  clearTimeout(thinkTimer);
+  thinkTimer=setTimeout(function(){
+    S.updatedAt=Date.now();
+    try{localStorage.setItem(KEY,JSON.stringify(S));ui.status='device';}catch(e){ui.status='failed';}
+    scheduleSync();
+  },400);
+}
+function quietSaveNow(){S.updatedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));ui.status='device';}catch(e){ui.status='failed';}scheduleSync();}
+function addBigTask(txt,actId){
+  txt=(txt||'').trim();if(!txt)return false;
+  S.tasks.unshift({id:uid(),text:txt,activityId:actId||null,created:iso(),done:null,updated:iso(),size:'big'});
+  commit();return true;
+}
+function bigCard(t){
+  var ps=childrenOf(t),dn=partsDone(t),open=!!ui.bigCards[t.id],nx=ps.find(function(c){return !c.done;});
+  var a=t.activityId?act(t.activityId):null;
+  var info=ps.length?dn+' of '+ps.length+' subtasks done'+(nx?' · next: '+nx.text:' · all done'):'No subtasks yet';
+  /* tapping the title edits the task; tapping the activity, bar or progress line opens and closes the card */
+  var titleBtn=h('button',{class:'tt','aria-label':'Edit big task: '+t.text,style:'border:0;background:none;padding:0;text-align:left;width:100%;color:inherit;font-family:inherit;cursor:pointer',
+    onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[house(true),h('span',{text:t.text})]);
+  var tgl=h('button',{class:'tgl','aria-expanded':open?'true':'false','aria-label':(open?'Close ':'Open ')+'big task: '+t.text,style:'display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;font-family:inherit;cursor:pointer',
+    onclick:function(){if(ui.bigCards[t.id])delete ui.bigCards[t.id];else ui.bigCards[t.id]=true;render();}},[
+    a?h('small',{text:a.name}):null,
+    waitLabel(t)?h('small',{style:'font-weight:600;color:var(--accent)',text:waitLabel(t)}):null,
+    ps.length>1?h('div',{class:'pb'},[h('i',{style:'width:'+Math.round(100*dn/ps.length)+'%'})]):null,
+    h('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:8px'},[h('small',{text:info}),svg(open?ICON.chevup:ICON.down,18)]),
+    (!open&&t.notes&&t.notes.trim())?h('div',{class:'prv',text:t.notes}):null].filter(Boolean));
+  var head=h('div',{class:'bhead'},[titleBtn,tgl]);
+  var grip=h('button',{class:'handle','data-handle':t.id,'aria-label':'Reorder big task: '+t.text+'. Drag, or use the up and down arrow keys. Automatic starts from the top one.',style:'align-self:flex-start;margin-top:6px',
+    onpointerdown:function(e){startDrag(e,t.id,'.bcard');},onkeydown:function(e){nudge(e,t.id,'.bcard');}},
+    [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)]);
+  var kids=[h('div',{style:'display:flex;align-items:flex-start'},[head,grip])];
+  if(open){
+    var ta=h('textarea',{class:'thinking',id:'think-'+t.id,'aria-label':'Thinking about: '+t.text,placeholder:'Think it through here: what are the parts of this?',autocapitalize:'sentences',
+      oninput:function(e){var v=e.target.value;if(v.trim())t.notes=v;else delete t.notes;t.updated=iso();grow(e.target);quietSave();}});
+    ta.value=t.notes||'';setTimeout(function(){grow(ta);},0);
+    var body=h('div',{class:'bbody'},[h('label',{for:'think-'+t.id,text:'Thinking'}),ta]);
+    body.appendChild(h('div',{style:'padding:8px 14px 0'},[h('button',{class:'btn',style:'height:40px;font-size:15px',onclick:function(){clearTimeout(thinkTimer);quietSaveNow();ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks'])]));
+    body.appendChild(h('label',{style:'padding-top:12px',text:'Subtasks'}));
+    body.appendChild(subArea(t));
+    body.appendChild(h('div',{class:'two',style:'padding:10px 14px 0'},[
+      h('button',{class:'btn',style:'height:44px;font-size:15px',onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},['Edit']),
+      h('button',{class:'btn',style:'height:44px;font-size:15px',onclick:function(){toggle(t.id);}},[t.done?'Untick the whole task':'Tick the whole task'])]));
+    kids.push(body);
+  }
+  return h('div',{class:'bcard','data-id':t.id},kids);
+}
+function viewBig(){
+  var bigs=S.tasks.filter(function(t){return isBig(t)&&!t.done&&!isChild(t);});
+  var lk=[];
+  if(bigs.length){
+    lk.push(h('p',{class:'note',text:'In your order. Drag the grip to sort them: Automatic on Today starts from the top one.'}));
+    lk.push(h('div',{class:'bigcards'},bigs.map(function(t){return bigCard(t);})));
+  }
+  if(!lk.length)lk.push(h('div',{class:'empty',text:'No big tasks yet. Add one above, or open any task and choose Big. A big task is a piece of work you can finish, made of subtasks.'}));
+  lk.push(h('div',{style:'height:16px'}));
+  var list=h('div',{class:'list'},lk);
+  var kids=[titleBar('Big'),addBox('Add a big task','New big task',function(txt){return addBigTask(txt,ui.pick);},true),h('div',{style:'height:8px'}),list];
+  var sb=syncBanner();if(sb)kids.push(sb);
+  kids.push(navBar('big'));
+  return kids;
+}
+
+/* ---------- Settings ---------- */
+function getTheme(){try{return localStorage.getItem('gag.theme')||'auto';}catch(e){return 'auto';}}
+function applyTheme(){
+  var t=getTheme(),r=document.documentElement;
+  if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');
+}
+function setTheme(t){try{localStorage.setItem('gag.theme',t);}catch(e){}applyTheme();render();}
+applyTheme();
+
+/* BRINGING THE TASKS OVER FROM THE PREVIEW. The old preview lived at /next/ on this same site, so its tasks are in this
+   browser's storage under next.* keys. This copies them to this app's own keys (the preview's copy is left as it was, and
+   what this app held is kept as tasks.v1.beforemove), then reloads. Asked once, at first start. */
+function previewData(){
+  try{var r=localStorage.getItem(PREVKEY);if(!r)return null;var d=JSON.parse(r);if(d&&Array.isArray(d.activities)&&Array.isArray(d.tasks))return d;}catch(e){}
+  return null;
+}
+function migrationDone(){try{return localStorage.getItem('gag.migrated')==='1';}catch(e){return false;}}
+function bringOver(){
+  try{
+    var raw=localStorage.getItem(PREVKEY);if(!raw)return;
+    var cur=localStorage.getItem(KEY);if(cur)localStorage.setItem('tasks.v1.beforemove',cur);
+    localStorage.setItem(KEY,raw);
+    var keys=[];for(var i=0;i<localStorage.length;i++)keys.push(localStorage.key(i));
+    keys.forEach(function(k){
+      if(k.indexOf('next.gag.')!==0)return;
+      var rest=k.slice('next.gag.'.length);
+      if(rest==='clientId'||rest==='impdraft')return;
+      localStorage.setItem('gag.'+rest,localStorage.getItem(k));
+    });
+    /* the old app's own Google client ID was for the Google Tasks list, which is gone; the built-in sign-in is used from now on */
+    var cid=localStorage.getItem('gag.clientId');
+    if(cid){localStorage.setItem('gag.clientId.old',cid);localStorage.removeItem('gag.clientId');}
+    localStorage.setItem('gag.migrated','1');
+    location.reload();
+  }catch(e){alert('Could not bring the tasks over: '+e.message);}
+}
+function leaveMoveOver(){ui.sheet=null;render();}
+
+function viewSettings(){
+  var parts=[];
+  var arch=archived().length;
+  function row(title,sub,fn){
+    return h('button',{class:'navrow',onclick:fn},[h('span',{class:'t'},[h('b',{text:title}),sub?h('small',{text:sub}):null]),svg(ICON.right,20)]);
+  }
+  parts.push(h('h3',{class:'sect',text:'Appearance'}));
+  var th=getTheme();
+  parts.push(h('div',{class:'sorts',style:'padding-top:10px'},[['auto','Follow my phone'],['light','Always light'],['dark','Always dark']].map(function(x){
+    return h('button',{class:'btn','aria-pressed':th===x[0]?'true':'false',onclick:function(){setTheme(x[0]);}},[x[1]]);
+  })));
+  parts.push(h('h3',{class:'sect',text:'Today page layout'}));
+  var lay=getLayout();
+  parts.push(h('div',{class:'sorts',style:'padding-top:10px'},[['blocks','Blocks'],['list','List']].map(function(x){
+    return h('button',{class:'btn','aria-pressed':lay===x[0]?'true':'false',onclick:function(){setLayout(x[0]);}},[x[1]]);
+  })));
+  parts.push(h('h3',{class:'sect',text:'Your tasks'}));
+  parts.push(row('Archive',arch===1?'1 archived activity':arch+' archived activities',function(){goSub('archive');}));
+  parts.push(row('Sync',syncSummary(),openSync));
+  parts.push(h('h3',{class:'sect',text:'Backup'}));
+  parts.push(h('p',{class:'note',text:ui.status==='failed'?'Could not save. Your device storage may be full or blocked.':'Saved on this device only unless you turn on Sync.'}));
+  var file=h('input',{type:'file',accept:'application/json,.json',id:'restorefile',style:'display:none',onchange:function(e){restoreFile(e.target.files&&e.target.files[0]);e.target.value='';}});
+  parts.push(h('div',{class:'pad two'},[
+    h('button',{class:'btn',onclick:backup},['Download a backup']),
+    h('button',{class:'btn',onclick:function(){document.getElementById('restorefile').click();}},['Restore from backup']),file]));
+  parts.push(h('div',{class:'foot'},[h('a',{href:'privacy.html',target:'_blank',rel:'noopener',text:'Privacy'}),' · ',h('a',{href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',text:'About this app'}),' · Version '+APP_VERSION]));
+  return [pageHeader('Settings'),h('div',{class:'list'},parts),navBar(null)];
+}
+
 /* ---------- sheets ---------- */
 function sheetEl(){
   var s=ui.sheet;if(!s)return null;
@@ -1539,24 +2577,297 @@ function sheetEl(){
       inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Done'])])]));
     }else{
       var bta=h('textarea',{id:'bulkin','aria-label':'Tasks, one per line',placeholder:'One task per line',style:'min-height:180px',autocapitalize:'sentences'});
-      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'Master tasks, with no activity')+', in the order you type them. Nothing already there is changed.'}));
-      var qcb=null;
+      inner.push(h('p',{class:'note',text:'One task per line. They go at the top of '+(ba?'“'+ba.name+'”':'the Small list, with no activity')+', in the order you type them. Nothing already there is changed.'}));
+      var qcb=null,bigcb=h('input',{type:'checkbox','aria-label':'Make these big'});
       if(ba){
         var qv=false;try{qv=localStorage.getItem('gag.bulkQuiet')==='1';}catch(e){}
-        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of Master tasks'});
+        qcb=h('input',{type:'checkbox',checked:qv,'aria-label':'Keep these out of the Small and Master lists'});
       }
       inner.push(h('div',{class:'field'},[h('label',null,['Tasks',bta]),
-        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of Master tasks'})]):null,
+        qcb?h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[qcb,h('span',{text:'Keep these out of the Small and Master lists'})]):null,
+        h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[bigcb,h('span',{text:'Make these big'})]),
         h('div',{class:'btns'},[
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
         h('button',{class:'btn primary',onclick:function(){
           if(!bta.value.trim())return;
           var quiet=!!(qcb&&qcb.checked);
           if(qcb){try{localStorage.setItem('gag.bulkQuiet',quiet?'1':'0');}catch(e){}}
-          var r=addMany(bta.value,s.actId,quiet);
-          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of Master tasks':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
+          var r=addMany(bta.value,s.actId,quiet,bigcb.checked);
+          var m=r.error?'Something went wrong, so nothing was added.':(r.added===0?'Nothing was added.':r.added+(r.added===1?' task':' tasks')+' added'+(quiet&&r.added?', and kept out of the Small and Master lists':'')+'.')+(r.skipped?' '+r.skipped+(r.skipped===1?' was':' were')+' skipped because '+(r.skipped===1?'it was':'they were')+' already there.':'');
           ui.sheet={type:'bulk',actId:s.actId,msg:m};render();}},['Add'])])]));
     }
+  }else if(s.type==='swap'){
+    var sw=ui.swap||{},spl=plans().find(function(x){return x.id===sw.pid;});
+    if(!spl)return null;
+    var kind=sw.item?sw.item.k:sw.kind,isBg=kind==='big';
+    inner.push(h('h2',{text:sw.item?(isBg?'Change the big piece':'Change this small one'):(isBg?'Add a big piece':'Add a small one')}));
+    var chosen=null;
+    var fld=[];
+    var sel2,sel3=null;
+    function replaceWith(it){
+      if(!it)return;
+      if(sw.item){var i=spl.items.indexOf(sw.item);if(i>-1)spl.items[i]=it;}
+      else spl.items.push(it);
+      ui.sheet=null;touchPlan(spl);
+    }
+    if(isBg){
+      var bgs=S.tasks.filter(function(t){return !t.done&&isBig(t)&&!isWaiting(t);});
+      sel2=h('select',{class:'sel','aria-label':'Big task'},[h('option',{value:'',text:'Choose a big task…'})].concat(bgs.map(function(t){return h('option',{value:t.id,text:t.text});})));
+      var holder=h('div',null);
+      sel3=null;var selA=null;
+      sel2.addEventListener('change',function(){
+        holder.replaceChildren();sel3=null;selA=null;
+        var bt=task(sel2.value);if(!bt)return;
+        var un=partsOf(bt).filter(function(p){return !p.done&&!isWaiting(p);});
+        sel3=h('select',{class:'sel','aria-label':'Subtask'},[h('option',{value:'',text:un.length?'Choose a subtask…':'Choose…'})].concat(un.map(function(p){return h('option',{value:p.id,text:p.text});})).concat([h('option',{value:'__self',text:'The whole task'})]));
+        if(!un.length)sel3.value='__self';
+        holder.appendChild(sel3);
+        var ac=attachChoices(bt);
+        if(ac.length){
+          selA=h('select',{class:'sel','aria-label':'Attach an existing task as a subtask',style:'margin-top:8px'},[h('option',{value:'',text:'Or attach an existing task as a subtask…'})].concat(ac.map(function(x){return h('option',{value:x.id,text:x.text});})));
+          holder.appendChild(selA);
+        }
+        holder.appendChild(h('div',{style:'margin-top:8px'},[h('button',{class:'btn',type:'button',style:'height:40px;font-size:15px',onclick:function(){ui.editId=bt.id;ui.sheet={type:'edit'};render();}},['Open this task'])]));
+      });
+      var npi=h('input',{type:'text',class:'txt','aria-label':'Or write today’s piece',placeholder:'Or write today’s piece',autocomplete:'off',style:'margin-top:8px'});
+      fld=[sel2,holder,npi];
+      var use=function(){
+        var bt=task(sel2.value);if(!bt)return;
+        if(selA&&selA.value){var ax=task(selA.value);if(ax){attachTo(ax,bt);replaceWith(mkItem('big',bt.id,ax.id));return;}}
+        var pid=sel3?sel3.value:'';
+        if(pid==='__self'){replaceWith(mkItem('big',bt.id));return;}
+        if(!pid&&npi.value.trim()){
+          var np=addSub(bt.id,npi.value);if(np)pid=np.id;
+        }
+        if(pid)replaceWith(mkItem('big',bt.id,pid));
+      };
+    }else{
+      var chs=littleChoices(spl,null);
+      sel2=choiceSelect('Small one',chs);
+      fld=[sel2];
+      var use=function(){if(sel2.value)replaceWith(itemFromValue(sel2.value,'little'));};
+    }
+    inner.push(h('div',{class:'field'},fld.concat([h('div',{class:'btns'},[
+      sw.item?h('button',{class:'btn danger',onclick:function(){spl.items=spl.items.filter(function(x){return x!==sw.item;});ui.sheet=null;touchPlan(spl);}},['Take it out']):null,
+      h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+      h('button',{class:'btn primary',onclick:use},[sw.item?'Swap':'Add'])])])));
+  }else if(s.type==='finish'){
+    var fpl=plans().find(function(x){return x.id===s.pid;});if(!fpl)return null;
+    var note=fpl.note||{tags:[],text:''},tags=(note.tags||[]).slice();
+    var tbox=h('div',{class:'tags',role:'group','aria-label':'About the day'},NOTE_TAGS.map(function(tg){
+      var b=h('button',{class:'btn',type:'button','aria-pressed':tags.indexOf(tg)>-1?'true':'false',onclick:function(){
+        var i=tags.indexOf(tg);if(i>-1)tags.splice(i,1);else tags.push(tg);b.setAttribute('aria-pressed',i>-1?'false':'true');}},[tg]);
+      return b;}));
+    var ntx=h('input',{type:'text',id:'sheetin','aria-label':'A note about the day',placeholder:'Anything to remember about today (optional)',value:note.text||'',autocomplete:'off'});
+    inner.push(h('h2',{text:s.edit?'Note for '+niceDate(fpl.date):'Finish the day'}));
+    inner.push(h('p',{class:'note',text:s.edit?'Tap anything that fits. Nothing here is a score.':'Everything that did not get done simply stays in your list. Add a note if it helps.'}));
+    inner.push(tbox);
+    inner.push(h('div',{class:'field'},[ntx,h('div',{class:'btns'},[
+      h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+      h('button',{class:'btn primary',onclick:function(){
+        fpl.note={tags:tags,text:ntx.value.trim()};
+        if(!s.edit)fpl.closed=iso();
+        ui.sheet=null;touchPlan(fpl);}},[s.edit?'Save':'Finish'])])]));
+  }else if(s.type==='lines'){
+    var lt=task(ui.linesFor);if(!lt)return null;
+    var lines=(lt.notes||'').split(/\r?\n/).map(function(x){return x.replace(/^[\s\-*•\d.)]+/,'').trim();}).filter(Boolean);
+    var have={};childrenOf(lt).forEach(function(c){have[c.text.trim().toLowerCase()]=1;});
+    var cbs=[];
+    inner.push(h('h2',{text:'Turn lines into subtasks'}));
+    inner.push(h('p',{class:'note',text:'Tick the lines you want as subtasks of “'+lt.text+'”. They are added at the bottom, in this order, and those lines are taken out of the details. Any line you leave unticked stays there.'}));
+    var box2=h('div',{class:'field'});
+    lines.forEach(function(ln){
+      var dup=!!have[ln.toLowerCase()];
+      var cb=h('input',{type:'checkbox',checked:!dup,disabled:dup,'aria-label':ln});
+      cbs.push([cb,ln]);
+      box2.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[cb,h('span',{text:ln+(dup?' (already a subtask)':'')})]));
+    });
+    if(!lines.length)box2.appendChild(h('p',{class:'note',text:'There are no lines to use yet.'}));
+    box2.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel']),
+      h('button',{class:'btn primary',onclick:function(){
+        var n=0,used={};
+        cbs.forEach(function(x){if(x[0].checked&&!x[0].disabled){addSub(lt.id,x[1]);n++;}if(x[0].disabled||x[0].checked)used[x[1].toLowerCase()]=1;});
+        if(n){
+          var keep=(lt.notes||'').split(/\r?\n/).filter(function(raw){var c=raw.replace(/^[\s\-*•\d.)]+/,'').trim();return !(c&&used[c.toLowerCase()]);});
+          var rest=keep.join('\n').replace(/^\s*\n+|\n\s*$/g,'').replace(/\n{3,}/g,'\n\n').trim();
+          if(rest)lt.notes=rest;else delete lt.notes;
+          lt.updated=iso();
+        }
+        if(n){ui.partsOpen[lt.id]=true;ui.bigCards[lt.id]=true;}
+        ui.sheet=null;if(n)commit();else render();}},['Make subtasks'])]));
+    inner.push(box2);
+  }else if(s.type==='wait'){
+    var wt=task(ui.waitFor);if(!wt)return null;
+    inner.push(h('h2',{text:'Wait'}));
+    inner.push(h('p',{class:'note',text:'“'+wt.text+'” stays in your lists, but it is left out of your day until the time is up. Then it comes back by itself.'}));
+    var wb=h('div',{class:'field'});
+    var later=laterOpen(wt),holdCb=null;
+    if(later.length){
+      holdCb=h('input',{type:'checkbox',checked:getWaitHold(),'aria-label':'Also hold the subtasks after this one',onchange:function(e){setWaitHold(e.target.checked);}});
+      wb.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text);display:flex'},[holdCb,h('span',{text:'Also hold the '+later.length+(later.length===1?' subtask':' subtasks')+' after this one'})]));
+    }
+    [['day','For a day'],['week','For a week'],['month','For a month']].forEach(function(o){
+      wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;waitTask(wt,o[0],!!(holdCb&&holdCb.checked));}},[o[1]]));
+    });
+    var MAXN={day:6,week:3,month:6};
+    var nSel=h('select',{'aria-label':'How many'}),uSel=h('select',{'aria-label':'Days, weeks or months'},[h('option',{value:'day',text:'days'}),h('option',{value:'week',text:'weeks'}),h('option',{value:'month',text:'months'})]);
+    function fillN(keep){
+      nSel.replaceChildren();
+      for(var i=1;i<=MAXN[uSel.value];i++)nSel.appendChild(h('option',{value:String(i),text:String(i)}));
+      nSel.value=String(Math.min(keep||1,MAXN[uSel.value]));
+    }
+    fillN(2);uSel.addEventListener('change',function(){fillN(+nSel.value);});
+    wb.appendChild(h('p',{class:'note',style:'padding:6px 0 0',text:'Or choose how long:'}));
+    wb.appendChild(h('div',{style:'display:flex;gap:10px;align-items:center'},[nSel,uSel,
+      h('button',{class:'btn primary',type:'button',style:'flex:none',onclick:function(){ui.sheet=null;waitTask(wt,{n:+nSel.value,unit:uSel.value},!!(holdCb&&holdCb.checked));}},['Wait'])]));
+    var tom=new Date();tom.setDate(tom.getDate()+1);
+    var dIn=h('input',{type:'date',min:dkey(tom),'aria-label':'Wait until this date'});
+    wb.appendChild(h('p',{class:'note',style:'padding:6px 0 0',text:'Or until a date, when it comes back:'}));
+    wb.appendChild(h('div',{style:'display:flex;gap:10px;align-items:center'},[dIn,
+      h('button',{class:'btn primary',type:'button',style:'flex:none',onclick:function(){
+        if(!dIn.value||dIn.value<=todayKey())return;ui.sheet=null;waitTask(wt,dIn.value,!!(holdCb&&holdCb.checked));}},['Wait'])]));
+    wb.appendChild(h('p',{class:'note',style:'padding:6px 0 0',text:'Or until another big task is finished:'}));
+    var blockers=S.tasks.filter(function(b){return isBig(b)&&!isChild(b)&&!b.done&&b.id!==wt.id&&b.id!==wt.parent&&b.wf!==wt.id&&!finishedTask(b);});
+    if(blockers.length){
+      var bSel=h('select',{'aria-label':'Big task to wait for',style:'flex:1;min-width:0;width:auto'},blockers.map(function(b){return h('option',{value:b.id,text:b.text});}));
+      wb.appendChild(h('div',{style:'display:flex;gap:10px;align-items:center'},[bSel,
+        h('button',{class:'btn primary',type:'button',style:'flex:none',onclick:function(){ui.sheet=null;waitTask(wt,{forTask:bSel.value},false);}},['Wait'])]));
+    }else wb.appendChild(h('p',{class:'note',style:'padding:0',text:'There are no other big tasks to wait for.'}));
+    if(waitUntil(wt)||blockerOf(wt))wb.appendChild(h('button',{class:'btn',type:'button',onclick:function(){ui.sheet=null;stopWaiting(wt);}},['Stop waiting']));
+    wb.appendChild(h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel'])]));
+    inner.push(wb);
+  }else if(s.type==='moveover'){
+    var pd=previewData();if(!pd)return null;
+    inner.push(h('h2',{text:'Bring your tasks over?'}));
+    inner.push(h('p',{class:'note',text:'This phone holds your tasks from the preview: '+pd.activities.length+' activities and '+pd.tasks.length+' tasks. Bring them into this app so it carries on from where the preview left off.'}));
+    inner.push(h('p',{class:'note',text:'What this app holds now ('+S.activities.length+' activities, '+S.tasks.length+' tasks) is kept as a backup copy, and the preview is left exactly as it is.'}));
+    inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[
+      h('button',{class:'btn',onclick:leaveMoveOver},['Not now']),
+      h('button',{class:'btn primary',onclick:bringOver},['Bring them over'])])]));
+  }else if(s.type==='newsmall'){
+    var nsIn=h('input',{type:'text',id:'sheetin','aria-label':'New small task',placeholder:'What needs doing?',autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
+      onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();nsGo();}}});
+    var nsSel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(live().map(function(a){return h('option',{value:a.id,text:a.name});})));
+    function nsGo(){var v=nsIn.value.trim();if(!v)return;ui.sheet=null;addNewSmall(v,nsSel.value||null);}
+    inner.push(h('h2',{text:'New small task'}));
+    inner.push(h('p',{class:'note',text:'It goes to the top of your Small list and to the front of today. If you already have six small ones still to do, the last one moves out of the day (it stays in your Small list).'}));
+    inner.push(h('div',{class:'field'},[nsIn,h('label',null,['Activity',nsSel]),h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Cancel']),h('button',{class:'btn primary',onclick:nsGo},['Add to my day'])])]));
+  }else if(s.type==='slot'){
+    var sl=ui.slot=ui.slot||{mins:'',dev:''};
+    inner.push(h('h2',{text:'I’ve got a slot'}));
+    function choiceRow(label,opts,key){
+      return h('div',null,[h('p',{class:'note',style:'padding:6px 20px 2px',text:label}),
+        h('div',{class:'tags'},opts.map(function(o){
+          return h('button',{class:'btn',type:'button','aria-pressed':sl[key]===o[0]?'true':'false',onclick:function(){sl[key]=o[0];sl.more=false;render();}},[o[1]]);}))]);
+    }
+    inner.push(choiceRow('How long have you got?',[['quick','15 minutes'],['30','30 minutes'],['60','1 hour'],['day','All day']],'mins'));
+    inner.push(choiceRow('What have you got with you?',[['none','Nothing with me'],['phone','Just my phone'],['tablet','A tablet'],['laptop','Laptop or PC']],'dev'));
+    inner.push(h('label',{style:'flex-direction:row;display:flex;align-items:center;gap:12px;font-size:16px;padding:8px 20px 0'},[
+      h('input',{type:'checkbox',checked:!!sl.big,'aria-label':'Include big tasks',onchange:function(e){sl.big=e.target.checked;sl.more=false;render();}}),h('span',{text:'Include big tasks'})]));
+    if(sl.mins&&sl.dev){
+      var cand=slotCandidates(!!sl.big),fit=[],untagged=[];
+      cand.forEach(function(r){
+        var t=r.t;
+        if(!t.dur||!t.dev){untagged.push(r);return;}
+        if(durRank(t.dur)<=durRank(sl.mins)&&devRank(t.dev)<=devRank(sl.dev))fit.push(r);
+      });
+      function slotRow(r,tagging){
+        var t=r.t,sub=[];
+        if(r.owner!==t)sub.push('subtask of '+r.owner.text);
+        var tg=tagText(t);if(tg)sub.push(tg);
+        var kids=[h('div',{class:'item',style:'border:0;background:none;padding:0 14px 0 20px'},[
+          h('button',{class:'itext','aria-label':'Open task: '+t.text,onclick:function(){ui.editId=t.id;ui.sheet={type:'edit'};render();}},[h('span',{text:t.text}),sub.length?h('small',{text:sub.join(' · ')}):null]),
+          tagging?null:h('button',{class:'chg','aria-label':'Add to my day: '+t.text,onclick:function(){addToDay(r);}},['Add to my day'])])];
+        if(tagging){
+          function mk(label,arr,key){
+            var sel=h('select',{class:'sel','aria-label':label+': '+t.text,style:'margin:0;flex:1'},[h('option',{value:'',text:label+'…'})].concat(arr.map(function(o){return h('option',{value:o[0],text:o[1]});})));
+            sel.value=t[key]||'';
+            sel.addEventListener('change',function(){setTag(t,key,sel.value);});
+            return sel;
+          }
+          kids.push(h('div',{style:'display:flex;gap:8px;padding:0 20px 10px'},[mk('How long',DURS,'dur'),mk('Needs at least',DEVS,'dev')]));
+        }
+        return h('div',{style:'border-bottom:1px solid var(--line)'},kids);
+      }
+      inner.push(h('div',{class:'sep'}));
+      var allFit=fit.length;
+      if(!sl.more&&sl.mins!=='day')fit=fit.slice(0,3);
+      inner.push(h('h2',{text:allFit?(allFit>fit.length?'First '+fit.length+' of '+allFit+' that fit':(allFit+(allFit===1?' task fits':' tasks fit'))):'Nothing tagged fits yet'}));
+      if(!fit.length)inner.push(h('p',{class:'note',text:untagged.length?'Tag a few tasks below and they will show up here.':'Tag tasks with how long they take and what they need, from the edit screen of any task.'}));
+      fit.forEach(function(r){inner.push(slotRow(r,false));});
+      if(allFit>fit.length)inner.push(h('div',{style:'padding:6px 20px'},[h('button',{class:'btn',style:'height:40px;font-size:15px',onclick:function(){sl.more=true;render();}},['Show the other '+(allFit-fit.length)])]));
+      if(untagged.length){
+        inner.push(h('h2',{style:'color:var(--muted);font-size:15px',text:'Not tagged yet ('+untagged.length+')'}));
+        untagged.slice(0,6).forEach(function(r){inner.push(slotRow(r,true));});
+        if(untagged.length>6)inner.push(h('p',{class:'note',text:'And '+(untagged.length-6)+' more. Tag these and the rest will appear.'}));
+      }
+    }
+    inner.push(h('div',{class:'field',style:'padding-top:12px'},[h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Close'])])]));
+  }else if(s.type==='quick'){
+    var qi=h('textarea',{rows:'1',id:'quickin','aria-label':'New task',class:'tt',placeholder:'Add a small task',autocapitalize:'sentences',style:'width:100%;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:17px;padding:14px;resize:none;overflow:hidden;line-height:1.3',
+      oninput:function(e){e.target.value=e.target.value.replace(/\n/g,' ');grow(e.target);},
+      onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();go2();}}});
+    function go2(){var v=qi.value.trim();if(!v)return;ui.sheet=null;addTask(v,null);}
+    inner.push(h('h2',{text:'Add a task'}));
+    inner.push(h('div',{class:'field'},[qi,h('div',{class:'btns'},[
+      h('button',{class:'btn',onclick:function(){ui.sheet={type:'bulk',actId:null};render();}},['Add several']),
+      h('button',{class:'btn primary',onclick:go2},['Add'])])]));
+  }else if(s.type==='tagall'){
+    var tq=ui.tag||{ids:[],i:0},tt=null;
+    while(tq.i<tq.ids.length&&!(tt=task(tq.ids[tq.i]))){tq.i++;}
+    inner.push(h('h2',{text:'Tag tasks'}));
+    if(!tt){
+      inner.push(h('p',{class:'note',text:tq.ids.length?'All done. Every task you went through has been looked at.':'Nothing is waiting: every task you could do already has a time and equipment.'}));
+      inner.push(h('div',{class:'field'},[h('div',{class:'btns'},[h('button',{class:'btn primary',onclick:closeSheet},['Close'])])]));
+    }else{
+      var tpar=isChild(tt)?task(tt.parent):null;
+      var dR=radios('tdur','How long it takes',DURS,tt.dur),vR=radios('tdev','Needs at least',DEVS,tt.dev);
+      function moveOn(save){
+        if(save){
+          var d=dR.value(),v=vR.value();
+          if(d)tt.dur=d;else delete tt.dur;
+          if(v)tt.dev=v;else delete tt.dev;
+          tt.updated=iso();
+        }
+        tq.i++;
+        if(save)commit();else render();
+      }
+      inner.push(h('p',{class:'note',style:'padding-bottom:0',text:(tq.i+1)+' of '+tq.ids.length}));
+      inner.push(h('div',{style:'padding:2px 20px 0;font-size:18px;font-weight:700;overflow-wrap:anywhere',text:tt.text}));
+      if(tpar)inner.push(h('div',{style:'padding:2px 20px 0'},[h('small',{class:'ptag',text:'Part of: '+tpar.text})]));
+      inner.push(h('div',{style:'display:flex;gap:14px;padding:8px 20px 0'},[dR.el,vR.el]));
+      inner.push(h('div',{class:'field',style:'padding-top:10px'},[h('div',{class:'btns'},[
+        h('button',{class:'btn',onclick:function(){moveOn(false);}},['Skip']),
+        h('button',{class:'btn primary',onclick:function(){moveOn(true);}},['Save and next'])]),
+        h('div',{class:'btns'},[h('button',{class:'btn',onclick:closeSheet},['Done for now'])])]));
+    }
+  }else if(s.type==='menu'){
+    /* the three-dot menu holds everything that is not about tasks, one item per line; there is no separate Settings page */
+    var nTag=untaggedLeaves().length,lay=getLayout(),th=getTheme(),lv=previewData();
+    function line(icon,title,sub,fn,dis){
+      return h('button',{class:'opt link',disabled:!!dis,style:dis?'opacity:.5':'',onclick:fn},[icon,h('span',{class:'l',text:title}),sub?h('small',{text:sub}):null]);
+    }
+    function choices(label,opts,cur,fn){
+      return h('div',{style:'padding:6px 20px 2px'},[h('div',{style:'font-size:14px;color:var(--muted);padding-bottom:4px',text:label}),
+        h('div',{class:'sorts',style:'padding:0'},opts.map(function(x){return h('button',{class:'btn','aria-pressed':cur===x[0]?'true':'false',onclick:function(){fn(x[0]);}},[x[1]]);}))]);
+    }
+    var restoreIn=h('input',{type:'file',accept:'application/json,.json',id:'restorefile',style:'display:none',onchange:function(e){var f=e.target.files&&e.target.files[0];ui.sheet=null;restoreFile(f);e.target.value='';}});
+    inner.push(h('h2',{text:'More'}));
+    inner.push(line(svg(ICON.check),'Tag tasks',nTag?nTag+' waiting':'none waiting',function(){ui.tag={ids:untaggedLeaves().map(function(x){return x.id;}),i:0};ui.sheet={type:'tagall'};render();}));
+    inner.push(line(svg(ICON.box),'Archive',archived().length+' archived',function(){goSub('archive');}));
+    inner.push(line(svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),'Sync',(function(){var x=syncSummary();return x.indexOf('Keep your devices')===0?'not on':x;})(),openSync));
+    inner.push(line(svg('<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'),'Download a backup','',function(){ui.sheet=null;render();backup();}));
+    inner.push(line(svg('<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>'),'Restore from backup','',function(){document.getElementById('restorefile').click();}));
+    inner.push(h('div',{class:'sep'}));
+    inner.push(choices('Appearance',[['auto','Follow my phone'],['light','Always light'],['dark','Always dark']],th,function(v){setTheme(v);}));
+    inner.push(choices('Today layout',[['blocks','Blocks'],['list','List']],lay,function(v){setLayout(v);}));
+    inner.push(h('div',{class:'sep'}));
+    inner.push(line(svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),'Check for a new version',ui.updMsg||('This is '+APP_VERSION),function(){checkForUpdateNow();}));
+    if(lv&&!migrationDone())inner.push(line(svg('<path d="M9 7H6a3 3 0 0 0 0 6h3M15 7h3a3 3 0 0 1 0 6h-3M8 10h8"/>'),'Bring over my tasks from the preview',lv.activities.length+' activities, '+lv.tasks.length+' tasks',function(){ui.sheet={type:'moveover'};render();}));
+    inner.push(h('a',{class:'opt link',href:'privacy.html',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'Privacy'})]));
+    inner.push(h('a',{class:'opt link',href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'About this app'})]));
+    inner.push(h('p',{class:'note',style:'padding:8px 20px 0',text:'Version '+APP_VERSION}));
+    inner.push(restoreIn);
   }else if(s.type==='switch'){
     inner.push(h('h2',{text:'Go to activity'}));
     live().forEach(function(a){
@@ -1594,43 +2905,136 @@ function sheetEl(){
     var sel=h('select',{'aria-label':'Activity'},[h('option',{value:'',text:'No activity'})].concat(
       S.activities.filter(function(a){return !a.archived||a.id===t.activityId;}).map(function(a){return h('option',{value:a.id,text:a.name+(a.archived?' (archived)':'')});})));
     sel.value=t.activityId||'';
-    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in Master tasks'});
+    var shownCb=h('input',{type:'checkbox',checked:!t.nm,'aria-label':'Show in the Small and Master lists'});
     shownCb.disabled=!sel.value;
     sel.addEventListener('change',function(){shownCb.disabled=!sel.value;if(!sel.value)shownCb.checked=true;});
     var hasN=!!(t.notes&&t.notes.trim());
-    var nt=h('textarea',{id:'sheetnotes','aria-label':'Details',placeholder:'A web address, a phone number, anything useful',autocapitalize:'sentences'});
+    var nt=h('textarea',{id:'sheetnotes','aria-label':isBig(t)?'Thinking':'Details',placeholder:isBig(t)?'Think it through here: what are the parts of this?':'A list of steps, a web address, a phone number, anything useful',autocapitalize:'sentences',style:'min-height:120px;resize:none;overflow:hidden',
+      oninput:function(e){grow(e.target);}});
     nt.value=t.notes||'';
-    var notesBox=h('label',null,['Details',nt]);
-    var addN=h('button',{class:'btn',type:'button',onclick:function(){addN.replaceWith(notesBox);nt.focus();}},['Add details']);
-    function saveEdit(){
-      var v=ti.value.trim();if(!v)return;
+    function applyFields(openParts){
+      var v=ti.value.trim();if(!v)return false;
+      if(nowBig!==wasBig)setSize(t,nowBig);
+      if(openParts===true)ui.partsOpen[t.id]=true;
       t.text=v;t.activityId=sel.value||null;t.updated=iso();
+      if(durRadio.value())t.dur=durRadio.value();else delete t.dur;
+      if(devRadio.value())t.dev=devRadio.value();else delete t.dev;
+      if(isChild(t)&&t.activityId!==task(t.parent).activityId)t.activityId=task(t.parent).activityId||null;
       if(t.activityId&&!shownCb.checked)t.nm=true;else delete t.nm;
-      var nv=(hasN||notesBox.parentNode)?nt.value.trim():'';
+      var nv=nt.value.trim();
       if(nv)t.notes=nv;else delete t.notes;
       if(!nv)delete ui.open[t.id];
-      ui.sheet=null;commit();
+      return true;
     }
+    function saveEdit(openParts){if(!applyFields(openParts))return false;ui.sheet=null;commit();return true;}
+    /* open another task (a subtask, or the task it belongs to) in this same sheet, keeping what has been typed */
+    /* dragging a subtask in this sheet: save what has been typed first, so the redraw loses nothing */
+    function reorderSubs(ids){applyFields();applyOrder(ids);}
+    function goEdit(id){if(!applyFields())return;ui.editId=id;ui.sheet={type:'edit'};commit();}
+    var wasBig=isBig(t),nowBig=wasBig;
+    var bSmall=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'false':'true',onclick:function(){nowBig=false;bSmall.setAttribute('aria-pressed','true');bBig.setAttribute('aria-pressed','false');}},[house(false),'Small']);
+    var bBig=h('button',{class:'btn',type:'button','aria-pressed':wasBig?'true':'false',onclick:function(){nowBig=true;bBig.setAttribute('aria-pressed','true');bSmall.setAttribute('aria-pressed','false');}},[house(true),'Big']);
+    function radioGroup(name,label,opts,cur){
+      var cur2=cur||'',rows=[['','Not set']].concat(opts),box=h('div',{role:'radiogroup','aria-label':label,style:'display:flex;flex-direction:column'});
+      rows.forEach(function(o){
+        var r=h('input',{type:'radio',name:name,value:o[0],checked:o[0]===cur2});
+        box.appendChild(h('label',{style:'flex-direction:row;align-items:center;gap:10px;min-height:44px;font-size:16px;color:var(--text)'},[r,h('span',{text:o[1]})]));
+      });
+      return {el:h('div',{style:'flex:1;min-width:0'},[h('div',{style:'font-size:14px;color:var(--muted);padding:6px 0 2px',text:label}),box]),value:function(){var c=box.querySelector('input:checked');return c?c.value:'';}};
+    }
+    var durRadio=radioGroup('dur','How long it takes',DURS,t.dur),devRadio=radioGroup('dev','Needs at least',DEVS,t.dev);
+    var panelT=h('div',{style:'display:flex;gap:14px'},[durRadio.el,devRadio.el]);
+    var addP=(!isChild(t)&&!childrenOf(t).length&&!ui.partsOpen[t.id])?h('button',{class:'btn',type:'button',onclick:function(){if(!applyFields())return;ui.partsOpen[t.id]=true;commit();}},['Add subtasks']):null;
+    var linesBtn=isChild(t)?null:h('button',{class:'btn',type:'button',onclick:function(){
+      if(!saveEdit())return;ui.linesFor=t.id;ui.sheet={type:'lines'};render();}},['Turn lines into subtasks']);
+    var toOwn=isChild(t)?h('button',{class:'btn',type:'button',onclick:function(){delete t.parent;t.updated=iso();ui.sheet=null;commit();}},['Take out of “'+task(t.parent).text+'”']):null;
+    var wBtn=t.done?null:(!waitUntil(t)&&heldBy(t)
+      ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(heldBy(t));ui.sheet=null;render();}},['Held until '+niceDate(waitInfo(t))+' behind “'+heldBy(t).text+'”. Stop waiting'])
+      :waitUntil(t)
+      ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(t);ui.sheet=null;render();}},['Waiting until '+niceDate(waitUntil(t))+'. Stop waiting'])
+      :blockerOf(t)
+      ?h('button',{class:'btn',type:'button',onclick:function(){stopWaiting(t);ui.sheet=null;render();}},['Waiting until “'+blockerOf(t).text+'” is finished. Stop waiting'])
+      :h('button',{class:'btn',type:'button',onclick:function(){if(!saveEdit())return;ui.waitFor=t.id;ui.sheet={type:'wait'};render();}},['Wait…']));
     inner.push(h('h2',{text:'Edit task'}));
-    inner.push(h('div',{class:'field'},[ti,h('label',null,['Activity',sel]),
-      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in Master tasks'})]),hasN?notesBox:addN,
+    var subNow=childrenOf(t);
+    var par=isChild(t)?task(t.parent):null;
+    var partOf=par?h('button',{class:'btn',type:'button',onclick:function(){goEdit(par.id);}},['‹ Part of: '+par.text]):null;
+    var subBox=null;
+    if(!isChild(t)&&(subNow.length||ui.partsOpen[t.id])){
+      var addIn=h('input',{type:'text',id:'subadd','aria-label':'Add a subtask',placeholder:'Add a subtask',autocomplete:'off',autocapitalize:'sentences',enterkeyhint:'done',
+        onkeydown:function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}}});
+      function doAdd(){
+        var v=addIn.value.trim();if(!v)return;if(!applyFields())return;
+        addSub(t.id,v);ui.partsOpen[t.id]=true;commit();
+        setTimeout(function(){var e=document.getElementById('subadd');if(e)e.focus();},0);
+      }
+      subBox=h('div',{style:'display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:8px 12px'},
+        [h('div',{style:'font-size:14px;color:var(--muted);padding:2px 0 4px',text:subNow.length?'Subtasks ('+partsDone(t)+' of '+subNow.length+' done)':'Subtasks'})]
+        .concat([h('div',{class:'sublist'},subNow.map(function(c){
+          var cb=h('input',{type:'checkbox',checked:!!c.done,'aria-label':'Tick “'+c.text+'”',style:'flex:none;width:24px;height:24px',
+            onchange:function(){if(!applyFields()){cb.checked=!cb.checked;return;}toggle(c.id);}});
+          return h('div',{class:'subrow','data-id':c.id,style:'display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line)'},[cb,
+            h('button',{type:'button','aria-label':'Open “'+c.text+'”',onclick:function(){goEdit(c.id);},
+              style:'flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;min-height:48px;background:none;border:0;padding:0;font:inherit;font-size:16px;color:'+(c.done?'var(--muted)':'var(--text)')+(c.done?';text-decoration:line-through':'')},
+              [h('span',{text:c.text,style:'flex:1;overflow-wrap:anywhere'}),h('span',{text:'›','aria-hidden':'true',style:'color:var(--muted);font-size:20px'})]),
+            h('button',{class:'handle',type:'button','data-handle':c.id,'aria-label':'Reorder: '+c.text+'. Drag, or use the up and down arrow keys.',style:'flex:none',
+              onpointerdown:function(e){startDrag(e,c.id,'.subrow',reorderSubs);},onkeydown:function(e){nudge(e,c.id,'.subrow',reorderSubs);}},
+              [svg('<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',22)])]);
+        }))]).concat([h('div',{style:'display:flex;gap:10px;align-items:center;padding-top:8px'},[addIn,
+          h('button',{class:'btn',type:'button',style:'flex:none',onclick:doAdd},['Add'])])]));
+    }
+    var panelD=h('div',{style:'display:flex;flex-direction:column;gap:10px'},[nt,linesBtn?h('div',{class:'btns'},[linesBtn]):null]);
+    var tagNow=tagText(t);
+    var bD=h('button',{class:'btn',type:'button','aria-pressed':'false',onclick:function(){showPanel(shown==='d'?'':'d');}},[(isBig(t)?'Thinking':'Details')+((t.notes&&t.notes.trim())?' •':'')]);
+    var bT=h('button',{class:'btn',type:'button','aria-pressed':'false',style:'height:auto;min-height:64px;padding-top:8px;padding-bottom:8px',onclick:function(){showPanel(shown==='t'?'':'t');}},[h('span',{style:'display:flex;flex-direction:column;align-items:center;gap:2px'},['Time and equipment',
+      h('small',{style:'font-weight:400;color:var(--muted)',text:tagNow||'not set'})])]);
+    var panel=h('div',{style:'border:1.5px solid var(--border);border-radius:12px;padding:12px',hidden:true},[panelD,panelT]);
+    var shown='';
+    function showPanel(w){
+      shown=w;
+      panel.hidden=!w;panelD.hidden=w!=='d';panelT.hidden=w!=='t';
+      bD.setAttribute('aria-pressed',w==='d'?'true':'false');bT.setAttribute('aria-pressed',w==='t'?'true':'false');
+      if(w==='d')setTimeout(function(){grow(nt);},0);
+    }
+    showPanel('');
+    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),subBox||addP,
+      h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
+      h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,wBtn,
       h('div',{class:'btns'},[
         h('button',{class:'btn danger',onclick:function(){
           [t.sid,t.gid].forEach(function(l){if(l)S.deleted.push({gid:l,text:t.text,at:iso()});});
           S.gone.push({id:t.id,at:iso()});
           S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;ui.sheet=null;commit();}},['Delete']),
         h('button',{class:'btn',onclick:closeSheet},['Cancel']),
-        h('button',{class:'btn primary',onclick:saveEdit},['Save'])])]));
+        h('button',{class:'btn primary',onclick:function(){saveEdit();}},['Save'])])]));
   }
   return h('div',null,[h('div',{class:'scrim',onclick:closeSheet}),h('div',{class:'sheet',role:'dialog','aria-modal':'true'},inner)]);
 }
 
 /* ---------- render ---------- */
+function ensureShape(){plans();migrateParts();}
+/* a new version of the app has installed in the background; the screen in front of you still runs the old one until it reloads */
+function updateBanner(){
+  if(!ui.updateReady)return null;
+  return h('div',{role:'status',style:'margin:6px 16px 0;padding:10px 14px;border:1.5px solid var(--accent);border-radius:12px;background:var(--tint);display:flex;align-items:center;justify-content:space-between;gap:12px'},[
+    h('span',{style:'font-weight:700',text:'A new version is ready'}),
+    h('button',{class:'btn primary',type:'button',style:'height:40px;flex:none;padding:0 16px',onclick:function(){location.reload();}},['Update now'])]);
+}
+var swReg=null;
+function checkForUpdate(){if(swReg){try{swReg.update();}catch(e){}}}
+function checkForUpdateNow(){
+  if(!swReg){ui.updMsg='Reloading…';render();location.reload();return;}
+  ui.updMsg='Checking…';render();
+  var done=function(){setTimeout(function(){ui.updMsg=ui.updateReady?'A new version is ready, see the top of the screen':'You have the newest version ('+APP_VERSION+')';render();},2500);};
+  try{swReg.update().then(done,done);}catch(e){done();}
+}
 function viewKids(){
-  return [h('p',{class:'brand',text:'Get a grip'})].concat(viewBody());
+  app.classList.toggle('wide',ui.view==='today');
+  return [appHeader(),updateBanner()].filter(Boolean).concat(viewBody());
 }
 function viewBody(){
-  return ui.view==='activity'?viewActivity():ui.view==='activities'?viewActivities():ui.view==='archive'?viewArchive():ui.view==='import'?viewImport():ui.view==='sync'?viewSync():viewMaster();
+  var v=ui.view;
+  return v==='activity'?viewActivity():v==='activities'?viewActivities():v==='archive'?viewArchive():v==='import'?viewImport():v==='sync'?viewSync():v==='settings'?viewSettings():v==='master'?viewMaster():v==='small'?viewSmall():v==='big'?viewBig():viewToday();
 }
 function render(){
   ui.dirty=false;
@@ -1648,7 +3052,8 @@ function render(){
   }
   if(ui.focusHandle){var fh=app.querySelector('[data-handle="'+ui.focusHandle+'"]');if(fh)fh.focus();ui.focusHandle=null;}
   if(ui.sheet&&ui.sheet.type==='bulk'&&!ui.sheet.msg){var bi=document.getElementById('bulkin');if(bi)bi.focus();}
-  if(ui.sheet&&(ui.sheet.type==='new'||ui.sheet.type==='rename'||ui.sheet.type==='edit')){
+  if(ui.sheet&&ui.sheet.type==='quick'){var qq=document.getElementById('quickin');if(qq)qq.focus();}
+  if(ui.sheet&&(ui.sheet.type==='new'||ui.sheet.type==='rename'||ui.sheet.type==='edit'||ui.sheet.type==='finish'||ui.sheet.type==='newsmall')){
     var si=document.getElementById('sheetin');if(si){si.focus();si.select();}
   }
 }
@@ -1720,26 +3125,30 @@ function nudge(e,id,sel,apply){
   apply(ids);ui.focusHandle=id;commit();
 }
 
-/* swipe between pages: Archive | Activities | Master tasks | Activity */
+/* swipe between pages: Today | Big | Small | Master tasks | Activities (an activity page swipes back to Activities) */
 var tx=0,ty=0,tracking=false;
 document.addEventListener('touchstart',function(e){
   if(ui.sheet||e.touches.length!==1){tracking=false;return;}
-  var tg=e.target;if(tg.closest&&tg.closest('input,select,textarea,.handle'))return;
+  var tg=e.target;if(tg.closest&&tg.closest('input,select,textarea,.handle,.navscroll'))return;
   tracking=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;
 },{passive:true});
 document.addEventListener('touchend',function(e){
   if(!tracking)return;tracking=false;
   var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
   if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;
-  var left=dx<0;
-  if(ui.view==='master'){
-    if(left){var a=lastAct();if(a)openActivity(a.id);}else go('activities');
-  }else if(ui.view==='activity'&&!left){go('master');}
-  else if(ui.view==='activities'){if(left)go('master');else go('archive');}
-  else if(ui.view==='archive'&&left){go('activities');}
+  var left=dx<0,order=['today','big','small','master','activities'];
+  if(ui.view==='activity'){if(!left)go('activities');return;}
+  var i=order.indexOf(ui.view);
+  if(i<0)return;
+  var j=i+(left?1:-1);
+  if(j>=0&&j<order.length)go(order[j]);
 },{passive:true});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
 
+if(migrateParts()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+/* the Google Tasks list sync is not part of this app any more */
+try{if(S.sync&&S.sync.enabled){S.sync.enabled=false;localStorage.setItem(KEY,JSON.stringify(S));}}catch(e){}
+if(previewData()&&!migrationDone())ui.sheet={type:'moveover'};
 render();
 (function(){
   var c=cfg(),d=dcfg(),hadCid=d.cid;
@@ -1764,10 +3173,15 @@ render();
     if(ui.dirty)setTimeout(function(){if(ui.dirty)softRender();},250);
   });
 })();
+if('serviceWorker' in navigator){
+  var hadController=!!navigator.serviceWorker.controller;
+  /* the first install also takes control; only a change of version after that is news */
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(hadController){ui.updateReady=true;ui.updMsg='';render();}});
+  window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').then(function(r){swReg=r;checkForUpdate();}).catch(function(){});});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checkForUpdate();});
+  setInterval(checkForUpdate,20*60*1000);
+}
 })();
-</script>
-<script>
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}
 </script>
 </body>
 </html>

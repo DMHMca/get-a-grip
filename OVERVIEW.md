@@ -70,11 +70,11 @@ The plan is shown as a block for the big piece, with the big task as its heading
 
 **Activities.** Your broad areas, in the order you choose. Open an activity to see all its tasks, big and small, with subtasks tucked under their parents.
 
-**The three-dot menu** (top right of every page) is the one home for housekeeping, one line per item: Tag tasks (with a count of what is waiting), Archive, Sync, Download a backup, Restore from backup, Appearance (follow the phone, always light, always dark), Today layout (blocks or list), Copy my live tasks (preview only), Privacy and About this app. The preview's version number is a plain line at the bottom. There is no separate Settings page.
+**The three-dot menu** (top right of every page) is the one home for housekeeping, one line per item: Tag tasks (with a count of what is waiting), Archive, Sync, Download a backup, Restore from backup, Appearance (follow the phone, always light, always dark), Today layout (blocks or list), Privacy and About this app. The preview's version number is a plain line at the bottom. There is no separate Settings page.
 
 **Archive** holds activities you have put away, searchable by name, date and the text of the tasks inside them. Restore brings one back.
 
-**Sync** is optional. It keeps the same data on several devices through a hidden file in your own Google Drive. In the live app, an advanced option also keeps one Google Tasks list in step with Master tasks, for people who use Google Tasks elsewhere.
+**Sync** is optional. It keeps the same data on several devices through a hidden file in your own Google Drive.
 
 ## The Slot finder in detail
 
@@ -84,22 +84,17 @@ Tasks missing either tag are listed separately as "Not tagged yet", with two sma
 
 ## What exists today
 
-| Capability | Live app | Preview (`/next/`) |
-|---|---|---|
-| Activities, tasks, drag to reorder, details, archive | Yes | Yes |
-| Add several, keep tasks out of Master | Yes | Yes |
-| Sync between devices through Google Drive | Yes | Yes (its own separate file) |
-| Two-way Google Tasks list sync | Yes | No |
-| Backup and restore | Yes | Yes |
-| Big and small tasks, subtasks, attach existing task | No | Yes |
-| Big page, Thinking box, lines into subtasks | No | Yes |
-| Master tasks fed one subtask at a time | No | Yes |
-| Today page: Automatic, Custom, blocks and list | No | Yes |
-| Finish the day, notes, Past days | No | Yes |
-| Slot finder, time and equipment tags, Tag tasks | No | Yes |
-| Three-dot menu for all housekeeping, appearance choice | No | Yes |
+The plum app at `https://dmhmca.github.io/get-a-grip/` is the main app and has all of the following. The old layout and its Google Tasks list sync were retired in November 2026 (the owner no longer uses Google Tasks).
 
-When a new version of the app has arrived, a banner at the top says so and an Update now button applies it; the three-dot menu also has Check for a new version. The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it, but only when the owner says so.
+- Activities, tasks, drag to reorder, details, archive, Add several, keep tasks out of Master.
+- Sync between devices through a hidden file in your own Google Drive; backup and restore.
+- Big and small tasks, subtasks, attach existing task, Big page with a Thinking box, lines into subtasks.
+- Today page (Automatic, Custom, blocks and list), Refresh, Finish the day, notes, Past days.
+- Slot finder, time and equipment tags, Tag tasks, Wait (a day, week, month, a date, or until another big task is finished).
+- Three-dot menu for all housekeeping, appearance choice, Update now banner.
+- A one-time "Bring over my tasks from the preview" step for the owner's devices, which copies the preview's data into the main app (the old data is kept as a safety copy).
+
+The older preview at `/get-a-grip/next/` is kept untouched as a fallback with its own separate data.
 
 ## Is it new?
 
@@ -109,7 +104,7 @@ What is unusual is the idea at the heart of it and the stance that follows. The 
 
 ## For someone picking this up
 
-You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync from the Activities page and sign in with Google.
+You can use the live app at `https://dmhmca.github.io/get-a-grip/` straight away: install it from Chrome and start adding tasks. It works offline and needs no account. If you want your tasks on a second device, turn on Sync from the three-dot menu and sign in with Google.
 
 To run your own copy, fork the repository on GitHub, switch on GitHub Pages for it, and follow `README.md` if you want Google sync under your own Google project. The whole app is a few static files (`index.html`, `sw.js`, a manifest and icons) with no build step.
 
