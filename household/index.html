@@ -184,9 +184,9 @@ var AREAS=[
   {n:'Living room',q:['What is broken, worn out or annoying here?','What would make it nicer to sit in?'],s:['Sort the cables behind the TV','Fix the wobbly shelf','Get the sofa cleaned','Put up the pictures']},
   {n:'Bathroom',q:['Anything leaking, mouldy or not working?','Anything to replace or re-seal?'],s:['Re-seal the bath','Fix the extractor fan','Replace the shower head','Fix the loo flush']},
   {n:'Bedrooms',q:['What is broken, worn out or annoying here?','Anything to clear out?'],s:['Clear out the wardrobe','Fix the curtain rail','Buy a new mattress','Sort the spare room']},
-  {n:'Hall and stairs',q:['What needs fixing or touching up?','Is there a clutter hotspot?'],s:['Touch up the paintwork','Sort the coats and shoes','Fix the doorbell','Replace the stair carpet']},
+  {n:'Halls, stairs and corridors',q:['What needs fixing or touching up?','Is there a clutter hotspot, or a light that does not work?'],s:['Touch up the paintwork','Sort the coats and shoes','Fix the doorbell','Replace the stair carpet']},
   {n:'Loft and storage',q:['What has been in there for years?','Anything to sell, give away or take to the tip?'],s:['Clear out the loft','Insulate the loft','Take things to the tip','Sell the old baby things']},
-  {n:'Garage',q:['What needs tidying, fixing or selling?'],s:['Tidy the garage','Sell the old bike','Sort the tools']}]},
+  {n:'Annex',q:['What needs fixing, finishing or clearing out?','What would make it more usable?'],s:['Clear out the annex','Fix the heating in the annex','Decorate the annex','Sort what is stored in the annex']}]},
  {k:'garden',n:'Garden',e:'🌿',c:'#DCE6E4',d:'#273B38',parts:[
   {n:'Lawn',q:['What does the lawn need this season?'],s:['Service the lawnmower','Feed and weed the lawn','Re-seed the bare patches']},
   {n:'Beds and borders',q:['What needs planting, clearing or cutting back?'],s:['Plant the spring bulbs','Clear the weeds from the borders','Prune the roses','Mulch the beds']},
@@ -225,7 +225,7 @@ var D=lo(DKEY,{tasks:[],gone:[],day:{}});if(!D.cats)D.cats=[];
 var L=lo(LKEY,{code:'',me:0,tab:'brain',local:false,area:'house'});
 if(L.tab==='board'||L.tab==='list')L.tab='brain';if(L.tab==='share')L.tab='link';
 if(!L.stage)L.stage='warm';if(L.stage==='rooms')L.stage='areas';if(!L.idx)L.idx={};if(!L.part)L.part={};
-var RM={kitchen:'Kitchen',living:'Living room',bathroom:'Bathroom',bedrooms:'Bedrooms',hall:'Hall and stairs',loft:'Loft and storage',garage:'Garage'};D.tasks.forEach(function(t){if(RM[t.area]){t.tag=RM[t.area];t.area='house';}if(t.area==='family')t.area='kids';if(t.area==='pets'||t.area==='work')t.area=t.area==='work'?'business':'wild';});
+var RM={kitchen:'Kitchen',living:'Living room',bathroom:'Bathroom',bedrooms:'Bedrooms',hall:'Halls, stairs and corridors',loft:'Loft and storage',garage:'Annex'};D.tasks.forEach(function(t){if(RM[t.area]){t.tag=RM[t.area];t.area='house';}if(t.area==='family')t.area='kids';if(t.area==='pets'||t.area==='work')t.area=t.area==='work'?'business':'wild';});
 var ui={dsize:'small',status:'',syncing:false,open:{},defer:false,fresh:null,timer:0};
 function lo(k,def){try{var r=localStorage.getItem(k);if(r)return JSON.parse(r);}catch(e){}return def;}
 function persist(){try{localStorage.setItem(DKEY,JSON.stringify(D));localStorage.setItem(LKEY,JSON.stringify(L));}catch(e){}}
