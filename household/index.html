@@ -38,9 +38,9 @@ select,input[type=text]{min-height:44px;padding:6px 10px;border:1px solid var(--
 <script>
 (function(){
 var KEY='household.demo.v1';
-var S=load();
+var S=load();if(S.people&&S.people[1]==='Partner'){S.people[1]='Josh';save();}
 var ui={tab:'brain',me:0};
-function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return {people:['Lauren','Partner'],tasks:[],day:{}};}
+function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return {people:['Lauren','Josh'],tasks:[],day:{}};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function id(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -65,7 +65,7 @@ function taskRow(t,full){
 function head(){
  var h='<div class="row"><span class="mut">Who is using this phone?</span>';
  S.people.forEach(function(p,i){h+='<button class="'+(ui.me===i?'on':'')+'" data-act="me" data-i="'+i+'">'+esc(p)+'</button>';});
- h+='<button class="mini" data-act="rename">Change names</button></div>';
+ h+='</div>';
  h+='<div class="row tabs">'+[['brain','Brainstorm'],['list','Everyone’s list'],['day','My day']].map(function(x){return '<button class="'+(ui.tab===x[0]?'on':'')+'" data-act="tab" data-t="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div>';
  return h;
 }
