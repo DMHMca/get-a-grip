@@ -161,7 +161,7 @@ input[type=text]{min-height:44px;padding:6px 12px;border:2px solid var(--line);b
 .nnpile{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
 .nnpile summary{cursor:pointer;font-weight:700;min-height:30px}
 .intro h2{font:700 1.6rem var(--head);margin:0 0 4px}
-.tilebox{margin-top:16px}.tlead{color:var(--mut);margin:0 0 6px}.stage.open .sl{opacity:.8;font-weight:700;font-size:.85rem}.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
+.tilebox{margin-top:16px}.tgh{font-weight:700;font-size:.85rem;color:var(--mut);margin:10px 0 6px}.tlead{color:var(--mut);margin:0 0 6px}.stage.open .sl{opacity:.8;font-weight:700;font-size:.85rem}.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
 .give .sel{outline:3px solid var(--acc2);outline-offset:1px}
 .m{color:var(--mut)}
 </style>
@@ -175,8 +175,15 @@ var SERVER='https://household-store.dmhmca-apps.workers.dev';
 var DKEY='household.doc.v2',LKEY='household.local.v2';
 var NAMES=['Lauren','Josh'];
 var AREAS=[
- {k:'house',n:'House',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Anything leaking, broken or squeaking?','What needs a service or inspection this year: boiler, alarms, chimney?','Is there a big job you keep putting off: the bathroom, the loft?','What needs painting, fixing or replacing?'],s:['Book the boiler service','Test the smoke alarms','Bleed the radiators','Sort out the loft','Fix the dripping tap','Re-seal the bath','Paint the hallway','Replace the broken light','Get the windows cleaned','Sweep the chimney']},
- {k:'garden',n:'Garden',e:'🌿',c:'#D8E6EE',d:'#22394A',p:['What does the garden need before the season turns?','Any trees, fences or paths to deal with?','What would make the garden nicer to sit in?'],s:['Cut the hedge','Fix the fence panel','Clear the gutters','Jet-wash the patio','Service the lawnmower','Plant the spring bulbs','Prune the roses','Clear the leaves']},
+ {k:'house',g:'room',n:'Whole house',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Heating, hot water, electrics: anything playing up or due a service?','Roof, windows, doors, damp: anything to keep an eye on?','Is there a big job you keep putting off?'],s:['Book the boiler service','Test the smoke alarms','Bleed the radiators','Get the windows cleaned','Sweep the chimney','Check the roof after the storms','Fix the sticking front door']},
+ {k:'kitchen',g:'room',n:'Kitchen',e:'🍳',c:'#F7E1C3',d:'#4E3818',p:['What is broken, worn out or annoying here?','Anything to clear out, clean or replace?','What would make cooking easier?'],s:['Descale the kettle','Fix the dripping tap','Clear the cupboard under the sink','Deep-clean the oven','Replace the worn-out pans','Sort the freezer']},
+ {k:'living',g:'room',n:'Living room',e:'🛋️',c:'#E8DCCB',d:'#43382A',p:['What is broken, worn out or annoying here?','What would make it nicer to sit in?'],s:['Sort the cables behind the TV','Fix the wobbly shelf','Get the sofa cleaned','Put up the pictures']},
+ {k:'bathroom',g:'room',n:'Bathroom',e:'🛁',c:'#D8E6EE',d:'#22394A',p:['Anything leaking, mouldy or not working?','Anything to replace or re-seal?'],s:['Re-seal the bath','Fix the extractor fan','Replace the shower head','Fix the loo flush']},
+ {k:'bedrooms',g:'room',n:'Bedrooms',e:'🛏️',c:'#E4D8F3',d:'#3B2A52',p:['What is broken, worn out or annoying here?','Anything to clear out?'],s:['Clear out the wardrobe','Fix the curtain rail','Buy a new mattress','Sort the spare room']},
+ {k:'hall',g:'room',n:'Hall and stairs',e:'🚪',c:'#E5E0D6',d:'#3B372E',p:['What needs fixing or touching up?','Is there a clutter hotspot?'],s:['Touch up the paintwork','Sort the coats and shoes','Fix the doorbell','Replace the stair carpet']},
+ {k:'loft',g:'room',n:'Loft and storage',e:'📦',c:'#EBDDF0',d:'#3F2B4A',p:['What has been in there for years?','Anything to sell, give away or take to the tip?'],s:['Clear out the loft','Insulate the loft','Take things to the tip','Sell the old baby things']},
+ {k:'garage',g:'room',n:'Garage and shed',e:'🧰',c:'#E8E2D4',d:'#3F3A2C',p:['What needs tidying, fixing or selling?','Any tools or bikes that need attention?'],s:['Tidy the shed','Sell the old bike','Sort the tools','Fix the shed roof']},
+ {k:'garden',g:'room',n:'Garden and outside',e:'🌿',c:'#DCE6E4',d:'#273B38',p:['What does the garden need before the season turns?','Any trees, fences, paths or gutters to deal with?','What would make it nicer to sit in?'],s:['Cut the hedge','Fix the fence panel','Clear the gutters','Jet-wash the patio','Service the lawnmower','Paint the front door']},
  {k:'bills',n:'Major bills',e:'🧾',c:'#E9DCC2',d:'#43361C',p:['Which big bills come round each year: house insurance, car insurance, council tax?','Which contracts end soon: energy, broadband, phones?','Anything you could switch to pay less?'],s:['Pay the house insurance','Renew the car insurance','Compare energy tariffs','Check the broadband contract end date','Check the council tax band','Review the phone contracts','Renew the boiler cover','Check the TV licence']},
  {k:'money',n:'Money',e:'💷',c:'#E4D8F3',d:'#3B2A52',p:['Anything to pay, claim or chase?','Tax or accounts coming due?','What would you like to save for or sort out this year?'],s:['Do the tax return','Set up a savings pot','Chase the refund','Review the pensions','Check the ISA allowance','Sort the joint account','Make a monthly budget']},
  {k:'car',n:'Car',e:'🚗',c:'#E8E2D4',d:'#3F3A2C',p:['MOT, tax, insurance or service due?','Tyres, wipers, anything making a noise?','Does the car need a clear-out or a clean?'],s:['Book the MOT','Renew the car tax','Check the tyres','Book the car service','Clean out the car','Top up the screenwash','Fix the chipped windscreen']},
@@ -188,24 +195,14 @@ var AREAS=[
  {k:'wild',n:'Anything else',e:'✨',c:'#F7E1C3',d:'#4E3818',p:['What is nagging at you that is not on a list?','What would you hate to forget this month?','What would make next week easier?'],s:['Sort out the spare room','Return the borrowed things','Fix the wobbly chair','Back up the photos']}
 ];
 var WARM=['What has been nagging at you this week?','What have you said you would do, and not done yet?','What would you hate to forget this month?','What would make next week easier?','What is the one big thing you would love to have finished by the summer?','What keeps going wrong in the house that you just put up with?'];
-var ROOMS=[
- {n:'Kitchen',a:'house',s:['Descale the kettle','Fix the dripping tap','Clear the cupboard under the sink','Deep-clean the oven']},
- {n:'Living room',a:'house',s:['Sort the cables behind the TV','Fix the wobbly shelf','Get the sofa cleaned']},
- {n:'Bathroom',a:'house',s:['Re-seal the bath','Fix the extractor fan','Replace the shower head']},
- {n:'Bedrooms',a:'house',s:['Clear out the wardrobe','Fix the curtain rail','Buy a new mattress']},
- {n:'Hall and stairs',a:'house',s:['Touch up the paintwork','Sort the coats and shoes','Fix the doorbell']},
- {n:'Loft and storage',a:'house',s:['Clear out the loft','Insulate the loft','Take things to the tip']},
- {n:'Garage and shed',a:'house',s:['Tidy the shed','Sell the old bike','Sort the tools']},
- {n:'Garden and outside',a:'garden',s:['Clear the gutters','Fix the fence','Paint the front door']}
-];
 var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var MHINT={0:['Self Assessment tax return is due by 31 January'],1:['Half-term plans'],2:['Spring clean','Mother’s Day'],3:['New tax year: ISAs and pensions','Bills often change in April'],4:['Book the summer holiday','Planting time in the garden'],5:['Father’s Day','Book summer childcare'],6:['School holidays begin'],7:['Back-to-school uniform and kit'],8:['Boiler service before winter','Clear the gutters'],9:['Clocks go back: test the smoke alarms','Half-term'],10:['Christmas plans and presents','Winter check on the car'],11:['Christmas','Year-end accounts for the business']};
-var STAGES=[{k:'warm',n:'Warm up'},{k:'rooms',n:'Walk the house'},{k:'year',n:'The year ahead'},{k:'areas',n:'Areas of life'},{k:'group',n:'Group into big tasks'}];
+var STAGES=[{k:'warm',n:'Warm up'},{k:'areas',n:'Around the house and life'},{k:'year',n:'The year ahead'},{k:'group',n:'Group into big tasks'}];
 function area(k){return AREAS.filter(function(a){return a.k===k;})[0];}
 var D=lo(DKEY,{tasks:[],gone:[],day:{}});
 var L=lo(LKEY,{code:'',me:0,tab:'brain',local:false,area:'house'});
 if(L.tab==='board'||L.tab==='list')L.tab='brain';if(L.tab==='share')L.tab='link';
-if(!L.stage)L.stage='warm';if(!L.idx)L.idx={};
+if(!L.stage)L.stage='warm';if(L.stage==='rooms')L.stage='areas';if(!L.idx)L.idx={};
 D.tasks.forEach(function(t){if(t.area==='family')t.area='kids';if(t.area==='pets'||t.area==='work')t.area=t.area==='work'?'business':'wild';});
 var ui={dsize:'small',status:'',syncing:false,open:{},defer:false,fresh:null,timer:0};
 function lo(k,def){try{var r=localStorage.getItem(k);if(r)return JSON.parse(r);}catch(e){}return def;}
@@ -258,7 +255,6 @@ function showCode(c){return c.slice(0,4)+'-'+c.slice(4,8)+'-'+c.slice(8);}
 /* ---- the brainstorm page ---- */
 function context(){
  var st=L.stage;
- if(st==='rooms'){var r=ROOMS[idx('rooms')%ROOMS.length];return {area:r.a,tag:r.n};}
  if(st==='year'){var m=(new Date().getMonth()+idx('year'))%12;return {area:'wild',tag:MONTHS[m]};}
  if(st==='areas')return {area:L.area,tag:''};
  return {area:'wild',tag:''};
@@ -269,12 +265,10 @@ function stageCard(){
  var st=L.stage,h='',a;
  if(st==='warm'){var p=WARM[idx('warm')%WARM.length];
   h='<div class="stage" style="--ac:#EADCF4;--acd:#3B2A52"><small>Warm up · question '+(idx('warm')%WARM.length+1)+' of '+WARM.length+'</small><p class="q">'+esc(p)+'</p><div class="srow"><button data-act="nexti" data-k="warm">Next question →</button>'+timerHtml()+'</div></div>';}
- else if(st==='rooms'){var i=idx('rooms')%ROOMS.length,r=ROOMS[i];
-  h='<div class="stage" style="--ac:#F6DDB8;--acd:#4A3A20"><small>Walk the house · room '+(i+1)+' of '+ROOMS.length+'</small><p class="q">The '+esc(r.n.toLowerCase())+'</p><ul class="hints"><li>What is broken, worn out or annoying here?</li><li>What would make it nicer to be in?</li><li>Anything to clear out, clean or replace?</li></ul><div class="srow"><button data-act="nexti" data-k="rooms">Next room →</button>'+timerHtml()+'</div>'+chips(r.s)+'</div>';}
  else if(st==='year'){var j=idx('year')%12,m=(new Date().getMonth()+j)%12;
   h='<div class="stage" style="--ac:#D8E6EE;--acd:#22394A"><small>The year ahead · month '+(j+1)+' of 12</small><p class="q">What comes round in '+MONTHS[m]+'?</p><ul class="hints">'+(MHINT[m]||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>Any birthdays or anniversaries?</li><li>Anything renewing: insurance, MOT, subscriptions?</li></ul><div class="srow"><button data-act="nexti" data-k="year">Next month →</button>'+timerHtml()+'</div></div>';}
  else if(st==='areas'){a=area(L.area)||AREAS[0];
-  h='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>Areas of life</small><p class="q">'+a.e+' '+esc(a.n)+'</p><div class="sl">Questions to talk about</div><ul class="hints">'+a.p.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul><div class="srow">'+timerHtml()+'</div>'+chips(a.s)+'</div>';}
+  h='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>Around the house and life · '+(AREAS.indexOf(a)+1)+' of '+AREAS.length+'</small><p class="q">'+a.e+' '+esc(a.n)+'</p><div class="sl">Questions to talk about</div><ul class="hints">'+a.p.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul><div class="srow"><button data-act="nexta">Next: '+esc(AREAS[(AREAS.indexOf(a)+1)%AREAS.length].n)+' →</button>'+timerHtml()+'</div>'+chips(a.s)+'</div>';}
  else {
   h='<div class="stage" style="--ac:#DCE9F7;--acd:#1E3248"><small>Group into big tasks</small><p class="q">Which of these belong together?</p><ul class="hints"><li>Drag one note onto another to make it a step of that task. The task becomes big.</li><li>Tap Small or Big on a note to change it.</li><li>Move anything that is not for now to <b>Not now</b>. It is kept, just out of the way.</li><li>When the wall looks right, go to <b>Share out</b>.</li></ul><div class="srow"><button class="on" data-act="tab" data-t="alloc">Go to Share out →</button></div></div>';
   return h;
@@ -283,14 +277,15 @@ function stageCard(){
   +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>'
   +tiles(L.stage==='areas'?'Open another area':'Or open an area for ideas');
 }
-function tiles(lead){var a=L.stage==='areas'?L.area:null;return '<div class="tilebox">'+(lead?'<div class="sl tlead">'+lead+'</div>':'')+'<div class="areas">'+AREAS.map(function(x){return '<button class="area'+(x.k===a?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'</div></div>';}
+function tiles(lead){var a=L.stage==='areas'?L.area:null;function grid(g){return '<div class="areas">'+AREAS.filter(function(x){return (x.g||'life')===g;}).map(function(x){return '<button class="area'+(x.k===a?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'</div>';}
+ return '<div class="tilebox">'+(lead?'<div class="sl tlead">'+lead+'</div>':'')+'<div class="tgh">Room by room</div>'+grid('room')+'<div class="tgh">Life</div>'+grid('life')+'</div>';}
 function stepper(){
  var ci=STAGES.map(function(s){return s.k;}).indexOf(L.stage);
  return '<ol class="steps">'+STAGES.map(function(s,i){return '<li><button class="'+(s.k===L.stage?'on':i<ci?'past':'')+'" data-act="stage" data-k="'+s.k+'"><span class="num">'+(i+1)+'</span>'+s.n+'</button></li>';}).join('')+'</ol>';
 }
 function welcome(){
  if(L.welcomed&&D.tasks.length)return '';
- return '<div class="welcome"><h2>Let’s get it all out of your heads</h2><p>Sit down together with this screen, for about half an hour. One of you types; both of you call things out. <b>Don’t decide who does what yet</b>, and don’t worry about wording. Every idea becomes a note on the wall below.</p><p>Five short rounds walk you through it: a warm-up, a walk round the house, the year ahead month by month, the areas of life, and finally grouping notes into big tasks. Skip any round you like.</p><div class="srow"><button class="on" data-act="begin">Start with the warm-up</button>'+(D.tasks.length?'':'<button data-act="example">Show me an example wall</button>')+'</div></div>';
+ return '<div class="welcome"><h2>Let’s get it all out of your heads</h2><p>Sit down together with this screen, for about half an hour. One of you types; both of you call things out. <b>Don’t decide who does what yet</b>, and don’t worry about wording. Every idea becomes a note on the wall below.</p><p>Four short rounds walk you through it: a warm-up, a walk round the house and the rest of life, the year ahead month by month, and finally grouping notes into big tasks. Skip any round you like.</p><div class="srow"><button class="on" data-act="begin">Start with the warm-up</button>'+(D.tasks.length?'':'<button data-act="example">Show me an example wall</button>')+'</div></div>';
 }
 function note(t,i){
  var a=area(t.area)||area('wild'),ks=kids(t.id);
@@ -389,7 +384,7 @@ function draw(force){
 function tick(){var el=document.getElementById('tleft');if(!el)return;var s=Math.max(0,Math.round((ui.timer-Date.now())/1000));el.textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2);if(s===0){ui.timer=0;draw();}}
 setInterval(tick,1000);
 function example(){
- var ex=[['Company website: finish the build and the SEO','big','business',''],['Phone app for sale: first working version','big','business',''],['Redo the bathroom','big','house','Bathroom'],['Pay the house insurance','small','bills','March'],['Compare energy tariffs','small','bills',''],['Fix the dripping kitchen tap','small','house','Kitchen'],['Book the boiler service','small','house','September'],['Clear the gutters','small','garden',''],['Book the dentist','small','health',''],['Renew the car tax','small','car',''],['Check passport expiry dates','small','trips',''],['Update the wills','small','paper','']];
+ var ex=[['Company website: finish the build and the SEO','big','business',''],['Phone app for sale: first working version','big','business',''],['Redo the bathroom','big','bathroom',''],['Pay the house insurance','small','bills','March'],['Compare energy tariffs','small','bills',''],['Fix the dripping kitchen tap','small','kitchen',''],['Book the boiler service','small','house','September'],['Clear the gutters','small','garden',''],['Book the dentist','small','health',''],['Renew the car tax','small','car',''],['Check passport expiry dates','small','trips',''],['Update the wills','small','paper','']];
  var base=Date.now();ex.forEach(function(x,i){D.tasks.push({id:id(),text:x[0],size:x[1],area:x[2],tag:x[3],to:null,by:L.me,done:false,n:base-i,updated:now()});});
  L.welcomed=true;changed();
 }
@@ -422,6 +417,7 @@ document.addEventListener('click',function(e){
  else if(act==='stage'){L.stage=b.getAttribute('data-k');}
  else if(act==='begin'){L.welcomed=true;L.stage='warm';}
  else if(act==='nexti'){var k=b.getAttribute('data-k');L.idx[k]=idx(k)+1;}
+ else if(act==='nexta'){var ai=AREAS.indexOf(area(L.area)||AREAS[0]);L.area=AREAS[(ai+1)%AREAS.length].k;}
  else if(act==='area'){L.area=b.getAttribute('data-k');L.stage='areas';L.welcomed=true;}
  else if(act==='timer'){ui.timer=ui.timer>Date.now()?0:Date.now()+120000;}
  else if(act==='starter'){addIdea(b.getAttribute('data-v'));changed();}
