@@ -3,22 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Household (demo)</title>
+<title>Household</title>
 <meta name="theme-color" content="#5B3A7A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="../icon-192.png">
 <style>
-:root{--acc:#5B3A7A;--bg:#F3F4F2;--tx:#1B1F1D;--card:#fff;--line:#d5d8d4;--big:#1F5C99;--small:#8A5A00;--mut:#5b625e}
-@media (prefers-color-scheme:dark){:root{--acc:#C9A7E8;--bg:#16181a;--tx:#ECEEEC;--card:#22262a;--line:#3a4044;--big:#8DBBEB;--small:#E8B75A;--mut:#a5aca8}}
+:root{--acc:#5B3A7A;--bg:#F3F4F2;--tx:#1B1F1D;--card:#fff;--line:#d5d8d4;--big:#1F5C99;--small:#8A5A00;--mut:#5b625e;--onacc:#fff}
+@media (prefers-color-scheme:dark){:root{--acc:#C9A7E8;--bg:#16181a;--tx:#ECEEEC;--card:#22262a;--line:#3a4044;--big:#8DBBEB;--small:#E8B75A;--mut:#a5aca8;--onacc:#16181a}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 "Atkinson Hyperlegible",system-ui,sans-serif;padding:0 16px 40px;max-width:640px;margin:auto}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 "Atkinson Hyperlegible",system-ui,sans-serif;padding:0 16px 40px;max-width:1100px;margin:auto}
 h1{font-size:1rem;color:var(--acc);margin:14px 0 4px}
 h2{font-size:1.1rem;margin:18px 0 6px}
 button,select,textarea,input{font:inherit;color:inherit}
 button{min-height:44px;padding:8px 14px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer}
-button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-@media (prefers-color-scheme:dark){button.on{color:#16181a}}
+button.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
 .tabs button{flex:1}
-textarea{width:100%;min-height:150px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+textarea{width:100%;min-height:200px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:1.05rem}
 select,input[type=text]{min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .task{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:8px 10px;margin:6px 0}
 .task.big{border-left-color:var(--big)}.task.small{border-left-color:var(--small)}
@@ -29,134 +32,207 @@ select,input[type=text]{min-height:44px;padding:6px 10px;border:1px solid var(--
 .mut{color:var(--mut);font-size:.9rem}
 .note{background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px;margin:10px 0}
 .mini{min-height:36px;padding:4px 10px;font-size:.9rem}
+.code{font-size:1.6rem;letter-spacing:.12em;font-weight:700;color:var(--acc)}
+.status{font-size:.82rem;color:var(--mut);margin:4px 0}
+.two{display:grid;grid-template-columns:1fr;gap:0 24px}
+.three{display:grid;grid-template-columns:1fr;gap:0 24px}
+@media (min-width:900px){.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:1fr 1fr 1fr}textarea{min-height:340px}}
 </style>
 </head>
 <body>
-<h1>Household (demo)</h1>
-<div class="mut">A shared list for two people, built on the idea of a few big things and a few small things each day. Demo only: made-up tasks, kept on this phone, nothing sent anywhere.</div>
+<h1>Household</h1>
 <div id="app"></div>
 <script>
 (function(){
-var KEY='household.demo.v1';
-var S=load();if(S.people&&S.people[1]==='Partner'){S.people[1]='Josh';save();}
-var ui={tab:'brain',me:0};
-function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return {people:['Lauren','Josh'],tasks:[],day:{}};}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+// Address of the shared store (a small Cloudflare service). Empty = this device only.
+var SERVER='';
+var DKEY='household.doc.v2',LKEY='household.local.v2';
+var NAMES=['Lauren','Josh'];
+var D=lo(DKEY,{tasks:[],gone:[],day:{}});
+var L=lo(LKEY,{code:'',me:0,tab:'brain',local:false});
+var ui={dsize:'small',status:'',syncing:false,dirty:false};
+function lo(k,def){try{var r=localStorage.getItem(k);if(r)return JSON.parse(r);}catch(e){}return def;}
+function persist(){try{localStorage.setItem(DKEY,JSON.stringify(D));localStorage.setItem(LKEY,JSON.stringify(L));}catch(e){}}
+function now(){return new Date().toISOString();}
 function id(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
-function who(i){return i===null||i===undefined||i===''?'Unassigned':S.people[i];}
-function example(){
- var L=0,P=1,n=null;
- [['Company website: finish the build and the SEO',1,'big',L],['Job applications: send three this week',1,'big',P],['Phone app for sale: get the first version working',1,'big',P],['House: redo the bathroom',1,'big',n],
-  ['Pay the house insurance (every year, must happen)',0,'small',L],['Fix the leaking kitchen tap',0,'small',P],['Book the boiler service',0,'small',n],['Order the dog food',0,'small',L],['Call the dentist',0,'small',n],['Clear the gutters',0,'small',P],['Renew the car tax',0,'small',n]
- ].forEach(function(x){S.tasks.push({id:id(),text:x[0],size:x[2],to:x[3],by:x[1],done:false});});
- save();
+function who(i){return i===null||i===undefined?'Unassigned':NAMES[i];}
+function byId(i){return D.tasks.filter(function(t){return t.id===i;})[0];}
+function sorted(){return D.tasks.slice().sort(function(a,b){return (b.n||0)-(a.n||0);});}
+function touch(t){t.updated=now();changed();}
+function changed(){persist();ui.dirty=true;clearTimeout(changed.t);changed.t=setTimeout(sync,1500);}
+
+/* ---- merging two copies of the household ---- */
+function merge(a,b){
+ var tasks={},gone={};
+ [a,b].forEach(function(d){(d.gone||[]).forEach(function(g){if(!gone[g.id]||gone[g.id]<g.at)gone[g.id]=g.at;});});
+ [a,b].forEach(function(d){(d.tasks||[]).forEach(function(t){var o=tasks[t.id];if(!o||(t.updated||'')>(o.updated||''))tasks[t.id]=t;});});
+ var out=[];Object.keys(tasks).forEach(function(k){var t=tasks[k];if(gone[k]&&gone[k]>=(t.updated||''))return;out.push(t);});
+ var day={};[a,b].forEach(function(d){var dd=d.day||{};Object.keys(dd).forEach(function(k){if(!day[k]||(dd[k].u||'')>(day[k].u||''))day[k]=dd[k];});});
+ var cut=new Date(Date.now()-90*864e5).toISOString();
+ var g=[];Object.keys(gone).forEach(function(k){if(gone[k]>cut)g.push({id:k,at:gone[k]});});
+ Object.keys(day).forEach(function(k){if(k.slice(0,10)<today().slice(0,8)+'00'&&k.slice(0,7)<today().slice(0,7))delete day[k];});
+ return {tasks:out,gone:g,day:day};
 }
+function stable(d){var t=d.tasks.slice().sort(function(x,y){return x.id<y.id?-1:1;});var k=Object.keys(d.day).sort();return JSON.stringify([t,d.gone.slice().sort(function(x,y){return x.id<y.id?-1:1;}),k.map(function(x){return [x,d.day[x]];})]);}
+
+/* ---- talking to the shared store ---- */
+function req(method,body){
+ return fetch(SERVER+'/h/'+L.code,{method:method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+}
+function sync(){
+ if(!SERVER||!L.code||ui.syncing)return Promise.resolve();
+ ui.syncing=true;
+ function round(tries){
+  return req('GET').then(function(r){return r.status===404?{v:0,doc:{tasks:[],gone:[],day:{}}}:r.json();}).then(function(remote){
+   var m=merge(D,remote.doc);
+   var differsLocal=stable(m)!==stable(D);
+   D=m;
+   var differsRemote=stable(m)!==stable(remote.doc);
+   if(differsLocal)persist();
+   var p=Promise.resolve();
+   if(differsRemote){p=req('PUT',{base:remote.v,doc:m}).then(function(r){if(r.status===409&&tries>0)return round(tries-1);if(!r.ok&&r.status!==409)throw new Error('save');});}
+   return p.then(function(){ui.status='Shared · up to date '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});ui.dirty=false;if(differsLocal)draw();else status();});
+  });
+ }
+ return round(2).catch(function(e){ui.status='Cannot reach the shared list just now. Your changes are kept here and will go up when it is back.';status();}).then(function(){ui.syncing=false;});
+}
+function status(){var el=document.getElementById('st');if(el)el.textContent=ui.status;}
+function newCode(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='',r=new Uint8Array(12);crypto.getRandomValues(r);for(var i=0;i<12;i++)s+=a[r[i]%a.length];return s;}
+function showCode(c){return c.slice(0,4)+'-'+c.slice(4,8)+'-'+c.slice(8);}
+
+/* ---- screens ---- */
 function sizeBtn(t){return '<button class="mini" data-act="size" data-id="'+t.id+'">'+(t.size==='big'?'Big':'Small')+'</button>';}
-function assignSel(t){var o='<option value="">Unassigned</option>';S.people.forEach(function(p,i){o+='<option value="'+i+'"'+(t.to===i?' selected':'')+'>'+esc(p)+'</option>';});return '<select data-act="assign" data-id="'+t.id+'" aria-label="Assign to">'+o+'</select>';}
+function assignSel(t){var o='<option value="">Unassigned</option>';NAMES.forEach(function(p,i){o+='<option value="'+i+'"'+(t.to===i?' selected':'')+'>'+esc(p)+'</option>';});return '<select data-act="assign" data-id="'+t.id+'" aria-label="Assign to">'+o+'</select>';}
 function taskRow(t,full){
+ var un=t.to===null||t.to===undefined;
+ var quick=un?NAMES.map(function(p,i){return '<button class="mini on" data-act="give" data-id="'+t.id+'" data-i="'+i+'">'+esc(p)+'</button>';}).join(''):assignSel(t);
  return '<div class="task '+t.size+(t.done?' done':'')+'"><input type="checkbox" data-act="tick" data-id="'+t.id+'" aria-label="Done"'+(t.done?' checked':'')+'>'
  +'<div class="t"><span class="tag '+t.size+'">'+(t.size==='big'?'Big':'Small')+'</span> '+esc(t.text)
- +'<div class="meta">'+(t.by!==undefined&&t.by!==null&&t.by!==t.to?'Added by '+esc(who(t.by)):'')+'</div>'
- +(full?'<div class="row">'+sizeBtn(t)+assignSel(t)+'<button class="mini" data-act="del" data-id="'+t.id+'">Delete</button></div>':'')
+ +(t.by!==undefined&&t.by!==null&&t.by!==t.to?'<div class="meta">Added by '+esc(who(t.by))+'</div>':'')
+ +(full?'<div class="row">'+(un?'<span class="mut">Give to</span>':'')+quick+sizeBtn(t)+'<button class="mini" data-act="del" data-id="'+t.id+'">Delete</button></div>':'')
  +'</div></div>';
 }
 function head(){
- var h='<div class="row"><span class="mut">Who is using this phone?</span>';
- S.people.forEach(function(p,i){h+='<button class="'+(ui.me===i?'on':'')+'" data-act="me" data-i="'+i+'">'+esc(p)+'</button>';});
- h+='</div>';
- h+='<div class="row tabs">'+[['brain','Brainstorm'],['list','Everyone’s list'],['day','My day']].map(function(x){return '<button class="'+(ui.tab===x[0]?'on':'')+'" data-act="tab" data-t="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div>';
+ var h='<div class="row"><span class="mut">Who is using this device?</span>';
+ NAMES.forEach(function(p,i){h+='<button class="'+(L.me===i?'on':'')+'" data-act="me" data-i="'+i+'">'+esc(p)+'</button>';});
+ h+='</div><div class="row tabs">'+[['brain','Brainstorm'],['list','Everyone’s list'],['day','My day'],['share','Sharing']].map(function(x){return '<button class="'+(L.tab===x[0]?'on':'')+'" data-act="tab" data-t="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div>';
+ h+='<div class="status" id="st">'+esc(ui.status)+'</div>';
  return h;
 }
 function brain(){
- var h='<h2>Get it all out</h2><div class="mut">Type or dictate everything that needs doing, one thing per line. No need to decide who or when yet.</div>'
+ var un=sorted().filter(function(t){return !t.done&&(t.to===null||t.to===undefined);});
+ var left='<h2>Get it all out</h2><div class="mut">Type or dictate everything that needs doing, one thing per line. No need to decide who or when yet.</div>'
  +'<textarea id="dump" placeholder="Pay the insurance\nCall the plumber\nFinish the website SEO"></textarea>'
- +'<div class="row"><span class="mut">These are mostly</span><button class="on" data-act="dsize" data-v="small" id="ds-small">Small</button><button data-act="dsize" data-v="big" id="ds-big">Big</button>'
- +'<span class="mut">for</span><select id="dto"><option value="">Unassigned (decide later)</option>'+S.people.map(function(p,i){return '<option value="'+i+'">'+esc(p)+'</option>';}).join('')+'</select></div>'
- +'<div class="row"><button class="on" data-act="adddump">Add these</button>'+(S.tasks.length?'':'<button data-act="example">Fill with made-up family tasks</button>')+'</div>';
- var un=S.tasks.filter(function(t){return !t.done&&(t.to===null||t.to===undefined);});
- h+='<h2>Still to hand out ('+un.length+')</h2>';
- if(!un.length)h+='<div class="note mut">Nothing waiting. Everything has an owner.</div>';
- un.forEach(function(t){h+=taskRow(t,true);});
- return h;
+ +'<div class="row"><span class="mut">These are mostly</span><button class="'+(ui.dsize==='small'?'on':'')+'" data-act="dsize" data-v="small">Small</button><button class="'+(ui.dsize==='big'?'on':'')+'" data-act="dsize" data-v="big">Big</button>'
+ +'<span class="mut">for</span><select id="dto"><option value="">Unassigned (decide later)</option>'+NAMES.map(function(p,i){return '<option value="'+i+'">'+esc(p)+'</option>';}).join('')+'</select></div>'
+ +'<div class="row"><button class="on" data-act="adddump">Add these</button>'+(D.tasks.length?'':'<button data-act="example">Fill with made-up family tasks</button>')+'</div>';
+ var right='<h2>Still to hand out ('+un.length+')</h2>';
+ if(!un.length)right+='<div class="note mut">Nothing waiting. Everything has an owner.</div>';
+ un.forEach(function(t){right+=taskRow(t,true);});
+ return '<div class="two"><div>'+left+'</div><div>'+right+'</div></div>';
 }
 function list(){
- var h='';
- [null].concat(S.people.map(function(_,i){return i;})).forEach(function(p){
-  var ts=S.tasks.filter(function(t){return (t.to===undefined?null:t.to)===p;});
+ var cols=[null,0,1].map(function(p){
+  var ts=sorted().filter(function(t){return (t.to===undefined?null:t.to)===p;});
   var open=ts.filter(function(t){return !t.done;}),done=ts.filter(function(t){return t.done;});
   var big=open.filter(function(t){return t.size==='big';}).length;
-  h+='<h2>'+esc(who(p))+' <span class="mut">('+big+' big, '+(open.length-big)+' small)</span></h2>';
+  var h='<div><h2>'+esc(who(p))+' <span class="mut">('+big+' big, '+(open.length-big)+' small)</span></h2>';
   if(!ts.length)h+='<div class="mut">Nothing here.</div>';
   open.forEach(function(t){h+=taskRow(t,true);});
   if(done.length)h+='<div class="mut">Done: '+done.length+'</div>';
+  return h+'</div>';
  });
- return h;
+ return '<div class="three">'+cols.join('')+'</div>';
 }
 function pickDay(me){
- var open=S.tasks.filter(function(t){return !t.done&&t.to===me;});
- return {big:open.filter(function(t){return t.size==='big';}).slice(0,1).map(function(t){return t.id;}),small:open.filter(function(t){return t.size!=='big';}).slice(0,3).map(function(t){return t.id;})};
+ var open=sorted().filter(function(t){return !t.done&&t.to===me;});
+ return {big:open.filter(function(t){return t.size==='big';}).slice(0,1).map(function(t){return t.id;}),small:open.filter(function(t){return t.size!=='big';}).slice(0,3).map(function(t){return t.id;}),u:now()};
 }
 function day(){
- var me=ui.me,k=today()+':'+me,d=S.day[k];
- var h='<h2>'+esc(S.people[me])+'’s day</h2>';
+ var me=L.me,k=today()+':'+me,d=D.day[k];
+ var h='<h2>'+esc(NAMES[me])+'’s day</h2>';
  if(!d){
-  h+='<div class="note">A short menu for today: one big thing and up to three small things from what has been handed to '+esc(S.people[me])+'. Nothing else is shown, so it never looks like a mountain.</div>'
+  h+='<div class="note">A short menu for today: one big thing and up to three small things from what has been handed to '+esc(NAMES[me])+'. Nothing else is shown, so it never looks like a mountain.</div>'
    +'<div class="row"><button class="on" data-act="plan">Plan my day</button></div>';
   return h;
  }
- var all=d.big.concat(d.small).map(function(i){return S.tasks.filter(function(t){return t.id===i;})[0];}).filter(Boolean);
+ var all=d.big.concat(d.small).map(byId).filter(Boolean);
  var done=all.filter(function(t){return t.done;}).length;
  h+='<div class="mut">'+done+' of '+all.length+' done</div>';
  all.forEach(function(t){h+=taskRow(t,false);});
- var bt=all.length&&done===all.length;
- if(bt)h+='<div class="note">That is today done. Anything else is a bonus.</div>';
+ if(all.length&&done===all.length)h+='<div class="note">That is today done. Anything else is a bonus.</div>';
  h+='<div class="row"><button data-act="more">Bring in one more</button><button data-act="replan">Start the day again</button></div>';
- var sent=S.tasks.filter(function(t){return !t.done&&t.by===me&&t.to!==null&&t.to!==undefined&&t.to!==me;});
+ var sent=D.tasks.filter(function(t){return !t.done&&t.by===me&&t.to!==null&&t.to!==undefined&&t.to!==me;});
  if(sent.length)h+='<h2>Handed to others by you ('+sent.length+')</h2>'+sent.map(function(t){return '<div class="meta">'+esc(t.text)+' → '+esc(who(t.to))+'</div>';}).join('');
  return h;
 }
-function render(){
- var a=document.getElementById('app'),keep='';var ta=document.getElementById('dump');if(ta)keep=ta.value;
- a.innerHTML=head()+(ui.tab==='brain'?brain():ui.tab==='list'?list():day());
- var n=document.getElementById('dump');if(n)n.value=keep;
- var s=document.getElementById('ds-'+(ui.dsize||'small'));if(s&&ui.dsize==='big'){document.getElementById('ds-small').className='';document.getElementById('ds-big').className='on';}
+function share(){
+ var h='<h2>Sharing</h2>';
+ if(!SERVER)return h+'<div class="note">The shared list is not switched on yet, so everything stays on this device for now.</div>';
+ if(L.code){
+  h+='<div class="note">This device is sharing a household. The code is<div class="code">'+showCode(L.code)+'</div>On each other device, open this page, go to Sharing and choose “Join with a code”.</div>'
+   +'<div class="row"><button data-act="syncnow">Update now</button><button data-act="leave">Stop sharing on this device</button></div>';
+  return h;
+ }
+ h+='<div class="note">Lauren and Josh share one list. One of you starts a household and gets a code; the other devices join with that code. You do this once per device.</div>'
+  +'<div class="row"><button class="on" data-act="start">Start a new household</button></div>'
+  +'<div class="row"><input type="text" id="jc" placeholder="Code, for example K7QD-4XMB-92TH" autocapitalize="characters" size="24"><button data-act="join">Join with a code</button></div>'
+  +'<div class="row"><button data-act="locally">Just try it on this device</button></div>';
+ return h;
 }
-function byId(i){return S.tasks.filter(function(t){return t.id===i;})[0];}
+function needSetup(){return SERVER&&!L.code&&!L.local;}
+function draw(){
+ var a=document.getElementById('app'),keep='',ta=document.getElementById('dump');if(ta)keep=ta.value;
+ if(needSetup())L.tab='share';
+ a.innerHTML=head()+(L.tab==='brain'?brain():L.tab==='list'?list():L.tab==='day'?day():share());
+ var n=document.getElementById('dump');if(n)n.value=keep;
+}
+function example(){
+ var ex=[['Company website: finish the build and the SEO','big',0],['Job applications: send three this week','big',1],['Phone app for sale: get the first version working','big',1],['House: redo the bathroom','big',null],
+  ['Pay the house insurance (every year, must happen)','small',0],['Fix the leaking kitchen tap','small',1],['Book the boiler service','small',null],['Order the dog food','small',0],['Call the dentist','small',null],['Clear the gutters','small',1],['Renew the car tax','small',null]];
+ var base=Date.now();
+ ex.forEach(function(x,i){D.tasks.push({id:id(),text:x[0],size:x[1],to:x[2],by:L.me,done:false,n:base-i,updated:now()});});
+ changed();
+}
 document.addEventListener('change',function(e){
  var el=e.target,act=el.getAttribute('data-act'),t=byId(el.getAttribute('data-id'));
- if(act==='tick'&&t){t.done=el.checked;save();render();}
- if(act==='assign'&&t){t.to=el.value===''?null:+el.value;save();render();}
+ if(act==='tick'&&t){t.done=el.checked;touch(t);draw();}
+ if(act==='assign'&&t){t.to=el.value===''?null:+el.value;touch(t);draw();}
 });
 document.addEventListener('click',function(e){
  var b=e.target.closest('button');if(!b)return;var act=b.getAttribute('data-act'),t=byId(b.getAttribute('data-id'));
- if(act==='me'){ui.me=+b.getAttribute('data-i');}
- else if(act==='tab'){ui.tab=b.getAttribute('data-t');}
+ if(act==='me'){L.me=+b.getAttribute('data-i');persist();}
+ else if(act==='tab'){L.tab=b.getAttribute('data-t');persist();}
  else if(act==='dsize'){ui.dsize=b.getAttribute('data-v');}
  else if(act==='adddump'){
   var lines=document.getElementById('dump').value.split(/\n/).map(function(x){return x.replace(/^[\s\-\*•\d\.\)]+/,'').trim();}).filter(Boolean);
-  var to=document.getElementById('dto').value;
-  lines.slice().reverse().forEach(function(x){S.tasks.unshift({id:id(),text:x,size:ui.dsize||'small',to:to===''?null:+to,by:ui.me,done:false});});
-  document.getElementById('dump').value='';save();
+  var to=document.getElementById('dto').value,base=Date.now();
+  lines.forEach(function(x,i){D.tasks.push({id:id(),text:x,size:ui.dsize,to:to===''?null:+to,by:L.me,done:false,n:base-i,updated:now()});});
+  document.getElementById('dump').value='';changed();
  }
  else if(act==='example'){example();}
- else if(act==='size'&&t){t.size=t.size==='big'?'small':'big';save();}
- else if(act==='del'&&t){S.tasks=S.tasks.filter(function(x){return x!==t;});save();}
- else if(act==='rename'){
-  var a=prompt('First name',S.people[0]);if(a&&a.trim())S.people[0]=a.trim();
-  var c=prompt('Second name',S.people[1]);if(c&&c.trim())S.people[1]=c.trim();save();
- }
- else if(act==='plan'||act==='replan'){var k=today()+':'+ui.me;S.day[k]=pickDay(ui.me);save();}
+ else if(act==='give'&&t){t.to=+b.getAttribute('data-i');touch(t);}
+ else if(act==='size'&&t){t.size=t.size==='big'?'small':'big';touch(t);}
+ else if(act==='del'&&t){D.tasks=D.tasks.filter(function(x){return x!==t;});D.gone.push({id:t.id,at:now()});changed();}
+ else if(act==='plan'||act==='replan'){D.day[today()+':'+L.me]=pickDay(L.me);changed();}
  else if(act==='more'){
-  var k2=today()+':'+ui.me,d=S.day[k2];
-  var used=d.big.concat(d.small);
-  var nx=S.tasks.filter(function(t2){return !t2.done&&t2.to===ui.me&&used.indexOf(t2.id)<0;})[0];
-  if(nx){(nx.size==='big'?d.big:d.small).push(nx.id);save();}else alert('Nothing more has been handed to '+S.people[ui.me]+'.');
+  var d=D.day[today()+':'+L.me],used=d.big.concat(d.small);
+  var nx=sorted().filter(function(t2){return !t2.done&&t2.to===L.me&&used.indexOf(t2.id)<0;})[0];
+  if(nx){(nx.size==='big'?d.big:d.small).push(nx.id);d.u=now();changed();}else alert('Nothing more has been handed to '+NAMES[L.me]+'.');
  }
- render();
+ else if(act==='start'){L.code=newCode();persist();ui.status='Starting…';sync();}
+ else if(act==='join'){var c=(document.getElementById('jc').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==12){alert('That code should have 12 letters and numbers.');return;}L.code=c;persist();ui.status='Joining…';sync();}
+ else if(act==='locally'){L.local=true;L.tab='brain';persist();}
+ else if(act==='syncnow'){sync();}
+ else if(act==='leave'){if(confirm('Stop sharing on this device? Your copy stays here.')){L.code='';persist();}}
+ draw();
 });
-render();
+document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
+setInterval(function(){if(!document.hidden)sync();},20000);
+draw();sync();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
 </script>
 </body>
