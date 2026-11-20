@@ -161,7 +161,7 @@ input[type=text]{min-height:44px;padding:6px 12px;border:2px solid var(--line);b
 .nnpile{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
 .nnpile summary{cursor:pointer;font-weight:700;min-height:30px}
 .intro h2{font:700 1.6rem var(--head);margin:0 0 4px}
-.tilebox{margin-top:16px}.parts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.parts button{min-height:32px;padding:2px 12px;border-radius:999px;font-size:.85rem;background:rgba(255,255,255,.55);border-color:transparent;color:#1F1B24}.parts button.on{background:#fff;font-weight:700;box-shadow:0 0 0 2px var(--acc)}.parts button.past{opacity:.6}.area.addcat{background:transparent;border:2px dashed var(--line);color:var(--mut)}.pnote{font-size:.88rem;margin:0 0 10px;opacity:.85}.wallact{margin-left:auto;display:flex;gap:8px;align-items:center}.wallact .lnk{color:var(--mut)}.tgh{font-weight:700;font-size:.85rem;color:var(--mut);margin:10px 0 6px}.tlead{color:var(--mut);margin:0 0 6px}.stage.open .sl{opacity:.8;font-weight:700;font-size:.85rem}.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
+.tilebox{margin:0}.area{position:relative}.tb{position:absolute;top:4px;right:6px;font-size:.72rem;font-weight:700;background:var(--acc);color:var(--onacc);border-radius:999px;padding:0 6px}.parts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.parts button{min-height:32px;padding:2px 12px;border-radius:999px;font-size:.85rem;background:rgba(255,255,255,.55);border-color:transparent;color:#1F1B24}.parts button.on{background:#fff;font-weight:700;box-shadow:0 0 0 2px var(--acc)}.parts button.past{opacity:.6}.area.addcat{background:transparent;border:2px dashed var(--line);color:var(--mut)}.pnote{font-size:.88rem;margin:0 0 10px;opacity:.85}.wallact{margin-left:auto;display:flex;gap:8px;align-items:center}.wallact .lnk{color:var(--mut)}.tgh{font-weight:700;font-size:.85rem;color:var(--mut);margin:10px 0 6px}.tlead{color:var(--mut);margin:0 0 6px}.stage.open .sl{opacity:.8;font-weight:700;font-size:.85rem}.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
 .give .sel{outline:3px solid var(--acc2);outline-offset:1px}
 .m{color:var(--mut)}
 </style>
@@ -283,18 +283,19 @@ function chips(list){var have=D.tasks.map(function(t){return t.text.toLowerCase(
 function timerHtml(){return '<button class="tmr" data-act="timer">'+(ui.timer>Date.now()?'<span id="tleft"></span> left · stop':'⏱ Two-minute round')+'</button>';}
 function stageCard(){
  var st=L.stage,h='',a;
+ if(st==='areas'&&!L.walkOpen)return '<div class="stage" style="--ac:#EADCF4;--acd:#3B2A52"><small>Walk each area</small><p class="q">Pick an area to walk through</p><p class="pnote">House, Garden and Paperwork go part by part. The others go month by month through the coming year. Come back here to pick the next one.</p></div>'+tiles('');
  if(st==='warm'){var p=WARM[idx('warm')%WARM.length];
   h='<div class="stage" style="--ac:#EADCF4;--acd:#3B2A52"><small>Warm up · question '+(idx('warm')%WARM.length+1)+' of '+WARM.length+'</small><div class="parts">'+WARM.map(function(x,i){var c=idx('warm')%WARM.length;return '<button class="'+(i===c?'on':i<c?'past':'')+'" data-act="seti" data-k="warm" data-i="'+i+'">'+(i+1)+'</button>';}).join('')+'</div><p class="q">'+esc(p)+'</p><div class="srow">'+(idx('warm')%WARM.length>0?'<button data-act="previ" data-k="warm">← Back</button>':'')+'<button data-act="nexti" data-k="warm">Next question →</button>'+timerHtml()+'</div></div>';}
  else if(st==='year'){var j=idx('year')%12,m=(new Date().getMonth()+j)%12;
   h='<div class="stage" style="--ac:#D8E6EE;--acd:#22394A"><small>The year ahead · month '+(j+1)+' of 12</small><div class="parts">'+[0,1,2,3,4,5,6,7,8,9,10,11].map(function(i){return '<button class="'+(i===j?'on':i<j?'past':'')+'" data-act="seti" data-k="year" data-i="'+i+'">'+MONTHS[monthIdx(i)].slice(0,3)+'</button>';}).join('')+'</div><p class="q">What comes round in '+MONTHS[m]+'?</p><ul class="hints">'+(MHINT[m]||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>Any birthdays or anniversaries?</li><li>Anything renewing: insurance, MOT, subscriptions?</li></ul><div class="srow">'+(j>0?'<button data-act="previ" data-k="year">← Back</button>':'')+'<button data-act="nexti" data-k="year">Next month →</button>'+timerHtml()+'</div></div>';}
- else if(st==='areas'){a=area(L.area)||AREAS[0];var na=nextArea(a),pi=L.part[a.k]||0;
+ else if(st==='areas'){a=area(L.area)||AREAS[0];var na=nextArea(a),pi=L.part[a.k]||0;h='<div class="srow" style="margin-top:0"><button data-act="allareas">← All areas</button></div>';
   if(a.parts){pi=pi%a.parts.length;var pt=a.parts[pi],last=pi===a.parts.length-1;
-   h='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · walk round · '+(pi+1)+' of '+a.parts.length+'</small>'
+   h+='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · walk round · '+(pi+1)+' of '+a.parts.length+'</small>'
    +'<div class="parts">'+a.parts.map(function(x,i){return '<button class="'+(i===pi?'on':i<pi?'past':'')+'" data-act="part" data-i="'+i+'">'+esc(x.n)+'</button>';}).join('')+'</div>'
    +'<p class="q">'+esc(pt.n)+'</p><ul class="hints">'+pt.q.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>'+esc(a.gq||'Anything broken, overdue or annoying here?')+'</li></ul>'+(a.note?'<p class="pnote">🔒 '+esc(a.note)+'</p>':'')
    +'<div class="srow"><button data-act="prevpart">← Back</button><button data-act="nextpart">'+(last?'Next area: '+na.e+' '+esc(na.n):'Next: '+esc(a.parts[pi+1].n))+' →</button>'+timerHtml()+'</div>'+chips(pt.s)+'</div>';}
   else{pi=pi%12;var m=monthIdx(pi),lastm=pi===11;
-   h='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · the year ahead · '+(pi+1)+' of 12</small>'
+   h+='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · the year ahead · '+(pi+1)+' of 12</small>'
    +'<div class="parts">'+[0,1,2,3,4,5,6,7,8,9,10,11].map(function(i){return '<button class="'+(i===pi?'on':i<pi?'past':'')+'" data-act="part" data-i="'+i+'">'+MONTHS[monthIdx(i)].slice(0,3)+'</button>';}).join('')+'</div>'
    +'<p class="q">'+MONTHS[m]+'</p><ul class="hints"><li>'+esc(a.y.replace('{M}',MONTHS[m]))+'</li>'+((a.mh&&a.mh[m])||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'
    +'<div class="srow"><button data-act="prevpart">← Back</button><button data-act="nextpart">'+(lastm?'Next area: '+na.e+' '+esc(na.n):'Next: '+MONTHS[monthIdx(pi+1)])+' →</button>'+timerHtml()+'</div>'+chips(a.s)
@@ -305,10 +306,10 @@ function stageCard(){
   return h;
  }
  return h+'<div class="add big"><input type="text" id="qa" placeholder="Call it out and type it here, then Enter" aria-label="Type an idea" autocomplete="off"><button class="on" data-act="qadd">Add</button></div>'
-  +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>'
-  +tiles(L.stage==='areas'?'Open another area':'Or open an area for ideas');
+  +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>';
 }
-function tiles(lead){var a=L.stage==='areas'?L.area:null;return '<div class="tilebox">'+(lead?'<div class="sl tlead">'+lead+'</div>':'')+'<div class="areas">'+tilesList().map(function(x){return '<button class="area'+(x.k===a?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'<button class="area addcat" data-act="addcat"><span class="em">＋</span>Add your own</button></div></div>';}
+function tb(k){var n=live().filter(function(t){return t.area===k;}).length;return n?'<span class="tb">'+n+'</span>':'';}
+function tiles(lead){var a=L.stage==='areas'?L.area:null;return '<div class="tilebox">'+(lead?'<div class="sl tlead">'+lead+'</div>':'')+'<div class="areas">'+tilesList().map(function(x){return '<button class="area'+(x.k===a?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+tb(x.k)+'</button>';}).join('')+'<button class="area addcat" data-act="addcat"><span class="em">＋</span>Add your own</button></div></div>';}
 function stepper(){
  var ci=STAGES.map(function(s){return s.k;}).indexOf(L.stage);
  return '<ol class="steps">'+STAGES.map(function(s,i){return '<li><button class="'+(s.k===L.stage?'on':i<ci?'past':'')+'" data-act="stage" data-k="'+s.k+'"><span class="num">'+(i+1)+'</span>'+s.n+'</button></li>';}).join('')+'</ol>';
@@ -328,7 +329,7 @@ function note(t,i){
  return h;
 }
 function wall(){
- var ts=live(),exn=exList().length,h='<div class="wallhead"><h2>The wall</h2><span class="sub">'+ts.length+' notes'+(ts.length?' · '+ts.filter(function(t){return t.size==='big';}).length+' big':'')+'</span><span class="wallact">'+(exn?'<button class="mini" data-act="clearex">Remove the example notes ('+exn+')</button>':'')+(D.tasks.length?'<button class="lnk" data-act="clearall">Clear the whole wall</button>':'')+'</span></div>';
+ var ts=live(),exn=exList().length,h='<div class="wallhead"><h2>The wall</h2><span class="sub">'+ts.length+(ts.length===1?' note':' notes')+(ts.length?' · '+ts.filter(function(t){return t.size==='big';}).length+' big':'')+'</span><span class="wallact">'+(exn?'<button class="mini" data-act="clearex">Remove the example notes ('+exn+')</button>':'')+(D.tasks.length?'<button class="lnk" data-act="clearall">Clear the whole wall</button>':'')+'</span></div>';
  if(!ts.length)h+='<div class="empty">Notes will appear here as you call them out.</div>';
  var n=0;
  tilesList().concat([area('wild')]).forEach(function(a){var g=ts.filter(function(t){return (area(t.area)?t.area:'wild')===a.k;});if(!g.length)return;
@@ -448,17 +449,18 @@ document.addEventListener('click',function(e){
  if(act==='edit'){if(b.isContentEditable)return;b.contentEditable='true';b.focus();var r=document.createRange();r.selectNodeContents(b);var s=getSelection();s.removeAllRanges();s.addRange(r);return;}
  if(act==='me'){L.me=+b.getAttribute('data-i');}
  else if(act==='tab'){L.tab=b.getAttribute('data-t');scrollTo(0,0);}
- else if(act==='stage'){L.stage=b.getAttribute('data-k');}
+ else if(act==='stage'){L.stage=b.getAttribute('data-k');if(L.stage==='areas')L.walkOpen=false;}
  else if(act==='begin'){L.welcomed=true;L.stage='warm';}
  else if(act==='previ'){var pk=b.getAttribute('data-k'),pn=pk==='warm'?WARM.length:12;L.idx[pk]=Math.max(0,(idx(pk)%pn)-1);}
  else if(act==='seti'){L.idx[b.getAttribute('data-k')]=+b.getAttribute('data-i');}
  else if(act==='prevpart'){var pa=area(L.area)||AREAS[0],pn2=pa.parts?pa.parts.length:12,pc=(L.part[pa.k]||0)%pn2;if(pc>0)L.part[pa.k]=pc-1;else{var tl=tilesList(),pv=tl[(tl.indexOf(pa)-1+tl.length)%tl.length];L.area=pv.k;L.part[pv.k]=(pv.parts?pv.parts.length:12)-1;}}
  else if(act==='nexti'){var k=b.getAttribute('data-k');L.idx[k]=idx(k)+1;}
  else if(act==='nextpart'){var ca=area(L.area)||AREAS[0],cn=ca.parts?ca.parts.length:12,cp=(L.part[ca.k]||0)%cn;if(cp<cn-1)L.part[ca.k]=cp+1;else{L.part[ca.k]=0;L.area=nextArea(ca).k;L.part[L.area]=0;}}
- else if(act==='addcat'){var nm=prompt('Name the new area, for example “Allotment” or “Grandparents”');if(nm&&nm.trim()){var ck='c'+id();D.cats.push({k:ck,n:nm.trim().slice(0,40),u:now()});L.area=ck;L.part[ck]=0;L.stage='areas';changed();}}
+ else if(act==='addcat'){var nm=prompt('Name the new area, for example “Allotment” or “Grandparents”');if(nm&&nm.trim()){var ck='c'+id();D.cats.push({k:ck,n:nm.trim().slice(0,40),u:now()});L.walkOpen=true;L.area=ck;L.part[ck]=0;L.stage='areas';changed();}}
  else if(act==='delcat'){var dk=b.getAttribute('data-k');if(confirm('Remove this area? Its notes stay on the wall.')){D.cats.forEach(function(c){if(c.k===dk){c.gone=true;c.u=now();}});D.tasks.forEach(function(t){if(t.area===dk){t.area='wild';t.updated=now();}});L.area='house';changed();}}
  else if(act==='part'){L.part[L.area]=+b.getAttribute('data-i');}
- else if(act==='area'){L.area=b.getAttribute('data-k');L.part[L.area]=0;L.stage='areas';L.welcomed=true;}
+ else if(act==='allareas'){L.walkOpen=false;}
+ else if(act==='area'){L.walkOpen=true;L.area=b.getAttribute('data-k');L.part[L.area]=0;L.stage='areas';L.welcomed=true;}
  else if(act==='timer'){ui.timer=ui.timer>Date.now()?0:Date.now()+120000;}
  else if(act==='starter'){addIdea(b.getAttribute('data-v'));changed();}
  else if(act==='dsize'){ui.dsize=b.getAttribute('data-v');}
