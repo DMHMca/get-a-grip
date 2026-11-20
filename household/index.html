@@ -292,7 +292,7 @@ function stageCard(){
   if(a.parts){pi=pi%a.parts.length;var pt=a.parts[pi],last=pi===a.parts.length-1;
    h+='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · walk round · '+(pi+1)+' of '+a.parts.length+'</small>'
    +'<div class="parts">'+a.parts.map(function(x,i){return '<button class="'+(i===pi?'on':i<pi?'past':'')+'" data-act="part" data-i="'+i+'">'+esc(x.n)+'</button>';}).join('')+'</div>'
-   +'<p class="q">'+esc(pt.n)+'</p><ul class="hints">'+pt.q.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>'+esc(a.gq||'Anything broken, overdue or annoying here?')+'</li></ul>'+(a.note?'<p class="pnote">🔒 '+esc(a.note)+'</p>':'')
+   +'<p class="q">'+esc(pt.n)+'</p><ul class="hints">'+pt.q.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+(a.gq?'<li>'+esc(a.gq)+'</li>':'')+'</ul>'+(a.note?'<p class="pnote">🔒 '+esc(a.note)+'</p>':'')
    +'<div class="srow"><button data-act="prevpart">← Back</button><button data-act="nextpart">'+(last?'Next area: '+na.e+' '+esc(na.n):'Next: '+esc(a.parts[pi+1].n))+' →</button>'+timerHtml()+'</div>'+chips(pt.s)+'</div>';}
   else{pi=pi%12;var m=monthIdx(pi),lastm=pi===11;
    h+='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+' · the year ahead · '+(pi+1)+' of 12</small>'
