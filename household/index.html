@@ -161,7 +161,7 @@ input[type=text]{min-height:44px;padding:6px 12px;border:2px solid var(--line);b
 .nnpile{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
 .nnpile summary{cursor:pointer;font-weight:700;min-height:30px}
 .intro h2{font:700 1.6rem var(--head);margin:0 0 4px}
-.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
+.tilebox{margin-top:16px}.tlead{color:var(--mut);margin:0 0 6px}.stage.open .sl{opacity:.8;font-weight:700;font-size:.85rem}.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
 .give .sel{outline:3px solid var(--acc2);outline-offset:1px}
 .m{color:var(--mut)}
 </style>
@@ -175,17 +175,17 @@ var SERVER='https://household-store.dmhmca-apps.workers.dev';
 var DKEY='household.doc.v2',LKEY='household.local.v2';
 var NAMES=['Lauren','Josh'];
 var AREAS=[
- {k:'house',n:'House',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Anything leaking, broken or squeaking?','What needs a service or inspection this year: boiler, alarms, chimney?','Is there a big job you keep putting off: the bathroom, the loft?','What needs painting, fixing or replacing?'],s:['Book the boiler service','Test the smoke alarms','Bleed the radiators','Sort out the loft']},
- {k:'garden',n:'Garden',e:'🌿',c:'#D8E6EE',d:'#22394A',p:['What does the garden need before the season turns?','Any trees, fences or paths to deal with?','What would make the garden nicer to sit in?'],s:['Cut the hedge','Fix the fence panel','Clear the gutters','Jet-wash the patio']},
- {k:'bills',n:'Major bills',e:'🧾',c:'#E9DCC2',d:'#43361C',p:['Which big bills come round each year: house insurance, car insurance, council tax?','Which contracts end soon: energy, broadband, phones?','Anything you could switch to pay less?'],s:['Pay the house insurance','Renew the car insurance','Compare energy tariffs','Check the broadband contract end date']},
- {k:'money',n:'Money',e:'💷',c:'#E4D8F3',d:'#3B2A52',p:['Anything to pay, claim or chase?','Tax or accounts coming due?','What would you like to save for or sort out this year?'],s:['Do the tax return','Set up a savings pot','Chase the refund']},
- {k:'car',n:'Car',e:'🚗',c:'#E8E2D4',d:'#3F3A2C',p:['MOT, tax, insurance or service due?','Tyres, wipers, anything making a noise?','Does the car need a clear-out or a clean?'],s:['Book the MOT','Renew the car tax','Check the tyres']},
- {k:'kids',n:'Kids',e:'🧒',c:'#F3D6CC',d:'#4A2E26',p:['School forms, trips or kit to sort?','Clubs, lessons or childcare to arrange?','Birthdays, parties or presents coming up?'],s:['Sign the school trip form','Book holiday childcare','Buy new school shoes']},
- {k:'health',n:'Health',e:'🩺',c:'#DCE6E4',d:'#273B38',p:['Appointments to book: dentist, optician, check-ups?','Prescriptions or repeats to sort?','Anything you have been putting off about health?'],s:['Book the dentist','Order repeat prescription','Book eye tests']},
- {k:'business',n:'Business ventures',e:'🚀',c:'#CFDDE8',d:'#1F3447',p:['What is the next step on the company website?','Which app idea needs its next piece?','What admin do the ventures need: accounts, domains, contracts?'],s:['Finish the website SEO','Get the first app version working','Register the domain']},
- {k:'trips',n:'Trips & fun',e:'✈️',c:'#EBDDF0',d:'#3F2B4A',p:['Holidays or weekends away to plan?','What would be nice to look forward to?','Passports, bookings, travel insurance?'],s:['Check passport expiry dates','Book a weekend away','Buy travel insurance']},
- {k:'paper',n:'Paperwork',e:'📄',c:'#E5E0D6',d:'#3B372E',p:['Forms, letters or emails you have been avoiding?','Documents to file, scan or renew?','Anything to cancel or switch?'],s:['Update the wills','File the paperwork pile','Cancel unused subscriptions']},
- {k:'wild',n:'Anything else',e:'✨',c:'#F7E1C3',d:'#4E3818',p:['What is nagging at you that is not on a list?','What would you hate to forget this month?','What would make next week easier?'],s:[]}
+ {k:'house',n:'House',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Anything leaking, broken or squeaking?','What needs a service or inspection this year: boiler, alarms, chimney?','Is there a big job you keep putting off: the bathroom, the loft?','What needs painting, fixing or replacing?'],s:['Book the boiler service','Test the smoke alarms','Bleed the radiators','Sort out the loft','Fix the dripping tap','Re-seal the bath','Paint the hallway','Replace the broken light','Get the windows cleaned','Sweep the chimney']},
+ {k:'garden',n:'Garden',e:'🌿',c:'#D8E6EE',d:'#22394A',p:['What does the garden need before the season turns?','Any trees, fences or paths to deal with?','What would make the garden nicer to sit in?'],s:['Cut the hedge','Fix the fence panel','Clear the gutters','Jet-wash the patio','Service the lawnmower','Plant the spring bulbs','Prune the roses','Clear the leaves']},
+ {k:'bills',n:'Major bills',e:'🧾',c:'#E9DCC2',d:'#43361C',p:['Which big bills come round each year: house insurance, car insurance, council tax?','Which contracts end soon: energy, broadband, phones?','Anything you could switch to pay less?'],s:['Pay the house insurance','Renew the car insurance','Compare energy tariffs','Check the broadband contract end date','Check the council tax band','Review the phone contracts','Renew the boiler cover','Check the TV licence']},
+ {k:'money',n:'Money',e:'💷',c:'#E4D8F3',d:'#3B2A52',p:['Anything to pay, claim or chase?','Tax or accounts coming due?','What would you like to save for or sort out this year?'],s:['Do the tax return','Set up a savings pot','Chase the refund','Review the pensions','Check the ISA allowance','Sort the joint account','Make a monthly budget']},
+ {k:'car',n:'Car',e:'🚗',c:'#E8E2D4',d:'#3F3A2C',p:['MOT, tax, insurance or service due?','Tyres, wipers, anything making a noise?','Does the car need a clear-out or a clean?'],s:['Book the MOT','Renew the car tax','Check the tyres','Book the car service','Clean out the car','Top up the screenwash','Fix the chipped windscreen']},
+ {k:'kids',n:'Kids',e:'🧒',c:'#F3D6CC',d:'#4A2E26',p:['School forms, trips or kit to sort?','Clubs, lessons or childcare to arrange?','Birthdays, parties or presents coming up?'],s:['Sign the school trip form','Book holiday childcare','Buy new school shoes','Book swimming lessons','Sort the birthday party','Label the school uniform','Book the parents’ evening slot']},
+ {k:'health',n:'Health',e:'🩺',c:'#DCE6E4',d:'#273B38',p:['Appointments to book: dentist, optician, check-ups?','Prescriptions or repeats to sort?','Anything you have been putting off about health?'],s:['Book the dentist','Order repeat prescription','Book eye tests','Book the flu jabs','Restock the first-aid kit','Book a health check']},
+ {k:'business',n:'Business ventures',e:'🚀',c:'#CFDDE8',d:'#1F3447',p:['What is the next step on the company website?','Which app idea needs its next piece?','What admin do the ventures need: accounts, domains, contracts?'],s:['Finish the website SEO','Get the first app version working','Register the domain','Set up the business bank account','Write the app store listing','Do the company accounts','Get business insurance']},
+ {k:'trips',n:'Trips & fun',e:'✈️',c:'#EBDDF0',d:'#3F2B4A',p:['Holidays or weekends away to plan?','What would be nice to look forward to?','Passports, bookings, travel insurance?'],s:['Check passport expiry dates','Book a weekend away','Buy travel insurance','Plan the summer holiday','Book a day out','Get the car ready for the trip','Sort the pet or house sitter']},
+ {k:'paper',n:'Paperwork',e:'📄',c:'#E5E0D6',d:'#3B372E',p:['Forms, letters or emails you have been avoiding?','Documents to file, scan or renew?','Anything to cancel or switch?'],s:['Update the wills','File the paperwork pile','Cancel unused subscriptions','Scan the important documents','Renew the driving licence photo','Sort the photo backup','Set up power of attorney']},
+ {k:'wild',n:'Anything else',e:'✨',c:'#F7E1C3',d:'#4E3818',p:['What is nagging at you that is not on a list?','What would you hate to forget this month?','What would make next week easier?'],s:['Sort out the spare room','Return the borrowed things','Fix the wobbly chair','Back up the photos']}
 ];
 var WARM=['What has been nagging at you this week?','What have you said you would do, and not done yet?','What would you hate to forget this month?','What would make next week easier?','What is the one big thing you would love to have finished by the summer?','What keeps going wrong in the house that you just put up with?'];
 var ROOMS=[
@@ -273,16 +273,17 @@ function stageCard(){
   h='<div class="stage" style="--ac:#F6DDB8;--acd:#4A3A20"><small>Walk the house · room '+(i+1)+' of '+ROOMS.length+'</small><p class="q">The '+esc(r.n.toLowerCase())+'</p><ul class="hints"><li>What is broken, worn out or annoying here?</li><li>What would make it nicer to be in?</li><li>Anything to clear out, clean or replace?</li></ul><div class="srow"><button data-act="nexti" data-k="rooms">Next room →</button>'+timerHtml()+'</div>'+chips(r.s)+'</div>';}
  else if(st==='year'){var j=idx('year')%12,m=(new Date().getMonth()+j)%12;
   h='<div class="stage" style="--ac:#D8E6EE;--acd:#22394A"><small>The year ahead · month '+(j+1)+' of 12</small><p class="q">What comes round in '+MONTHS[m]+'?</p><ul class="hints">'+(MHINT[m]||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>Any birthdays or anniversaries?</li><li>Anything renewing: insurance, MOT, subscriptions?</li></ul><div class="srow"><button data-act="nexti" data-k="year">Next month →</button>'+timerHtml()+'</div></div>';}
- else if(st==='areas'){a=area(L.area)||AREAS[0];var pi=idx('a_'+a.k);
-  h='<div class="areas">'+AREAS.map(function(x){return '<button class="area'+(x.k===a.k?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'</div>'
-  +'<div class="stage" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+'</small><p class="q">'+esc(a.p[pi%a.p.length])+'</p><div class="srow"><button data-act="nexti" data-k="a_'+a.k+'">Another question →</button>'+timerHtml()+'</div>'+chips(a.s)+'</div>';}
+ else if(st==='areas'){a=area(L.area)||AREAS[0];
+  h='<div class="stage open" style="--ac:'+a.c+';--acd:'+a.d+'"><small>Areas of life</small><p class="q">'+a.e+' '+esc(a.n)+'</p><div class="sl">Questions to talk about</div><ul class="hints">'+a.p.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul><div class="srow">'+timerHtml()+'</div>'+chips(a.s)+'</div>';}
  else {
   h='<div class="stage" style="--ac:#DCE9F7;--acd:#1E3248"><small>Group into big tasks</small><p class="q">Which of these belong together?</p><ul class="hints"><li>Drag one note onto another to make it a step of that task. The task becomes big.</li><li>Tap Small or Big on a note to change it.</li><li>Move anything that is not for now to <b>Not now</b>. It is kept, just out of the way.</li><li>When the wall looks right, go to <b>Share out</b>.</li></ul><div class="srow"><button class="on" data-act="tab" data-t="alloc">Go to Share out →</button></div></div>';
   return h;
  }
  return h+'<div class="add big"><input type="text" id="qa" placeholder="Call it out and type it here, then Enter" aria-label="Type an idea" autocomplete="off"><button class="on" data-act="qadd">Add</button></div>'
-  +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>';
+  +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>'
+  +tiles(L.stage==='areas'?'Open another area':'Or open an area for ideas');
 }
+function tiles(lead){var a=L.stage==='areas'?L.area:null;return '<div class="tilebox">'+(lead?'<div class="sl tlead">'+lead+'</div>':'')+'<div class="areas">'+AREAS.map(function(x){return '<button class="area'+(x.k===a?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'</div></div>';}
 function stepper(){
  var ci=STAGES.map(function(s){return s.k;}).indexOf(L.stage);
  return '<ol class="steps">'+STAGES.map(function(s,i){return '<li><button class="'+(s.k===L.stage?'on':i<ci?'past':'')+'" data-act="stage" data-k="'+s.k+'"><span class="num">'+(i+1)+'</span>'+s.n+'</button></li>';}).join('')+'</ol>';
@@ -421,7 +422,7 @@ document.addEventListener('click',function(e){
  else if(act==='stage'){L.stage=b.getAttribute('data-k');}
  else if(act==='begin'){L.welcomed=true;L.stage='warm';}
  else if(act==='nexti'){var k=b.getAttribute('data-k');L.idx[k]=idx(k)+1;}
- else if(act==='area'){L.area=b.getAttribute('data-k');}
+ else if(act==='area'){L.area=b.getAttribute('data-k');L.stage='areas';L.welcomed=true;}
  else if(act==='timer'){ui.timer=ui.timer>Date.now()?0:Date.now()+120000;}
  else if(act==='starter'){addIdea(b.getAttribute('data-v'));changed();}
  else if(act==='dsize'){ui.dsize=b.getAttribute('data-v');}
