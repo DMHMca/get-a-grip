@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Household</title>
+<title>Get a Grip Household</title>
 <meta name="theme-color" content="#5B3A7A">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="icon" href="../icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <style>
 :root{
  --acc:#5B3A7A;--acc2:#7C55A0;--bg1:#F8F3EC;--bg2:#ECE4F3;--tx:#1F1B24;--mut:#6B6474;--card:#FFFFFF;--line:#E3DCEA;
@@ -115,7 +115,57 @@ textarea{width:100%;min-height:120px;padding:10px;border:2px solid var(--line);b
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
 .day{max-width:640px;margin:auto}.day h2{font:700 1.5rem var(--head)}
 input[type=text]{min-height:44px;padding:6px 12px;border:2px solid var(--line);border-radius:12px;background:var(--card)}
+.steps{list-style:none;display:flex;gap:8px;flex-wrap:wrap;padding:0;margin:0 0 16px;counter-reset:s}
+.steps button{display:flex;align-items:center;gap:8px;border-radius:999px;padding:6px 16px 6px 6px}
+.steps .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--bg2);font-weight:700}
+.steps button.on .num{background:var(--onacc);color:var(--acc)}
+.steps button.past{color:var(--mut)}
+.welcome{background:linear-gradient(135deg,var(--card),var(--bigbg));border:1px solid var(--line);border-radius:24px;padding:22px 26px;margin:0 0 18px;box-shadow:var(--shadow)}
+.welcome h2{font:700 1.6rem var(--head);margin:0 0 8px;color:var(--acc)}
+.welcome p{max-width:70ch;margin:0 0 10px}
+.bwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.bwrap>div{min-width:0}
+@media (min-width:1000px){.bwrap{grid-template-columns:420px minmax(0,1fr);align-items:start}.stagecol{position:sticky;top:12px}}
+.stage{border-radius:24px;padding:22px;background:var(--ac);color:#1F1B24;box-shadow:var(--shadow);margin-bottom:14px}
+@media (prefers-color-scheme:dark){.stage{background:var(--acd);color:#F0ECF4}}
+.stage small{text-transform:uppercase;letter-spacing:.07em;font-size:.74rem;font-weight:700;opacity:.75}
+.stage .q{font:600 1.75rem/1.2 var(--head);margin:8px 0 12px}
+.hints{margin:0 0 14px;padding-left:20px;font-size:1rem}.hints li{margin:3px 0}
+.srow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.stage .srow button{background:rgba(255,255,255,.75);color:#1F1B24;border-color:transparent}
+.stage .srow button.on{background:var(--acc);color:#fff}
+.tmr{font-variant-numeric:tabular-nums}
+.starters{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.sl{font-size:.85rem;color:inherit;opacity:.8;margin-right:4px}
+.chipb{min-height:34px;padding:2px 12px;border-radius:999px;font-size:.88rem;background:rgba(255,255,255,.6);border:1px dashed rgba(0,0,0,.25);color:#1F1B24}
+.add.big input{font-size:1.15rem;min-height:56px}
+.seg .sl{color:var(--mut);align-self:center}
+.wallhead{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}.wallhead h2{font:700 1.4rem var(--head);margin:0}
+.grp{margin:0 0 18px}.grp h3{font:700 1.05rem var(--head);margin:0 0 8px}.grp .cnt{color:var(--mut);font:400 .85rem "Atkinson Hyperlegible",sans-serif}
+.notes{display:flex;flex-wrap:wrap;gap:12px}
+.note{position:relative;width:210px;min-height:120px;padding:10px 12px 8px;border-radius:4px 4px 16px 4px;background:var(--ac);color:#1F1B24;box-shadow:0 2px 3px rgba(40,20,60,.12),0 8px 18px rgba(40,20,60,.1);transform:rotate(var(--rot,0deg));cursor:grab;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+.note:hover{transform:rotate(0) translateY(-2px)}
+.note.big{border-top:5px solid var(--big);width:240px}
+.note.small{border-top:5px solid var(--small)}
+.note.over{outline:3px dashed var(--acc);outline-offset:3px;transform:scale(1.03)}
+.note.dragging{opacity:.4}
+@media (prefers-color-scheme:dark){.note{background:var(--acd);color:#F0ECF4}}
+.ntop{display:flex;gap:6px;align-items:center;padding-right:24px;margin-bottom:6px}
+.ntag{font-size:.72rem;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.6);color:#1F1B24}
+.note .ctext{font-size:1rem;flex:1}
+.nsubs{font-size:.88rem;margin:6px 0;padding:6px 8px;background:rgba(255,255,255,.45);border-radius:8px}
+@media (prefers-color-scheme:dark){.nsubs{background:rgba(0,0,0,.2)}.ntag{background:rgba(0,0,0,.25);color:#F0ECF4}}
+.ns{display:flex;gap:6px;align-items:center}.ns span{flex:1}.ns button{min-height:26px;padding:0 6px;border:0;background:none;color:inherit;opacity:.7}
+.nfoot{display:flex;justify-content:space-between;margin-top:6px}
+.lnk{min-height:30px;padding:0 6px;border:0;background:none;color:inherit;opacity:.75;font-size:.85rem;text-decoration:underline}
+.nnpile{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.nnpile summary{cursor:pointer;font-weight:700;min-height:30px}
+.intro h2{font:700 1.6rem var(--head);margin:0 0 4px}
+.note2{background:var(--bigbg);border-radius:14px;padding:12px 14px;margin:10px 0}
+.give .sel{outline:3px solid var(--acc2);outline-offset:1px}
+.m{color:var(--mut)}
 </style>
+
 </head>
 <body>
 <div id="app"></div>
@@ -125,38 +175,54 @@ var SERVER='https://household-store.dmhmca-apps.workers.dev';
 var DKEY='household.doc.v2',LKEY='household.local.v2';
 var NAMES=['Lauren','Josh'];
 var AREAS=[
- {k:'house',n:'House',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Anything leaking, broken or squeaking?','What would make the house feel calmer: a room, a cupboard, a corner?','What needs a service or inspection this year (boiler, alarms, chimney)?','Is there a big job you keep putting off: the bathroom, the loft?','What needs painting, fixing or replacing?']},
- {k:'garden',n:'Garden',e:'🌿',c:'#D8E6EE',d:'#22394A',p:['What does the garden need before the season turns?','Any trees, fences or paths to deal with?','What would make the garden nicer to sit in?']},
- {k:'money',n:'Money',e:'💷',c:'#E4D8F3',d:'#3B2A52',p:['Which policies or bills renew soon: insurance, broadband, car?','Anything to pay, claim or chase?','Tax, accounts or paperwork coming due?','What would you like to save or sort out this year?']},
- {k:'car',n:'Car',e:'🚗',c:'#E8E2D4',d:'#3F3A2C',p:['MOT, tax, insurance or service due?','Tyres, wipers, anything making a noise?','Does the car need a clear-out or a clean?']},
- {k:'pets',n:'Pets',e:'🐾',c:'#F4E6A8',d:'#4D4416',p:['Vet, vaccinations, flea and worming due?','Food and supplies running low?','Boarding or cover for the next trip?']},
- {k:'work',n:'Work & business',e:'💼',c:'#CFDDE8',d:'#1F3447',p:['What is the next step on the company website?','Which job applications or leads need a push?','Which app idea needs its next piece?','What admin does the business need?']},
- {k:'family',n:'Family',e:'👨‍👩‍👧',c:'#F3D6CC',d:'#4A2E26',p:['Birthdays and presents coming up?','Anyone to call, visit or invite?','School, childcare or family admin?']},
- {k:'health',n:'Health',e:'🩺',c:'#DCE6E4',d:'#273B38',p:['Appointments to book: dentist, optician, check-ups?','Prescriptions or repeats to sort?','Anything you have been putting off about health?']},
- {k:'trips',n:'Trips & fun',e:'✈️',c:'#EBDDF0',d:'#3F2B4A',p:['Holidays or weekends away to plan?','What would be nice to look forward to?','Passports, bookings, travel insurance?']},
- {k:'paper',n:'Paperwork',e:'📄',c:'#E5E0D6',d:'#3B372E',p:['Forms, letters or emails you have been avoiding?','Documents to file, scan or renew?','Anything to cancel or switch?']},
- {k:'wild',n:'Wild card',e:'✨',c:'#F7E1C3',d:'#4E3818',p:['What is nagging at you that is not on a list?','What would you hate to forget this month?','What would make next week easier?']}
+ {k:'house',n:'House',e:'🏠',c:'#F6DDB8',d:'#4A3A20',p:['Anything leaking, broken or squeaking?','What needs a service or inspection this year: boiler, alarms, chimney?','Is there a big job you keep putting off: the bathroom, the loft?','What needs painting, fixing or replacing?'],s:['Book the boiler service','Test the smoke alarms','Bleed the radiators','Sort out the loft']},
+ {k:'garden',n:'Garden',e:'🌿',c:'#D8E6EE',d:'#22394A',p:['What does the garden need before the season turns?','Any trees, fences or paths to deal with?','What would make the garden nicer to sit in?'],s:['Cut the hedge','Fix the fence panel','Clear the gutters','Jet-wash the patio']},
+ {k:'bills',n:'Major bills',e:'🧾',c:'#E9DCC2',d:'#43361C',p:['Which big bills come round each year: house insurance, car insurance, council tax?','Which contracts end soon: energy, broadband, phones?','Anything you could switch to pay less?'],s:['Pay the house insurance','Renew the car insurance','Compare energy tariffs','Check the broadband contract end date']},
+ {k:'money',n:'Money',e:'💷',c:'#E4D8F3',d:'#3B2A52',p:['Anything to pay, claim or chase?','Tax or accounts coming due?','What would you like to save for or sort out this year?'],s:['Do the tax return','Set up a savings pot','Chase the refund']},
+ {k:'car',n:'Car',e:'🚗',c:'#E8E2D4',d:'#3F3A2C',p:['MOT, tax, insurance or service due?','Tyres, wipers, anything making a noise?','Does the car need a clear-out or a clean?'],s:['Book the MOT','Renew the car tax','Check the tyres']},
+ {k:'kids',n:'Kids',e:'🧒',c:'#F3D6CC',d:'#4A2E26',p:['School forms, trips or kit to sort?','Clubs, lessons or childcare to arrange?','Birthdays, parties or presents coming up?'],s:['Sign the school trip form','Book holiday childcare','Buy new school shoes']},
+ {k:'health',n:'Health',e:'🩺',c:'#DCE6E4',d:'#273B38',p:['Appointments to book: dentist, optician, check-ups?','Prescriptions or repeats to sort?','Anything you have been putting off about health?'],s:['Book the dentist','Order repeat prescription','Book eye tests']},
+ {k:'business',n:'Business ventures',e:'🚀',c:'#CFDDE8',d:'#1F3447',p:['What is the next step on the company website?','Which app idea needs its next piece?','What admin do the ventures need: accounts, domains, contracts?'],s:['Finish the website SEO','Get the first app version working','Register the domain']},
+ {k:'trips',n:'Trips & fun',e:'✈️',c:'#EBDDF0',d:'#3F2B4A',p:['Holidays or weekends away to plan?','What would be nice to look forward to?','Passports, bookings, travel insurance?'],s:['Check passport expiry dates','Book a weekend away','Buy travel insurance']},
+ {k:'paper',n:'Paperwork',e:'📄',c:'#E5E0D6',d:'#3B372E',p:['Forms, letters or emails you have been avoiding?','Documents to file, scan or renew?','Anything to cancel or switch?'],s:['Update the wills','File the paperwork pile','Cancel unused subscriptions']},
+ {k:'wild',n:'Anything else',e:'✨',c:'#F7E1C3',d:'#4E3818',p:['What is nagging at you that is not on a list?','What would you hate to forget this month?','What would make next week easier?'],s:[]}
 ];
+var WARM=['What has been nagging at you this week?','What have you said you would do, and not done yet?','What would you hate to forget this month?','What would make next week easier?','What is the one big thing you would love to have finished by the summer?','What keeps going wrong in the house that you just put up with?'];
+var ROOMS=[
+ {n:'Kitchen',a:'house',s:['Descale the kettle','Fix the dripping tap','Clear the cupboard under the sink','Deep-clean the oven']},
+ {n:'Living room',a:'house',s:['Sort the cables behind the TV','Fix the wobbly shelf','Get the sofa cleaned']},
+ {n:'Bathroom',a:'house',s:['Re-seal the bath','Fix the extractor fan','Replace the shower head']},
+ {n:'Bedrooms',a:'house',s:['Clear out the wardrobe','Fix the curtain rail','Buy a new mattress']},
+ {n:'Hall and stairs',a:'house',s:['Touch up the paintwork','Sort the coats and shoes','Fix the doorbell']},
+ {n:'Loft and storage',a:'house',s:['Clear out the loft','Insulate the loft','Take things to the tip']},
+ {n:'Garage and shed',a:'house',s:['Tidy the shed','Sell the old bike','Sort the tools']},
+ {n:'Garden and outside',a:'garden',s:['Clear the gutters','Fix the fence','Paint the front door']}
+];
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MHINT={0:['Self Assessment tax return is due by 31 January'],1:['Half-term plans'],2:['Spring clean','Mother’s Day'],3:['New tax year: ISAs and pensions','Bills often change in April'],4:['Book the summer holiday','Planting time in the garden'],5:['Father’s Day','Book summer childcare'],6:['School holidays begin'],7:['Back-to-school uniform and kit'],8:['Boiler service before winter','Clear the gutters'],9:['Clocks go back: test the smoke alarms','Half-term'],10:['Christmas plans and presents','Winter check on the car'],11:['Christmas','Year-end accounts for the business']};
+var STAGES=[{k:'warm',n:'Warm up'},{k:'rooms',n:'Walk the house'},{k:'year',n:'The year ahead'},{k:'areas',n:'Areas of life'},{k:'group',n:'Group into big tasks'}];
 function area(k){return AREAS.filter(function(a){return a.k===k;})[0];}
 var D=lo(DKEY,{tasks:[],gone:[],day:{}});
-var L=lo(LKEY,{code:'',me:0,tab:'board',local:false,area:'house'});
-if(L.tab==='brain'||L.tab==='list')L.tab='board';
-var ui={dsize:'small',status:'',syncing:false,pi:{},open:{},defer:false};
+var L=lo(LKEY,{code:'',me:0,tab:'brain',local:false,area:'house'});
+if(L.tab==='board'||L.tab==='list')L.tab='brain';if(L.tab==='share')L.tab='link';
+if(!L.stage)L.stage='warm';if(!L.idx)L.idx={};
+D.tasks.forEach(function(t){if(t.area==='family')t.area='kids';if(t.area==='pets'||t.area==='work')t.area=t.area==='work'?'business':'wild';});
+var ui={dsize:'small',status:'',syncing:false,open:{},defer:false,fresh:null,timer:0};
 function lo(k,def){try{var r=localStorage.getItem(k);if(r)return JSON.parse(r);}catch(e){}return def;}
 function persist(){try{localStorage.setItem(DKEY,JSON.stringify(D));localStorage.setItem(LKEY,JSON.stringify(L));}catch(e){}}
 function now(){return new Date().toISOString();}
 function id(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
-function who(i){return i===null||i===undefined?'Still to sort':i===2?'Both':NAMES[i];}
+function who(i){return i===null||i===undefined?'Still to share out':i===2?'Both':NAMES[i];}
 function byId(i){return D.tasks.filter(function(t){return t.id===i;})[0];}
 function kids(p){return D.tasks.filter(function(t){return t.parent===p;}).sort(function(a,b){return (a.n||0)-(b.n||0);});}
 function tops(){return D.tasks.filter(function(t){return !t.parent;}).sort(function(a,b){return (b.n||0)-(a.n||0);});}
+function live(){return tops().filter(function(t){return !t.nn;});}
 function touch(t){t.updated=now();changed();}
 function changed(){persist();clearTimeout(changed.t);changed.t=setTimeout(sync,1200);}
 function av(i,sz){var l=i===2?'+':(NAMES[i]||'?').charAt(0);return '<span class="av p'+i+'"'+(sz?' style="width:'+sz+'px;height:'+sz+'px"':'')+' aria-hidden="true">'+esc(l)+'</span>';}
-
-/* ---- merging ---- */
+function idx(k){return L.idx[k]||0;}
 function merge(a,b){
  var tasks={},gone={};
  [a,b].forEach(function(d){(d.gone||[]).forEach(function(g){if(!gone[g.id]||gone[g.id]<g.at)gone[g.id]=g.at;});});
@@ -188,161 +254,210 @@ function status(){var el=document.getElementById('st');if(el)el.textContent=ui.s
 function newCode(){var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='',r=new Uint8Array(12);crypto.getRandomValues(r);for(var i=0;i<12;i++)s+=a[r[i]%a.length];return s;}
 function showCode(c){return c.slice(0,4)+'-'+c.slice(4,8)+'-'+c.slice(8);}
 
-/* ---- pieces ---- */
+
+/* ---- the brainstorm page ---- */
+function context(){
+ var st=L.stage;
+ if(st==='rooms'){var r=ROOMS[idx('rooms')%ROOMS.length];return {area:r.a,tag:r.n};}
+ if(st==='year'){var m=(new Date().getMonth()+idx('year'))%12;return {area:'wild',tag:MONTHS[m]};}
+ if(st==='areas')return {area:L.area,tag:''};
+ return {area:'wild',tag:''};
+}
+function chips(list){var have=D.tasks.map(function(t){return t.text.toLowerCase();});var l=list.filter(function(x){return have.indexOf(x.toLowerCase())<0;});if(!l.length)return '';return '<div class="starters"><span class="sl">Tap to add:</span>'+l.map(function(x){return '<button class="chipb" data-act="starter" data-v="'+esc(x)+'">+ '+esc(x)+'</button>';}).join('')+'</div>';}
+function timerHtml(){return '<button class="tmr" data-act="timer">'+(ui.timer>Date.now()?'<span id="tleft"></span> left · stop':'⏱ Two-minute round')+'</button>';}
+function stageCard(){
+ var st=L.stage,h='',a;
+ if(st==='warm'){var p=WARM[idx('warm')%WARM.length];
+  h='<div class="stage" style="--ac:#EADCF4;--acd:#3B2A52"><small>Warm up · question '+(idx('warm')%WARM.length+1)+' of '+WARM.length+'</small><p class="q">'+esc(p)+'</p><div class="srow"><button data-act="nexti" data-k="warm">Next question →</button>'+timerHtml()+'</div></div>';}
+ else if(st==='rooms'){var i=idx('rooms')%ROOMS.length,r=ROOMS[i];
+  h='<div class="stage" style="--ac:#F6DDB8;--acd:#4A3A20"><small>Walk the house · room '+(i+1)+' of '+ROOMS.length+'</small><p class="q">The '+esc(r.n.toLowerCase())+'</p><ul class="hints"><li>What is broken, worn out or annoying here?</li><li>What would make it nicer to be in?</li><li>Anything to clear out, clean or replace?</li></ul><div class="srow"><button data-act="nexti" data-k="rooms">Next room →</button>'+timerHtml()+'</div>'+chips(r.s)+'</div>';}
+ else if(st==='year'){var j=idx('year')%12,m=(new Date().getMonth()+j)%12;
+  h='<div class="stage" style="--ac:#D8E6EE;--acd:#22394A"><small>The year ahead · month '+(j+1)+' of 12</small><p class="q">What comes round in '+MONTHS[m]+'?</p><ul class="hints">'+(MHINT[m]||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'<li>Any birthdays or anniversaries?</li><li>Anything renewing: insurance, MOT, subscriptions?</li></ul><div class="srow"><button data-act="nexti" data-k="year">Next month →</button>'+timerHtml()+'</div></div>';}
+ else if(st==='areas'){a=area(L.area)||AREAS[0];var pi=idx('a_'+a.k);
+  h='<div class="areas">'+AREAS.map(function(x){return '<button class="area'+(x.k===a.k?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';}).join('')+'</div>'
+  +'<div class="stage" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+'</small><p class="q">'+esc(a.p[pi%a.p.length])+'</p><div class="srow"><button data-act="nexti" data-k="a_'+a.k+'">Another question →</button>'+timerHtml()+'</div>'+chips(a.s)+'</div>';}
+ else {
+  h='<div class="stage" style="--ac:#DCE9F7;--acd:#1E3248"><small>Group into big tasks</small><p class="q">Which of these belong together?</p><ul class="hints"><li>Drag one note onto another to make it a step of that task. The task becomes big.</li><li>Tap Small or Big on a note to change it.</li><li>Move anything that is not for now to <b>Not now</b>. It is kept, just out of the way.</li><li>When the wall looks right, go to <b>Share out</b>.</li></ul><div class="srow"><button class="on" data-act="tab" data-t="alloc">Go to Share out →</button></div></div>';
+  return h;
+ }
+ return h+'<div class="add big"><input type="text" id="qa" placeholder="Call it out and type it here, then Enter" aria-label="Type an idea" autocomplete="off"><button class="on" data-act="qadd">Add</button></div>'
+  +'<div class="seg"><span class="sl">New notes are</span><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>';
+}
+function stepper(){
+ var ci=STAGES.map(function(s){return s.k;}).indexOf(L.stage);
+ return '<ol class="steps">'+STAGES.map(function(s,i){return '<li><button class="'+(s.k===L.stage?'on':i<ci?'past':'')+'" data-act="stage" data-k="'+s.k+'"><span class="num">'+(i+1)+'</span>'+s.n+'</button></li>';}).join('')+'</ol>';
+}
+function welcome(){
+ if(L.welcomed&&D.tasks.length)return '';
+ return '<div class="welcome"><h2>Let’s get it all out of your heads</h2><p>Sit down together with this screen, for about half an hour. One of you types; both of you call things out. <b>Don’t decide who does what yet</b>, and don’t worry about wording. Every idea becomes a note on the wall below.</p><p>Five short rounds walk you through it: a warm-up, a walk round the house, the year ahead month by month, the areas of life, and finally grouping notes into big tasks. Skip any round you like.</p><div class="srow"><button class="on" data-act="begin">Start with the warm-up</button>'+(D.tasks.length?'':'<button data-act="example">Show me an example wall</button>')+'</div></div>';
+}
+function note(t,i){
+ var a=area(t.area)||area('wild'),ks=kids(t.id);
+ var h='<div class="note '+t.size+(ui.fresh===t.id?' fresh':'')+'" draggable="true" data-id="'+t.id+'" style="--ac:'+a.c+';--acd:'+a.d+';--rot:'+((i%3)-1)*0.8+'deg">';
+ h+='<div class="ntop"><button class="pill '+t.size+'" data-act="size" data-id="'+t.id+'">'+(t.size==='big'?'Big':'Small')+'</button>'+(t.tag?'<span class="ntag">'+esc(t.tag)+'</span>':'')+'<button class="x" data-act="del" data-id="'+t.id+'" aria-label="Delete">×</button></div>';
+ h+='<div class="ctext" data-act="edit" data-id="'+t.id+'">'+esc(t.text)+'</div>';
+ if(ks.length)h+='<div class="nsubs">'+ks.map(function(k){return '<div class="ns">• <span>'+esc(k.text)+'</span><button data-act="unlink" data-id="'+k.id+'" title="Take it out of this task" aria-label="Take out">↥</button></div>';}).join('')+'</div>';
+ if(ui.open[t.id])h+='<div class="brk"><input type="text" data-brk="'+t.id+'" placeholder="A step, then Enter"></div>';
+ h+='<div class="nfoot"><button class="lnk" data-act="brk" data-id="'+t.id+'">'+(ui.open[t.id]?'Done':'+ step')+'</button><button class="lnk" data-act="nn" data-id="'+t.id+'">Not now</button></div></div>';
+ return h;
+}
+function wall(){
+ var ts=live(),h='<div class="wallhead"><h2>The wall</h2><span class="sub">'+ts.length+' notes'+(ts.length?' · '+ts.filter(function(t){return t.size==='big';}).length+' big':'')+'</span></div>';
+ if(!ts.length)h+='<div class="empty">Notes will appear here as you call them out.</div>';
+ var n=0;
+ AREAS.forEach(function(a){var g=ts.filter(function(t){return (area(t.area)?t.area:'wild')===a.k;});if(!g.length)return;
+  h+='<section class="grp" data-area="'+a.k+'"><h3>'+a.e+' '+esc(a.n)+' <span class="cnt">'+g.length+'</span></h3><div class="notes">'+g.map(function(t){return note(t,n++);}).join('')+'</div></section>';});
+ var nn=tops().filter(function(t){return t.nn;});
+ if(nn.length)h+='<details class="nnpile"><summary>Not now ('+nn.length+')</summary>'+nn.map(function(t){return '<div class="ns">'+esc(t.text)+' <button class="lnk" data-act="unnn" data-id="'+t.id+'">Bring back</button></div>';}).join('')+'</details>';
+ return h;
+}
+function brain(){return welcome()+stepper()+'<div class="bwrap"><div class="stagecol">'+stageCard()+'</div><div class="wallcol">'+wall()+'</div></div>';}
+
+/* ---- the share-out page ---- */
 function card(t){
  var ks=kids(t.id),dn=ks.filter(function(k){return k.done;}).length,a=t.area?area(t.area):null;
- var h='<article class="card '+t.size+(t.done?' done':'')+(ui.fresh===t.id?' fresh':'')+'" draggable="true" data-id="'+t.id+'"><button class="x" data-act="del" data-id="'+t.id+'" aria-label="Delete" title="Delete">×</button>';
- h+='<div class="ctop"><input class="tk" type="checkbox" data-act="tick" data-id="'+t.id+'" aria-label="Done" title="Done"'+(t.done?' checked':'')+'>'+(a?'<span class="chip">'+a.e+' '+esc(a.n)+'</span>':'')+'<button class="pill '+t.size+'" data-act="size" data-id="'+t.id+'" title="Change between big and small">'+(t.size==='big'?'Big':'Small')+'</button>'+(t.to===null||t.to===undefined?'<span class="chip">from '+esc(NAMES[t.by]||'')+'</span>':'')+'</div>';
- h+='<div class="ctext" data-act="edit" data-id="'+t.id+'" title="Tap to change the words">'+esc(t.text)+'</div>';
- if(ks.length){
-  if(ks.length>1)h+='<div class="bar"><i style="width:'+Math.round(dn/ks.length*100)+'%"></i></div>';
-  h+='<div class="subs">'+ks.map(function(k){return '<div class="sr'+(k.done?' done':'')+'"><input type="checkbox" data-act="tick" data-id="'+k.id+'" aria-label="Done"'+(k.done?' checked':'')+'><span>'+esc(k.text)+'</span><button data-act="del" data-id="'+k.id+'" aria-label="Remove">×</button></div>';}).join('')+'</div>';
- }
- if(ui.open[t.id])h+='<div class="brk"><input type="text" data-brk="'+t.id+'" placeholder="A smaller step, then Enter" aria-label="Add a smaller step"></div>';
- h+='<div class="cf"><div class="give">'+[0,1,2].map(function(i){return '<button class="'+(t.to===i?'on':'')+' av p'+i+'" data-act="give" data-id="'+t.id+'" data-i="'+i+'" aria-label="Give to '+who(i)+'" title="'+who(i)+'" style="'+(t.to===i?'outline:3px solid var(--acc2);outline-offset:1px':'')+'">'+(i===2?'+':NAMES[i].charAt(0))+'</button>';}).join('')+(t.to!==null&&t.to!==undefined?'<button class="gi" data-act="give" data-id="'+t.id+'" data-i="" title="Back to the pile">↩</button>':'')+'</div>'
-  +'<button class="mini" data-act="brk" data-id="'+t.id+'" title="Break it into smaller steps">'+(ui.open[t.id]?'Done':'+ Step')+'</button>'
-  +'</div></article>';
+ var h='<article class="card '+t.size+(t.done?' done':'')+(ui.fresh===t.id?' fresh':'')+'" draggable="true" data-id="'+t.id+'"><button class="x" data-act="del" data-id="'+t.id+'" aria-label="Delete">×</button>';
+ h+='<div class="ctop"><input class="tk" type="checkbox" data-act="tick" data-id="'+t.id+'" aria-label="Done"'+(t.done?' checked':'')+'>'+(a?'<span class="chip">'+a.e+' '+esc(a.n)+'</span>':'')+'<button class="pill '+t.size+'" data-act="size" data-id="'+t.id+'">'+(t.size==='big'?'Big':'Small')+'</button></div>';
+ h+='<div class="ctext" data-act="edit" data-id="'+t.id+'">'+esc(t.text)+'</div>';
+ if(ks.length){if(ks.length>1)h+='<div class="bar"><i style="width:'+Math.round(dn/ks.length*100)+'%"></i></div>';
+  h+='<div class="subs">'+ks.map(function(k){return '<div class="sr'+(k.done?' done':'')+'"><input type="checkbox" data-act="tick" data-id="'+k.id+'" aria-label="Done"'+(k.done?' checked':'')+'><span>'+esc(k.text)+'</span></div>';}).join('')+'</div>';}
+ if(ui.open[t.id])h+='<div class="brk"><input type="text" data-brk="'+t.id+'" placeholder="A step, then Enter"></div>';
+ h+='<div class="cf"><div class="give">'+[0,1,2].map(function(i){return '<button class="av p'+i+(t.to===i?' sel':'')+'" data-act="give" data-id="'+t.id+'" data-i="'+i+'" aria-label="Give to '+who(i)+'" title="'+who(i)+'">'+(i===2?'+':NAMES[i].charAt(0))+'</button>';}).join('')+(t.to!==null&&t.to!==undefined?'<button class="gi" data-act="give" data-id="'+t.id+'" data-i="" title="Back to still to share out">↩</button>':'')+'</div><button class="mini" data-act="brk" data-id="'+t.id+'">'+(ui.open[t.id]?'Done':'+ Step')+'</button></div></article>';
  return h;
 }
 function column(to,title,sub,ico){
- var ts=tops().filter(function(t){return (t.to===undefined?null:t.to)===to&&!t.done;});
- var dn=tops().filter(function(t){return (t.to===undefined?null:t.to)===to&&t.done;}).length;
+ var ts=live().filter(function(t){return (t.to===undefined?null:t.to)===to&&!t.done;});
+ var dn=live().filter(function(t){return (t.to===undefined?null:t.to)===to&&t.done;}).length;
  var big=ts.filter(function(t){return t.size==='big';}).length;
  var h='<section class="col'+(to===null?' ideas':'')+'" data-to="'+(to===null?'':to)+'"><div class="ch">'+ico+'<div><h3>'+esc(title)+'</h3><div class="cnt">'+(ts.length?big+' big · '+(ts.length-big)+' small':sub)+(dn?' · '+dn+' done':'')+'</div></div></div>';
- if(!ts.length)h+='<div class="empty">'+(to===null?'Nothing waiting. Pick a prompt on the left to spark ideas.':'Drag a card here, or use the round buttons on a card.')+'</div>';
+ if(!ts.length)h+='<div class="empty">'+(to===null?'Everything has been shared out.':'Drag a card here, or tap the round buttons on a card.')+'</div>';
  ts.forEach(function(t){h+=card(t);});
  return h+'</section>';
 }
 function balance(){
- var c=[0,1,2].map(function(i){return tops().filter(function(t){return t.to===i&&!t.done;});});
- var tot=c[0].length+c[1].length+c[2].length,un=tops().filter(function(t){return (t.to===null||t.to===undefined)&&!t.done;}).length;
+ var c=[0,1,2].map(function(i){return live().filter(function(t){return t.to===i&&!t.done;});});
+ var tot=c[0].length+c[1].length+c[2].length,un=live().filter(function(t){return (t.to===null||t.to===undefined)&&!t.done;}).length;
  var bg=c.map(function(a){return a.filter(function(t){return t.size==='big';}).length;});
- var h='<div class="panel balance"><div class="legend">'+[0,1,2].map(function(i){return '<span>'+av(i,22)+' <b>'+who(i)+'</b> '+c[i].length+' <span style="color:var(--mut)">('+bg[i]+' big)</span></span>';}).join('')+'<span style="color:var(--mut)">Still to sort: '+un+'</span></div>';
+ var h='<div class="panel balance"><div class="legend">'+[0,1,2].map(function(i){return '<span>'+av(i,22)+' <b>'+who(i)+'</b> '+c[i].length+' <span class="m">('+bg[i]+' big)</span></span>';}).join('')+'<span class="m">Still to share out: '+un+'</span></div>';
  if(tot)h+='<div class="bal" aria-hidden="true">'+[0,1,2].map(function(i){return '<i class="b'+i+'" style="width:'+(c[i].length/tot*100)+'%"></i>';}).join('')+'</div>';
- var msg=Math.abs(bg[0]-bg[1])>=2?(bg[0]>bg[1]?NAMES[0]:NAMES[1])+' is holding more of the big ones. Worth a look together.':(un?'Some are still to sort.':tot?'Looks evenly spread.':'');
+ var msg=Math.abs(bg[0]-bg[1])>=2?(bg[0]>bg[1]?NAMES[0]:NAMES[1])+' is holding more of the big ones. Worth a look together.':(un?'Some are still to share out.':tot?'Everything has a home. Each person’s tasks go to Get a grip on their phone.':'');
  return h+(msg?'<div class="sub" style="margin:0">'+esc(msg)+'</div>':'')+'</div>';
 }
-function spark(){
- var a=area(L.area)||AREAS[0],i=ui.pi[a.k]||0,p=a.p[i%a.p.length];
- var h='<div class="panel"><h2>Spark ideas</h2><p class="sub">Pick an area. Answer the prompt with whatever comes to mind, one idea at a time, and press Enter.</p><div class="areas">';
- AREAS.forEach(function(x){h+='<button class="area'+(x.k===a.k?' sel':'')+'" style="--ac:'+x.c+';--acd:'+x.d+'" data-act="area" data-k="'+x.k+'"><span class="em">'+x.e+'</span>'+esc(x.n)+'</button>';});
- h+='</div><div class="prompt" style="--ac:'+a.c+';--acd:'+a.d+'"><small>'+a.e+' '+esc(a.n)+'</small><p>'+esc(p)+'</p><button data-act="nextp">Another prompt</button></div>';
- h+='<div class="add"><input type="text" id="qa" placeholder="Type an idea, then Enter" aria-label="Type an idea" autocomplete="off"><button class="on" data-act="qadd">Add</button></div>'
-  +'<div class="seg"><button class="smallb'+(ui.dsize==='small'?' on':'')+'" data-act="dsize" data-v="small">Small</button><button class="bigb'+(ui.dsize==='big'?' on':'')+'" data-act="dsize" data-v="big">Big</button></div>'
-  +'<details class="paste"><summary>Paste or dictate a whole list</summary><textarea id="dump" placeholder="One idea per line"></textarea><div class="row"><button class="on" data-act="adddump">Add these</button></div></details>';
- if(!D.tasks.length)h+='<div class="row"><button data-act="example">Fill with made-up family tasks</button></div>';
- return h+'</div>';
+function alloc(){
+ return '<div class="intro"><h2>Share out</h2><p class="sub">Drag each card to whoever will own it from start to finish: noticing it, planning it and doing it. “Both” is for things you will split up later.</p></div>'+balance()+'<div class="board">'
+  +column(null,'Still to share out','From the wall','<span class="avx">🗂️</span>')+column(0,NAMES[0],'Nothing yet',av(0,38))+column(1,NAMES[1],'Nothing yet',av(1,38))+column(2,'Both','To split up between you',av(2,38))+'</div>';
 }
-function board(){
- return '<div class="wrap"><div>'+spark()+'</div><div>'+balance()+'<div class="board">'
-  +column(null,'Still to sort','Ideas waiting for a home','<span class="avx">🗂️</span>')
-  +column(0,NAMES[0],'Nothing yet',av(0,38))
-  +column(1,NAMES[1],'Nothing yet',av(1,38))
-  +column(2,'Both','To split up between you',av(2,38))
-  +'</div></div></div>';
-}
+
+/* ---- my day and sharing ---- */
 function pickDay(me){
- var open=tops().filter(function(t){return !t.done&&t.to===me;});
+ var open=live().filter(function(t){return !t.done&&t.to===me;});
  var big=open.filter(function(t){return t.size==='big';})[0],ids=[];
  if(big){var nk=kids(big.id).filter(function(k){return !k.done;}).slice(0,2);ids=nk.length?nk.map(function(k){return k.id;}):[big.id];}
  return {big:ids,small:open.filter(function(t){return t.size!=='big';}).slice(0,3).map(function(t){return t.id;}),u:now()};
 }
-function row(t,big){var p=t.parent?byId(t.parent):null;return '<div class="card '+(big?'big':'small')+(t.done?' done':'')+'" style="cursor:default"><div class="sr" style="padding:2px 0"><input type="checkbox" data-act="tick" data-id="'+t.id+'" aria-label="Done"'+(t.done?' checked':'')+' style="width:26px;height:26px"><div><span class="pill '+(big?'big':'small')+'" style="cursor:default">'+(big?'Big':'Small')+'</span>'+(p?'<div class="chip" style="margin:2px 0">'+esc(p.text)+'</div>':'')+'<div class="ctext">'+esc(t.text)+'</div></div></div></div>';}
+function row(t,big){var p=t.parent?byId(t.parent):null;return '<div class="card '+(big?'big':'small')+(t.done?' done':'')+'" style="cursor:default"><div class="sr"><input type="checkbox" data-act="tick" data-id="'+t.id+'" aria-label="Done"'+(t.done?' checked':'')+' style="width:26px;height:26px"><div><span class="pill '+(big?'big':'small')+'">'+(big?'Big':'Small')+'</span>'+(p?'<div class="chip" style="margin:2px 0">'+esc(p.text)+'</div>':'')+'<div class="ctext">'+esc(t.text)+'</div></div></div></div>';}
 function day(){
- var me=L.me,d=D.day[today()+':'+me];
- var h='<div class="day"><h2>'+esc(NAMES[me])+'’s day</h2>';
- var mine=tops().filter(function(t){return !t.done&&t.to===me;});
- if(!d){return h+'<div class="note">One big thing and up to three small things, from what has been handed to '+esc(NAMES[me])+'. Nothing else is shown, so it never looks like a mountain.'+(mine.length?'':' Nothing has been handed over yet.')+'</div><div class="row"><button class="on" data-act="plan">Plan my day</button></div></div>';}
+ var me=L.me,d=D.day[today()+':'+me],h='<div class="day"><h2>'+esc(NAMES[me])+'’s day</h2>';
+ if(!d)return h+'<div class="note2">A preview of what will arrive in Get a grip: one big thing and up to three small things from what '+esc(NAMES[me])+' owns. Nothing else is shown, so it never looks like a mountain.</div><div class="srow"><button class="on" data-act="plan">Plan my day</button></div></div>';
  var all=d.big.concat(d.small).map(byId).filter(Boolean),dn=all.filter(function(t){return t.done;}).length;
- h+='<p class="sub">'+dn+' of '+all.length+' done</p>';
- all.forEach(function(t){h+=row(t,d.big.indexOf(t.id)>=0);});
- if(all.length&&dn===all.length)h+='<div class="note">That is today done. Anything else is a bonus.</div>';
- return h+'<div class="row"><button data-act="more">Bring in one more</button><button data-act="replan">Start the day again</button></div></div>';
+ h+='<p class="sub">'+dn+' of '+all.length+' done</p>';all.forEach(function(t){h+=row(t,d.big.indexOf(t.id)>=0);});
+ if(all.length&&dn===all.length)h+='<div class="note2">That is today done. Anything else is a bonus.</div>';
+ return h+'<div class="srow"><button data-act="more">Bring in one more</button><button data-act="replan">Start the day again</button></div></div>';
 }
-function share(){
+function link(){
  var h='<div class="day"><h2>Sharing</h2>';
- if(L.code)return h+'<div class="note">This device shares a household. The code is<div class="code">'+showCode(L.code)+'</div>On each other device open this page, go to Sharing and choose “Join with a code”.</div><div class="row"><button data-act="syncnow">Update now</button><button data-act="leave">Stop sharing on this device</button></div></div>';
- return h+'<div class="note">Lauren and Josh share one list. One of you starts a household and gets a code; the other devices join with it. You do this once per device.</div><div class="row"><button class="on" data-act="start">Start a new household</button></div><div class="row"><input type="text" id="jc" placeholder="Code, for example K7QD-4XMB-92TH" autocapitalize="characters" size="26"><button data-act="join">Join with a code</button></div><div class="row"><button data-act="locally">Just try it on this device</button></div></div>';
+ if(L.code)return h+'<div class="note2">This device shares a household. The code is<div class="code">'+showCode(L.code)+'</div>On each other device open this page, go to Sharing and choose “Join with a code”.</div><div class="srow"><button data-act="syncnow">Update now</button><button data-act="leave">Stop sharing on this device</button></div></div>';
+ return h+'<div class="note2">Lauren and Josh share one household. One of you starts it and gets a code; the other devices join with that code. You do this once per device.</div><div class="srow"><button class="on" data-act="start">Start a new household</button></div><div class="srow"><input type="text" id="jc" placeholder="Code, for example K7QD-4XMB-92TH" autocapitalize="characters" size="26"><button data-act="join">Join with a code</button></div><div class="srow"><button data-act="locally">Just try it on this device</button></div></div>';
 }
 function head(){
- var h='<header class="top"><div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="brand"><h1>Household</h1><div>Plan it together. Do a little each day.</div></div><div class="who"><span class="lbl">This device is</span>';
+ var h='<header class="top"><div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="brand"><h1>Get a Grip Household</h1><div>Work it out together. Do a little each day.</div></div><div class="who"><span class="lbl">This device is</span>';
  [0,1].forEach(function(i){h+='<button class="pick'+(L.me===i?' on':'')+'" data-act="me" data-i="'+i+'">'+av(i,26)+esc(NAMES[i])+'</button>';});
- h+='</div></header><nav class="tabs">'+[['board','Planning board'],['day','My day'],['share','Sharing']].map(function(x){return '<button class="'+(L.tab===x[0]?'on':'')+'" data-act="tab" data-t="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</nav><div class="status" id="st">'+esc(ui.status)+'</div>';
+ h+='</div></header><nav class="tabs">'+[['brain','1 · Brainstorm'],['alloc','2 · Share out'],['day','My day'],['link','Sharing']].map(function(x){return '<button class="'+(L.tab===x[0]?'on':'')+'" data-act="tab" data-t="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</nav><div class="status" id="st">'+esc(ui.status)+'</div>';
  return h;
 }
-function typing(){var a=document.activeElement;return a&&(a.id==='qa'||a.id==='dump'||a.hasAttribute('data-brk')||a.isContentEditable);}
+function typing(){var a=document.activeElement;return a&&(a.id==='qa'||a.hasAttribute('data-brk')||a.isContentEditable);}
 function draw(force){
  if(!force&&typing()){ui.defer=true;return;}
  ui.defer=false;
- var a=document.getElementById('app'),qv='',dv='',open=false,bs=document.querySelector('.board'),sx=bs?bs.scrollLeft:0;
- var q=document.getElementById('qa');if(q)qv=q.value;var dd=document.getElementById('dump');if(dd){dv=dd.value;}var dt=document.querySelector('details.paste');if(dt)open=dt.open;
- if(SERVER&&!L.code&&!L.local)L.tab='share';
- a.innerHTML=head()+(L.tab==='board'?board():L.tab==='day'?day():share());
- var q2=document.getElementById('qa');if(q2)q2.value=qv;var d2=document.getElementById('dump');if(d2)d2.value=dv;var dt2=document.querySelector('details.paste');if(dt2)dt2.open=open;
- var b2=document.querySelector('.board');if(b2)b2.scrollLeft=sx;ui.fresh=null;
+ var a=document.getElementById('app'),q=document.getElementById('qa'),qv=q?q.value:'',bs=document.querySelector('.board'),sx=bs?bs.scrollLeft:0,nn=document.querySelector('.nnpile'),nno=nn&&nn.open;
+ if(SERVER&&!L.code&&!L.local)L.tab='link';
+ a.innerHTML=head()+(L.tab==='brain'?brain():L.tab==='alloc'?alloc():L.tab==='day'?day():link());
+ var q2=document.getElementById('qa');if(q2)q2.value=qv;var b2=document.querySelector('.board');if(b2)b2.scrollLeft=sx;var n2=document.querySelector('.nnpile');if(n2&&nno)n2.open=true;
+ ui.fresh=null;tick();
 }
+function tick(){var el=document.getElementById('tleft');if(!el)return;var s=Math.max(0,Math.round((ui.timer-Date.now())/1000));el.textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2);if(s===0){ui.timer=0;draw();}}
+setInterval(tick,1000);
 function example(){
- var ex=[['Company website: finish the build and the SEO','big',0,'work'],['Job applications: send three this week','big',1,'work'],['Phone app for sale: first working version','big',1,'work'],['Redo the bathroom','big',null,'house'],
-  ['Pay the house insurance (every year, must happen)','small',0,'money'],['Fix the leaking kitchen tap','small',1,'house'],['Book the boiler service','small',null,'house'],['Order the dog food','small',0,'pets'],['Call the dentist','small',null,'health'],['Clear the gutters','small',1,'house'],['Renew the car tax','small',null,'car'],['Sort passports for the summer','small',2,'trips']];
- var base=Date.now();
- ex.forEach(function(x,i){D.tasks.push({id:id(),text:x[0],size:x[1],to:x[2],area:x[3],by:L.me,done:false,n:base-i,updated:now()});});
- changed();
+ var ex=[['Company website: finish the build and the SEO','big','business',''],['Phone app for sale: first working version','big','business',''],['Redo the bathroom','big','house','Bathroom'],['Pay the house insurance','small','bills','March'],['Compare energy tariffs','small','bills',''],['Fix the dripping kitchen tap','small','house','Kitchen'],['Book the boiler service','small','house','September'],['Clear the gutters','small','garden',''],['Book the dentist','small','health',''],['Renew the car tax','small','car',''],['Check passport expiry dates','small','trips',''],['Update the wills','small','paper','']];
+ var base=Date.now();ex.forEach(function(x,i){D.tasks.push({id:id(),text:x[0],size:x[1],area:x[2],tag:x[3],to:null,by:L.me,done:false,n:base-i,updated:now()});});
+ L.welcomed=true;changed();
 }
-function addIdea(text){text=text.replace(/^[\s\-\*•\d\.\)]+/,'').trim();if(!text)return;var nid=id();ui.fresh=nid;D.tasks.push({id:nid,text:text,size:ui.dsize,to:null,area:L.area,by:L.me,done:false,n:Date.now(),updated:now()});}
+function addIdea(text,size){text=text.replace(/^[\s\-\*•\d\.\)]+/,'').trim();if(!text)return;var c=context(),nid=id();ui.fresh=nid;D.tasks.push({id:nid,text:text,size:size||ui.dsize,area:c.area,tag:c.tag,to:null,by:L.me,done:false,n:Date.now(),updated:now()});L.welcomed=true;}
+function setOwner(t,v){t.to=v;kids(t.id).forEach(function(k){k.to=v;k.updated=now();});ui.fresh=t.id;touch(t);}
+function nest(child,parent){
+ if(!child||!parent||child===parent||child.parent||parent.parent)return false;
+ if(kids(child.id).length){alert('That note already has its own steps, so it cannot go inside another one.');return false;}
+ child.parent=parent.id;child.to=parent.to;child.n=Date.now();child.updated=now();parent.size='big';parent.updated=now();ui.fresh=parent.id;changed();return true;
+}
 
 /* ---- events ---- */
-document.addEventListener('change',function(e){
- var el=e.target,act=el.getAttribute('data-act'),t=byId(el.getAttribute('data-id'));
- if(act==='tick'&&t){t.done=el.checked;touch(t);draw();}
-});
+document.addEventListener('change',function(e){var el=e.target,t=byId(el.getAttribute('data-id'));if(el.getAttribute('data-act')==='tick'&&t){t.done=el.checked;touch(t);draw();}});
 document.addEventListener('keydown',function(e){
  if(e.key!=='Enter')return;var el=e.target;
  if(el.id==='qa'){e.preventDefault();addIdea(el.value);el.value='';changed();draw(true);var q=document.getElementById('qa');if(q)q.focus();}
- else if(el.hasAttribute('data-brk')){e.preventDefault();var p=el.getAttribute('data-brk'),tx=el.value.trim(),par=byId(p);if(tx&&par){D.tasks.push({id:id(),text:tx,size:'small',to:par.to,parent:p,by:L.me,done:false,n:Date.now(),updated:now()});par.updated=now();changed();draw(true);var nb=document.querySelector('[data-brk="'+p+'"]');if(nb)nb.focus();}}
+ else if(el.hasAttribute('data-brk')){e.preventDefault();var p=el.getAttribute('data-brk'),tx=el.value.trim(),par=byId(p);if(tx&&par){D.tasks.push({id:id(),text:tx,size:'small',area:par.area,to:par.to,parent:p,by:L.me,done:false,n:Date.now(),updated:now()});par.size='big';par.updated=now();changed();draw(true);var nb=document.querySelector('[data-brk="'+p+'"]');if(nb)nb.focus();}}
  else if(el.isContentEditable){e.preventDefault();el.blur();}
 });
 document.addEventListener('focusout',function(e){
  var el=e.target;
- if(el.isContentEditable){var t=byId(el.getAttribute('data-id'));var v=el.textContent.trim();el.contentEditable='false';if(t&&v&&v!==t.text){t.text=v;touch(t);}draw(true);}
+ if(el.isContentEditable){var t=byId(el.getAttribute('data-id')),v=el.textContent.trim();el.contentEditable='false';if(t&&v&&v!==t.text){t.text=v;touch(t);}draw(true);}
  else if(ui.defer)setTimeout(function(){if(!typing())draw(true);},50);
 });
 document.addEventListener('click',function(e){
  var b=e.target.closest('[data-act]');if(!b||b.tagName==='INPUT')return;var act=b.getAttribute('data-act'),t=byId(b.getAttribute('data-id'));
  if(act==='edit'){if(b.isContentEditable)return;b.contentEditable='true';b.focus();var r=document.createRange();r.selectNodeContents(b);var s=getSelection();s.removeAllRanges();s.addRange(r);return;}
- if(act==='me'){L.me=+b.getAttribute('data-i');persist();}
- else if(act==='tab'){L.tab=b.getAttribute('data-t');persist();}
- else if(act==='area'){L.area=b.getAttribute('data-k');persist();}
- else if(act==='nextp'){ui.pi[L.area]=(ui.pi[L.area]||0)+1;}
+ if(act==='me'){L.me=+b.getAttribute('data-i');}
+ else if(act==='tab'){L.tab=b.getAttribute('data-t');scrollTo(0,0);}
+ else if(act==='stage'){L.stage=b.getAttribute('data-k');}
+ else if(act==='begin'){L.welcomed=true;L.stage='warm';}
+ else if(act==='nexti'){var k=b.getAttribute('data-k');L.idx[k]=idx(k)+1;}
+ else if(act==='area'){L.area=b.getAttribute('data-k');}
+ else if(act==='timer'){ui.timer=ui.timer>Date.now()?0:Date.now()+120000;}
+ else if(act==='starter'){addIdea(b.getAttribute('data-v'));changed();}
  else if(act==='dsize'){ui.dsize=b.getAttribute('data-v');}
  else if(act==='qadd'){var q=document.getElementById('qa');addIdea(q.value);q.value='';changed();}
- else if(act==='adddump'){var base=Date.now();document.getElementById('dump').value.split(/\n/).forEach(function(x,i){x=x.replace(/^[\s\-\*•\d\.\)]+/,'').trim();if(x)D.tasks.push({id:id(),text:x,size:ui.dsize,to:null,area:L.area,by:L.me,done:false,n:base-i,updated:now()});});document.getElementById('dump').value='';changed();}
  else if(act==='example'){example();}
- else if(act==='give'&&t){var v=b.getAttribute('data-i');t.to=v===''?null:+v;ui.fresh=t.id;kids(t.id).forEach(function(k){k.to=t.to;k.updated=now();});touch(t);}
+ else if(act==='give'&&t){var v=b.getAttribute('data-i');setOwner(t,v===''?null:+v);}
  else if(act==='size'&&t){t.size=t.size==='big'?'small':'big';touch(t);}
+ else if(act==='nn'&&t){t.nn=true;touch(t);}
+ else if(act==='unnn'&&t){delete t.nn;touch(t);}
+ else if(act==='unlink'&&t){delete t.parent;t.n=Date.now();touch(t);}
  else if(act==='brk'&&t){ui.open[t.id]=!ui.open[t.id];draw(true);var nb=document.querySelector('[data-brk="'+t.id+'"]');if(nb)nb.focus();return;}
  else if(act==='del'&&t){var rm=[t].concat(kids(t.id));rm.forEach(function(x){D.gone.push({id:x.id,at:now()});});D.tasks=D.tasks.filter(function(x){return rm.indexOf(x)<0;});changed();}
  else if(act==='plan'||act==='replan'){D.day[today()+':'+L.me]=pickDay(L.me);changed();}
- else if(act==='more'){
-  var d=D.day[today()+':'+L.me],used=d.big.concat(d.small);
-  var nx=tops().filter(function(x){return !x.done&&x.to===L.me&&used.indexOf(x.id)<0;})[0];
-  if(nx){(nx.size==='big'?d.big:d.small).push(nx.id);d.u=now();changed();}else alert('Nothing more has been handed to '+NAMES[L.me]+'.');
- }
- else if(act==='start'){L.code=newCode();persist();ui.status='Starting…';sync();}
- else if(act==='join'){var c=(document.getElementById('jc').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==12){alert('That code should have 12 letters and numbers.');return;}L.code=c;persist();ui.status='Joining…';sync();}
- else if(act==='locally'){L.local=true;L.tab='board';persist();}
+ else if(act==='more'){var d=D.day[today()+':'+L.me],used=d.big.concat(d.small),nx=live().filter(function(x){return !x.done&&x.to===L.me&&used.indexOf(x.id)<0;})[0];if(nx){(nx.size==='big'?d.big:d.small).push(nx.id);d.u=now();changed();}else alert('Nothing more belongs to '+NAMES[L.me]+'.');}
+ else if(act==='start'){L.code=newCode();ui.status='Starting…';persist();sync();}
+ else if(act==='join'){var c=(document.getElementById('jc').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==12){alert('That code should have 12 letters and numbers.');return;}L.code=c;ui.status='Joining…';persist();sync();}
+ else if(act==='locally'){L.local=true;L.tab='brain';}
  else if(act==='syncnow'){sync();}
- else if(act==='leave'){if(confirm('Stop sharing on this device? Your copy stays here.')){L.code='';persist();}}
- draw(true);
+ else if(act==='leave'){if(confirm('Stop sharing on this device? Your copy stays here.'))L.code='';}
+ persist();draw(true);
 });
-/* drag and drop between columns */
-document.addEventListener('dragstart',function(e){var c=e.target.closest&&e.target.closest('.card[data-id]');if(!c)return;e.dataTransfer.setData('text/plain',c.getAttribute('data-id'));e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
-document.addEventListener('dragend',function(e){var c=e.target.closest&&e.target.closest('.card');if(c)c.classList.remove('dragging');document.querySelectorAll('.col.over').forEach(function(x){x.classList.remove('over');});});
-document.addEventListener('dragover',function(e){var c=e.target.closest&&e.target.closest('.col');if(!c)return;e.preventDefault();document.querySelectorAll('.col.over').forEach(function(x){if(x!==c)x.classList.remove('over');});c.classList.add('over');});
-document.addEventListener('drop',function(e){var c=e.target.closest&&e.target.closest('.col');if(!c)return;e.preventDefault();var t=byId(e.dataTransfer.getData('text/plain'));if(!t)return;var v=c.getAttribute('data-to');t.to=v===''?null:+v;ui.fresh=t.id;kids(t.id).forEach(function(k){k.to=t.to;k.updated=now();});touch(t);draw(true);});
+/* drag and drop: onto a note = make it a step; onto a column = give it to that person */
+document.addEventListener('dragstart',function(e){var c=e.target.closest&&e.target.closest('[draggable][data-id]');if(!c)return;e.dataTransfer.setData('text/plain',c.getAttribute('data-id'));e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
+function clearOver(){document.querySelectorAll('.over').forEach(function(x){x.classList.remove('over');});}
+document.addEventListener('dragend',function(e){var c=e.target.closest&&e.target.closest('[data-id]');if(c)c.classList.remove('dragging');clearOver();});
+function target(e){return (e.target.closest&&(e.target.closest('.note[data-id]')||e.target.closest('.col')));}
+document.addEventListener('dragover',function(e){var c=target(e);if(!c)return;e.preventDefault();if(!c.classList.contains('over')){clearOver();c.classList.add('over');}});
+document.addEventListener('drop',function(e){var c=target(e);if(!c)return;e.preventDefault();clearOver();var t=byId(e.dataTransfer.getData('text/plain'));if(!t)return;
+ if(c.classList.contains('note')){nest(t,byId(c.getAttribute('data-id')));}
+ else{var v=c.getAttribute('data-to');setOwner(t,v===''?null:+v);}
+ draw(true);});
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
 setInterval(function(){if(!document.hidden)sync();},20000);
 draw(true);sync();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+
 })();
 </script>
 </body>
