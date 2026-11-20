@@ -40,7 +40,7 @@ Where a task sits in your own list is the only statement of importance, so there
 
 **Small tasks** are the default: usually an hour or less, marked with a small amber house. You put them in your own order too.
 
-**Subtasks** are ordinary tasks that sit under another task, one level deep. They are listed in their main task's edit screen, and tapping one opens it in the same screen, with a link back to the main task. Each has a grip, so you can drag them into a new order there as well as on the Big card. Big tasks nearly always have them, because a big task is made startable by its subtasks. You add a subtask exactly as you add any task, you can attach an existing task from a dropdown, and you can drag subtasks into the order you want to do them. New subtasks go at the bottom.
+**Subtasks** are ordinary tasks that sit under another task, one level deep. When you tick the last subtask of a small task, the small task ticks itself; a big task is always ticked by you. They are listed in their main task's edit screen, and tapping one opens it in the same screen, with a link back to the main task. Each has a grip, so you can drag them into a new order there as well as on the Big card. Big tasks nearly always have them, because a big task is made startable by its subtasks. You add a subtask exactly as you add any task, you can attach an existing task from a dropdown, and you can drag subtasks into the order you want to do them. New subtasks go at the bottom.
 
 **Thinking** is a roomy writing box on every big task, for working out what its parts might be. Write loosely, then use "Turn lines into subtasks" to turn the lines you choose into real subtasks. Those lines are taken out of the details so nothing is held twice, and any line you leave unticked, such as a phone number or web address, stays where it was. That option works on any task, big or small: write a list in a task's details, then turn it into subtasks in one tap.
 
@@ -99,7 +99,7 @@ Tasks missing either tag are listed separately as "Not tagged yet", with two sma
 | Slot finder, time and equipment tags, Tag tasks | No | Yes |
 | Three-dot menu for all housekeeping, appearance choice | No | Yes |
 
-The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it, but only when the owner says so.
+When a new version of the app has arrived, a banner at the top says so and an Update now button applies it; the three-dot menu also has Check for a new version. The preview lives at `/get-a-grip/next/` with its own data, so it can be tried without risking the live app. When it is ready the live app is replaced by it, but only when the owner says so.
 
 ## Is it new?
 

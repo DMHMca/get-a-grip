@@ -696,14 +696,29 @@ function setActivityMaster(actId,show){
   });
   commit();
 }
+/* A SMALL task finishes itself when its last subtask is ticked, and reopens if a subtask is unticked (t.ad marks "finished by itself").
+   A BIG task is always ticked by the owner, and a small task the owner ticked or unticked by hand is left as they set it. */
+function autoParent(t){
+  var par=isChild(t)?task(t.parent):null;
+  if(!par||isBig(par))return;
+  var kids=childrenOf(par);
+  if(!kids.length)return;
+  if(kids.every(function(c){return c.done;})){
+    if(!par.done){par.done=iso();par.ad=true;par.updated=iso();}
+  }else if(par.done&&par.ad){
+    par.done=null;delete par.ad;par.updated=iso();
+  }
+}
 function toggle(id){
   var t=task(id);if(!t)return;
   if(t.done){t.done=null;if(ui.lastTicked===id)ui.lastTicked=null;}
   else{t.done=iso();ui.lastTicked=id;}
+  delete t.ad;
   t.updated=iso();
+  autoParent(t);
   commit();
 }
-function restore(id){var t=task(id);if(t){t.done=null;t.updated=iso();}ui.lastTicked=null;commit();}
+function restore(id){var t=task(id);if(t){t.done=null;delete t.ad;t.updated=iso();autoParent(t);}ui.lastTicked=null;commit();}
 function createActivity(name){
   name=(name||'').trim();if(!name)return null;
   var a={id:uid(),name:name,created:iso(),archived:null,updated:iso()};
@@ -981,7 +996,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='n51';
+var APP_VERSION='n52';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('next.gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2828,6 +2843,7 @@ function sheetEl(){
     inner.push(choices('Appearance',[['auto','Follow my phone'],['light','Always light'],['dark','Always dark']],th,function(v){setTheme(v);}));
     inner.push(choices('Today layout',[['blocks','Blocks'],['list','List']],lay,function(v){setLayout(v);}));
     inner.push(h('div',{class:'sep'}));
+    inner.push(line(svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),'Check for a new version',ui.updMsg||('This is '+APP_VERSION),function(){checkForUpdateNow();}));
     inner.push(line(svg('<path d="M9 7H6a3 3 0 0 0 0 6h3M15 7h3a3 3 0 0 1 0 6h-3M8 10h8"/>'),'Copy my live tasks into the preview',lv?lv.activities.length+' activities, '+lv.tasks.length+' tasks':'none found',function(){ui.sheet=null;render();copyFromLive();},!lv));
     inner.push(h('a',{class:'opt link',href:'../privacy.html',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'Privacy'})]));
     inner.push(h('a',{class:'opt link',href:'https://github.com/DMHMca/get-a-grip',target:'_blank',rel:'noopener',style:'text-decoration:none'},[svg(ICON.right),h('span',{class:'l',text:'About this app'})]));
@@ -2978,9 +2994,24 @@ function sheetEl(){
 
 /* ---------- render ---------- */
 function ensureShape(){plans();migrateParts();}
+/* a new version of the app has installed in the background; the screen in front of you still runs the old one until it reloads */
+function updateBanner(){
+  if(!ui.updateReady)return null;
+  return h('div',{role:'status',style:'margin:6px 16px 0;padding:10px 14px;border:1.5px solid var(--accent);border-radius:12px;background:var(--tint);display:flex;align-items:center;justify-content:space-between;gap:12px'},[
+    h('span',{style:'font-weight:700',text:'A new version is ready'}),
+    h('button',{class:'btn primary',type:'button',style:'height:40px;flex:none;padding:0 16px',onclick:function(){location.reload();}},['Update now'])]);
+}
+var swReg=null;
+function checkForUpdate(){if(swReg){try{swReg.update();}catch(e){}}}
+function checkForUpdateNow(){
+  if(!swReg){ui.updMsg='Reloading…';render();location.reload();return;}
+  ui.updMsg='Checking…';render();
+  var done=function(){setTimeout(function(){ui.updMsg=ui.updateReady?'A new version is ready, see the top of the screen':'You have the newest version ('+APP_VERSION+')';render();},2500);};
+  try{swReg.update().then(done,done);}catch(e){done();}
+}
 function viewKids(){
   app.classList.toggle('wide',ui.view==='today');
-  return [appHeader()].concat(viewBody());
+  return [appHeader(),updateBanner()].filter(Boolean).concat(viewBody());
 }
 function viewBody(){
   var v=ui.view;
@@ -3120,10 +3151,15 @@ render();
     if(ui.dirty)setTimeout(function(){if(ui.dirty)softRender();},250);
   });
 })();
+if('serviceWorker' in navigator){
+  var hadController=!!navigator.serviceWorker.controller;
+  /* the first install also takes control; only a change of version after that is news */
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(hadController){ui.updateReady=true;ui.updMsg='';render();}});
+  window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').then(function(r){swReg=r;checkForUpdate();}).catch(function(){});});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checkForUpdate();});
+  setInterval(checkForUpdate,20*60*1000);
+}
 })();
-</script>
-<script>
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}
 </script>
 </body>
 </html>
