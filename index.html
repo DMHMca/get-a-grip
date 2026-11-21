@@ -996,7 +996,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='31';
+var APP_VERSION='32';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2957,6 +2957,9 @@ function sheetEl(){
       :h('button',{class:'btn',type:'button',onclick:function(){if(!saveEdit())return;ui.waitFor=t.id;ui.sheet={type:'wait'};render();}},['Wait…']));
     inner.push(h('h2',{text:'Edit task'}));
     var subNow=childrenOf(t);
+    var allSubsDone=subNow.length>0&&subNow.every(function(c){return c.done;});
+    var doneBtn=isChild(t)?null:h('button',{class:'btn'+(!t.done&&allSubsDone?' primary':''),type:'button',onclick:function(){if(!applyFields())return;ui.sheet=null;toggle(t.id);}},
+      [t.done?'Finished. Untick the whole task':allSubsDone?'All subtasks done. Mark the whole task finished':'Mark the whole task finished']);
     var par=isChild(t)?task(t.parent):null;
     var partOf=par?h('button',{class:'btn',type:'button',onclick:function(){goEdit(par.id);}},['‹ Part of: '+par.text]):null;
     var subBox=null;
@@ -2997,7 +3000,7 @@ function sheetEl(){
       if(w==='d')setTimeout(function(){grow(nt);},0);
     }
     showPanel('');
-    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),subBox||addP,
+    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),subBox||addP,doneBtn,
       h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,wBtn,
       h('div',{class:'btns'},[
