@@ -2,6 +2,10 @@
 
 Read this first. It records what this app is, how it is built and hosted, the rules the owner has agreed, and what is still to do.
 
+## SHARED TASK MODEL (read `TASK-MODEL.md`)
+
+`TASK-MODEL.md` holds the shape of a task and the rules about subtasks, moving and finishing that Get a grip and Get a Grip Household share. It is kept word for word the same in both repositories: change it in both or not at all, and make any new task rule there first. The screens may differ (phone drop-downs, laptop drag and drop); the data and rules may not.
+
 ## SWITCH-OVER DONE (November 2026): READ THIS BEFORE THE OLDER TEXT BELOW
 
 The plum "preview" app is now the MAIN app at the repository root (`index.html`, `sw.js`, cache `get-a-grip-v31`, `APP_VERSION` `n52`-based; bump both on every release). The owner decided it ("well past the point of it being a live app"), accepted plum, and no longer uses Google Tasks, so the Google Tasks list sync and import are NOT in the main app. Wherever the text below describes the old live layout (four-button bar, "All tasks"/Master-only model, rules 1, 2, 7, 8, the Google Tasks sections, `Settings` page), the redesign text (Today, Big, Small, Master, Activities, three-dot menu, subtasks, Wait, Slot, Refresh, Update banner) is what is true now.
