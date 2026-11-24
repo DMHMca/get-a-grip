@@ -996,7 +996,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='33';
+var APP_VERSION='34';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2962,6 +2962,21 @@ function sheetEl(){
     inner.push(h('h2',{text:'Edit task'}));
     var subNow=childrenOf(t);
     var allSubsDone=subNow.length>0&&subNow.every(function(c){return c.done;});
+    /* move a task under a big task, to another big task, or back to being a task on its own (one level only) */
+    var partSel=null;
+    if(!subNow.length&&(!isBig(t)||isChild(t))){
+      var bigsList=S.tasks.filter(function(b){return b.id!==t.id&&isBig(b)&&!isChild(b)&&(!b.done||b.id===t.parent);});
+      var curP=isChild(t)?t.parent:'';
+      var ps=h('select',{class:'sel','aria-label':'Part of a big task',onchange:function(){
+        var v=ps.value;if(v===curP)return;
+        if(!applyFields()){ps.value=curP;return;}
+        if(v){var bt=task(v);if(bt)attachTo(t,bt);}
+        else{delete t.parent;t.updated=iso();}
+        ui.editId=t.id;ui.sheet={type:'edit'};commit();
+      }},[h('option',{value:'',text:'None (a task on its own)'})].concat(bigsList.map(function(b){return h('option',{value:b.id,text:b.text});})));
+      ps.value=curP;
+      partSel=h('label',null,['Part of a big task',ps]);
+    }
     var doneBtn=isChild(t)?null:h('button',{class:'btn'+(!t.done&&allSubsDone?' primary':''),type:'button',onclick:function(){if(!applyFields())return;ui.sheet=null;toggle(t.id);}},
       [t.done?'Finished. Untick the whole task':allSubsDone?'All subtasks done. Mark the whole task finished':'Mark the whole task finished']);
     var par=isChild(t)?task(t.parent):null;
@@ -3004,7 +3019,7 @@ function sheetEl(){
       if(w==='d')setTimeout(function(){grow(nt);},0);
     }
     showPanel('');
-    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),subBox||addP,doneBtn,
+    inner.push(h('div',{class:'field'},[partOf,h('label',null,['Activity',sel]),ti,h('div',{class:'seg',role:'group','aria-label':'Size'},[bSmall,bBig]),partSel,subBox||addP,doneBtn,
       h('div',{class:'seg',role:'group','aria-label':'Panels'},[bT,bD]),panel,
       h('label',{style:'flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--text)'},[shownCb,h('span',{text:'Show in the Small and Master lists'})]),toOwn,wBtn,
       h('div',{class:'btns'},[
