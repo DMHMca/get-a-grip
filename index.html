@@ -996,7 +996,7 @@ function restoreFile(f){
 var gisReady=false,gisLoading=false;
 /* The app's own Google sign-in (the family project, Drive app-data permission only). A client ID is public, not a secret.
    It only ever carries the Drive app-data permission. The Google Tasks features need the user's own client ID. */
-var APP_VERSION='34';
+var APP_VERSION='35';
 var DEFAULT_CID='941879453696-6ob1dsj9mnna0ifiv5dki1h62k78vl3i.apps.googleusercontent.com';
 function getCustomCid(){try{return localStorage.getItem('gag.clientId')||'';}catch(e){return '';}}
 function getCid(){return getCustomCid()||DEFAULT_CID;}
@@ -2976,6 +2976,23 @@ function sheetEl(){
       }},[h('option',{value:'',text:'None (a task on its own)'})].concat(bigsList.map(function(b){return h('option',{value:b.id,text:b.text});})));
       ps.value=curP;
       partSel=h('label',null,['Part of a big task',ps]);
+    }
+    /* a small task with its own subtasks: move all of them into a big task, then remove the emptied small task (details go to the big task) */
+    if(subNow.length&&!isChild(t)&&!isBig(t)){
+      var bigs2=S.tasks.filter(function(b){return b.id!==t.id&&isBig(b)&&!isChild(b)&&!b.done;});
+      var ms=h('select',{class:'sel','aria-label':'Move its subtasks into a big task',onchange:function(){
+        var bt=task(ms.value);if(!bt)return;
+        var n=subNow.length;
+        if(!confirm('Move the '+n+' subtask'+(n===1?'':'s')+' of “'+t.text+'” into “'+bt.text+'”? “'+t.text+'” itself will then be removed'+(t.notes?' and its details added to the big task':'')+'.')){ms.value='';return;}
+        if(!applyFields()){ms.value='';return;}
+        childrenOf(t).forEach(function(c){attachTo(c,bt);});
+        if(t.notes){bt.notes=(bt.notes?bt.notes+'\n\n':'')+t.notes;}
+        bt.updated=iso();
+        S.gone.push({id:t.id,at:iso()});
+        S.tasks=S.tasks.filter(function(x){return x.id!==t.id;});delete ui.open[t.id];if(ui.lastTicked===t.id)ui.lastTicked=null;
+        ui.sheet=null;commit();
+      }},[h('option',{value:'',text:'Choose a big task…'})].concat(bigs2.map(function(b){return h('option',{value:b.id,text:b.text});})));
+      partSel=h('label',null,['Move its subtasks into a big task',ms]);
     }
     var doneBtn=isChild(t)?null:h('button',{class:'btn'+(!t.done&&allSubsDone?' primary':''),type:'button',onclick:function(){if(!applyFields())return;ui.sheet=null;toggle(t.id);}},
       [t.done?'Finished. Untick the whole task':allSubsDone?'All subtasks done. Mark the whole task finished':'Mark the whole task finished']);
