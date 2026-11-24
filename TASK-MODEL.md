@@ -1,6 +1,6 @@
-# The shared task model (Get a grip and Get a Grip Household)
+# Get a grip's task model and rules
 
-This file is kept WORD FOR WORD the same in both repositories, `DMHMca/get-a-grip` and `DMHMca/get-a-grip-household`. Change it in both or not at all. The two apps may look and behave differently on screen (the phone app uses drop-downs, the household planning board uses drag and drop on a laptop); what must not differ is what a task is and the rules below, because household tasks will be passed into each person's Get a grip.
+This file describes what a task is in Get a grip and the rules about subtasks, moving and finishing. It is a reference document. Get a Grip Household is a fork that goes its own way (owner's decision, 21 November 2026), so nothing here binds it; its sessions may read this file to borrow rules they want. When Get a grip's task rules change, update this file.
 
 ## What a task is
 
@@ -19,7 +19,6 @@ A task is a JSON object with these fields (all but `id` and `text` optional):
 - `dev`: least equipment needed: `'none'`, `'phone'`, `'tablet'`, `'laptop'`.
 - `activityId` (Get a grip) or `area` (Household): which part of life it belongs to.
 - `created`, `updated`: ISO times; `updated` is stamped on every change and settles clashes between devices (the later one wins).
-- Household only, kept when passed across: `to` (who owns it: 0, 1 or 2 for both), `by` (who added it), `tag` (room or month it came from).
 
 Deleted tasks are remembered as `{id, at}` in a `gone` list for 90 days so a deletion travels to other devices.
 
@@ -34,7 +33,6 @@ Deleted tasks are remembered as `{id, at}` in a `gone` list for 90 days so a del
 7. A small task finishes itself when its last subtask is ticked (and reopens if one is unticked). A big task is only ever finished by a person.
 8. Neutral wording everywhere: no streaks, scores, "overdue" or blame; no red or green.
 
-## Where each app stands (update when either changes)
+## Where Get a grip stands
 
-- Get a grip (phone): rules 1 to 8 built. Edit screen: "Part of a big task" (rule 4/5), "Move its subtasks into a big task" (rule 6), version 35.
-- Household (laptop board): dropping a note onto another makes it a step (rule 4). NOT YET: dropping a note that has steps onto another is refused; it should follow rule 6. Waits, time and equipment are not yet set on the board.
+All eight rules are built (version 35). Edit screen: "Part of a big task" (rules 4 and 5) and "Move its subtasks into a big task" (rule 6).

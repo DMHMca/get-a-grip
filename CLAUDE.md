@@ -2,9 +2,9 @@
 
 Read this first. It records what this app is, how it is built and hosted, the rules the owner has agreed, and what is still to do.
 
-## SHARED TASK MODEL (read `TASK-MODEL.md`)
+## TASK MODEL (read `TASK-MODEL.md`)
 
-`TASK-MODEL.md` holds the shape of a task and the rules about subtasks, moving and finishing that Get a grip and Get a Grip Household share. It is kept word for word the same in both repositories: change it in both or not at all, and make any new task rule there first. The screens may differ (phone drop-downs, laptop drag and drop); the data and rules may not.
+`TASK-MODEL.md` describes what a task is in Get a grip and the rules about subtasks, moving and finishing. Make any new task rule there first and keep it true to the app. It is a reference only for Get a Grip Household, which is a fork that goes its own way (owner's decision 21 Nov 2026); never change the household repository from here.
 
 ## SWITCH-OVER DONE (November 2026): READ THIS BEFORE THE OLDER TEXT BELOW
 
